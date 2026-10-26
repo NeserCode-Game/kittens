@@ -1,14 +1,19 @@
 import {
   getAllWindows,
-  getCurrentWindow,
   Window,
 } from "@tauri-apps/api/window";
 import { createLogger } from "@/lib/logger";
+import {
+  getCurrentWindowOrNull,
+  isTauriRuntime,
+} from "@/lib/tauri-runtime";
 
 const log = createLogger("Window");
 
 /** 统一的窗口查询，失败时记日志并返回空数组 */
 async function safeGetAllWindows(): Promise<Window[]> {
+  if (!isTauriRuntime()) return [];
+
   try {
     return await getAllWindows();
   } catch (reason) {
@@ -25,7 +30,7 @@ async function safeGetAllWindows(): Promise<Window[]> {
  * 避免错误地 fallback 到当前窗口。
  */
 export class WindowUtils {
-  private readonly $current: Window;
+  private readonly $current: Window | null;
   private readonly $label: string;
   /** 构造期预取的结果；未 resolve 时为 undefined */
   private $bound: Window | undefined;
@@ -33,7 +38,7 @@ export class WindowUtils {
   private $pending: Promise<void> | undefined;
 
   constructor(label: string) {
-    this.$current = getCurrentWindow();
+    this.$current = getCurrentWindowOrNull();
     this.$label = label;
     void this.prefetch();
   }
@@ -41,6 +46,11 @@ export class WindowUtils {
   /** 幂等预取：并发调用共享同一个 in-flight promise */
   private prefetch(): Promise<void> {
     if (!this.$pending) {
+      if (!this.$current) {
+        this.$pending = Promise.resolve();
+        return this.$pending;
+      }
+
       this.$pending = WindowUtils.getWindowByLabel(this.$label).then((window) => {
         this.$bound = window;
         log.debug("bound window", this.$label, window ? "found" : "not found");
@@ -56,10 +66,11 @@ export class WindowUtils {
    * undefined —— 此处等待同一个 promise，绝不重复发起查询，也绝不静默
    * fallback 到可能错误的窗口。
    */
-  private async resolveTarget(): Promise<Window> {
+  private async resolveTarget(): Promise<Window | null> {
     if (this.$bound) return this.$bound;
     await this.prefetch();
     if (this.$bound) return this.$bound;
+    if (!this.$current) return null;
 
     log.warn("bound window not found, fallback to current", this.$label);
     return this.$current;
@@ -68,6 +79,7 @@ export class WindowUtils {
   /** 取消最小化 → 显示 → 聚焦 */
   async renderFocus(): Promise<void> {
     const target = await this.resolveTarget();
+    if (!target) return;
     await WindowUtils.restoreAndFocus(target);
   }
 
@@ -104,6 +116,8 @@ export class WindowUtils {
   }
 
   static async windowsQuit(): Promise<void> {
+    if (!isTauriRuntime()) return;
+
     const windows = await safeGetAllWindows();
     log.info("windowsQuit", `${windows.length} window(s)`);
     await Promise.all(windows.map((window) => window.close()));

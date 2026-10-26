@@ -6,10 +6,18 @@ import { Toaster } from "@/components/ui/sonner";
 import { Routes, Route, useNavigate } from "react-router";
 
 import { useTheme, useI18nLogic } from "@/composables";
-import { lazy, Suspense, useEffect, useMemo, useState, useCallback, useRef } from "react";
+import {
+  lazy,
+  Suspense,
+  useEffect,
+  useMemo,
+  useState,
+  useCallback,
+  useRef,
+} from "react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useLocalStorageState } from "ahooks";
-import { getCurrentWindow, PhysicalPosition } from "@tauri-apps/api/window";
+import { PhysicalPosition } from "@tauri-apps/api/window";
 import { listen } from "@tauri-apps/api/event";
 import { WindowUtils } from "@/lib/window.utils";
 
@@ -22,10 +30,14 @@ import SettingsDialog from "@/components/framework/SettingsDialog";
 import AboutDialog from "@/components/framework/AboutDialog";
 import { SettingsDialogContext } from "@/contexts/settings";
 import { createLogger } from "@/lib/logger";
+import {
+  getCurrentWindowOrNull,
+  isTauriRuntime,
+} from "@/lib/tauri-runtime";
 
 const log = createLogger("App");
 
-const Home = lazy(() => import("@/views/Home"));
+const KittensGame = lazy(() => import("@/views/KittensGame"));
 const Software = lazy(() => import("@/views/Software"));
 const Framework = lazy(() => import("@/views/Framework"));
 const TrayMenu = lazy(() => import("@/views/TrayMenu"));
@@ -43,7 +55,8 @@ lifecycle.register({
   stage: "ready",
   once: true,
   run: () => {
-    if (getCurrentWindow().label === "tray") return;
+    const currentWindow = getCurrentWindowOrNull();
+    if (!currentWindow || currentWindow.label === "tray") return;
     return $windowMain.renderFocus();
   },
 });
@@ -63,7 +76,10 @@ function App() {
   });
 
   /* Detect current window */
-  const currentLabel = getCurrentWindow().label;
+  const tauriRuntime = isTauriRuntime();
+  const currentLabel = tauriRuntime
+    ? (getCurrentWindowOrNull()?.label ?? "main")
+    : "main";
 
   /* 弹窗状态 */
   const [settingsOpen, setSettingsOpen] = useState(false);
@@ -86,7 +102,7 @@ function App() {
   }, []);
 
   useEffect(() => {
-    if (currentLabel === "tray") return;
+    if (!tauriRuntime || currentLabel === "tray") return;
 
     const unlistenPopup = listen<{ x: number; y: number }>(
       "tray-popup",
@@ -122,7 +138,13 @@ function App() {
       void unlistenPopup.then((fn) => fn());
       void unlistenNavigate.then((fn) => fn());
     };
-  }, [navigate, currentLabel, openSettings, openAbout]);
+  }, [
+    navigate,
+    currentLabel,
+    openSettings,
+    openAbout,
+    tauriRuntime,
+  ]);
 
   /* 固定 Context value 引用，避免任意状态变化导致所有消费者全量重渲染 */
   const i18nValue = useMemo(
@@ -167,7 +189,7 @@ function App() {
                     <ScrollArea className="h-[calc(100vh-2rem)] w-full">
                       <Suspense fallback={null}>
                         <Routes>
-                          <Route path="/" index element={<Home />} />
+                          <Route path="/" index element={<KittensGame />} />
                           <Route path="/software" element={<Software />} />
                           <Route path="/framework" element={<Framework />} />
                         </Routes>

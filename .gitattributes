@@ -1,2 +1,2 @@
-# Auto detect text files and perform LF normalization
-* text=auto
+# Vendored upstream sources are immutable and verified by SOURCE.json.
+src/game/upstream/** linguist-vendored -whitespace

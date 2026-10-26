@@ -11,17 +11,19 @@ import {
 } from "lucide-react";
 import { ThemeContext } from "@/contexts/theme";
 import { Separator } from "../ui/separator";
-import { useContext, useEffect, useState } from "react";
+import { useContext, useEffect, useMemo, useState } from "react";
 import { useLocalStorageState } from "ahooks";
-import { getCurrentWindow } from "@tauri-apps/api/window";
+import type { Window } from "@tauri-apps/api/window";
 
 import { useI18n } from "@/composables";
 import { WindowUtils } from "@/lib/window.utils";
 import { createLogger } from "@/lib/logger";
+import {
+  getCurrentWindowOrNull,
+  isTauriRuntime,
+} from "@/lib/tauri-runtime";
 
 const log = createLogger("Titlebar");
-
-const currentWindow = getCurrentWindow();
 
 export function ThemeIcon() {
   const { theme } = useContext(ThemeContext);
@@ -42,7 +44,12 @@ export function MaximizeIcon({ maximized }: { maximized: boolean }) {
   );
 }
 
-async function handleOperation(operation: "minimize" | "close") {
+async function handleOperation(
+  currentWindow: Window | null,
+  operation: "minimize" | "close"
+) {
+  if (!currentWindow) return;
+
   switch (operation) {
     case "minimize":
       await currentWindow.minimize();
@@ -54,7 +61,11 @@ async function handleOperation(operation: "minimize" | "close") {
 }
 
 /** 切换最大化；返回切换后的状态 */
-async function toggleMaximize(): Promise<boolean> {
+async function toggleMaximize(
+  currentWindow: Window | null
+): Promise<boolean> {
+  if (!currentWindow) return false;
+
   const maximized = await currentWindow.isMaximized().catch(() => false);
   if (maximized) {
     await currentWindow.unmaximize();
@@ -76,13 +87,19 @@ export default function TitlebarOperations() {
     }
   );
   const [maximized, setMaximized] = useState(false);
+  const currentWindow = useMemo(
+    () => (isTauriRuntime() ? getCurrentWindowOrNull() : null),
+    []
+  );
 
   useEffect(() => {
-    currentWindow.setAlwaysOnTop(alwaysOnTop ?? false);
-  }, [alwaysOnTop]);
+    void currentWindow?.setAlwaysOnTop(alwaysOnTop ?? false);
+  }, [alwaysOnTop, currentWindow]);
 
   /* 同步最大化状态：覆盖双击标题栏、系统快捷键、外部 resize 等场景 */
   useEffect(() => {
+    if (!currentWindow) return;
+
     let cancelled = false;
 
     const sync = async () => {
@@ -99,7 +116,7 @@ export default function TitlebarOperations() {
       cancelled = true;
       unlisten.then((fn) => fn());
     };
-  }, []);
+  }, [currentWindow]);
 
   return (
     <>
@@ -114,7 +131,7 @@ export default function TitlebarOperations() {
             onMouseUp={() => {
               const next = !alwaysOnTop;
               setAlwaysOnTop(next);
-              void currentWindow.setAlwaysOnTop(next);
+              void currentWindow?.setAlwaysOnTop(next);
             }}
           >
             <Paperclip className="titlebar-op-icon" />
@@ -134,7 +151,7 @@ export default function TitlebarOperations() {
           <span
             className="titlebar-op"
             onMouseUp={() => {
-              handleOperation("minimize");
+              void handleOperation(currentWindow, "minimize");
             }}
           >
             <Minus className="titlebar-op-icon" />
@@ -150,7 +167,7 @@ export default function TitlebarOperations() {
           <span
             className="titlebar-op"
             onMouseUp={() => {
-              void toggleMaximize().then(setMaximized);
+              void toggleMaximize(currentWindow).then(setMaximized);
             }}
           >
             <MaximizeIcon maximized={maximized} />
@@ -160,7 +177,7 @@ export default function TitlebarOperations() {
           <span
             className="titlebar-op"
             onMouseUp={() => {
-              handleOperation("close");
+              void handleOperation(currentWindow, "close");
             }}
           >
             <X className="titlebar-op-icon" />

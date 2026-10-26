@@ -1,12 +1,12 @@
 [package]
-name = "app-template"
+name = "kittens-game"
 version = "0.1.0"
-description = "A Tauri App"
+description = "Kittens Game desktop integration"
 authors = ["nesercode"]
 edition = "2021"
 
 [lib]
-name = "app_template_lib"
+name = "kittens_game_lib"
 crate-type = ["staticlib", "cdylib", "rlib"]
 
 [build-dependencies]

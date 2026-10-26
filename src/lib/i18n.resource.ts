@@ -1,8 +1,8 @@
 export const I18nTexts = {
   "en-US": {
-    "Titlebar.default.title": "App Template",
+    "Titlebar.default.title": "Kittens Game",
     "Titlebar.menu.turnto": "Turn to",
-    "Titlebar.menu.turnto.home": "Home",
+    "Titlebar.menu.turnto.home": "Game",
     "Titlebar.menu.turnto.settings": "Settings",
     "Titlebar.menu.turnto.theme": "Theme mode",
     "Titlebar.menu.turnto.exit": "Exit",
@@ -27,7 +27,7 @@ export const I18nTexts = {
     "Command.super.error": "Command execution failed",
     "Command.super.confirm": "Confirm execution",
     "Command.turnto": "Turn to",
-    "Command.turnto.home": "Home",
+    "Command.turnto.home": "Open Kittens Game",
 
     "Titlebar.menu.edit": "Edit",
     "Titlebar.menu.edit.undo": "Undo",
@@ -40,7 +40,7 @@ export const I18nTexts = {
     "Titlebar.menu.help": "Help",
     "Command.turnto.settings": "Settings",
 
-    "Home.title": "Home",
+    "Home.title": "Kittens Game",
     "Software.title": "Software",
     "Framework.title": "Framework",
     "Framework.intro": "This application is built with",
@@ -48,7 +48,8 @@ export const I18nTexts = {
     "Framework.card.vite.description": "Next-generation frontend build tool",
     "Framework.card.vite.url": "https://vite.dev/",
     "Framework.card.react.name": "React",
-    "Framework.card.react.description": "The library for web and native user interfaces",
+    "Framework.card.react.description":
+      "The library for web and native user interfaces",
     "Framework.card.react.url": "https://react.dev/",
     "Framework.card.typescript.name": "TypeScript",
     "Framework.card.typescript.description": "JavaScript with syntax for types",
@@ -57,24 +58,29 @@ export const I18nTexts = {
     "Framework.card.tailwind.description": "A utility-first CSS framework",
     "Framework.card.tailwind.url": "https://tailwindcss.com/",
     "Framework.card.tauri.name": "Tauri",
-    "Framework.card.tauri.description": "Build smaller, faster, and more secure desktop applications",
+    "Framework.card.tauri.description":
+      "Build smaller, faster, and more secure desktop applications",
     "Framework.card.tauri.url": "https://tauri.app/",
     "Framework.card.radix.name": "shadcn/ui",
-    "Framework.card.radix.description": "Beautifully designed components built with Radix UI and Tailwind CSS",
+    "Framework.card.radix.description":
+      "Beautifully designed components built with Radix UI and Tailwind CSS",
     "Framework.card.radix.url": "https://ui.shadcn.com/",
     "Framework.card.react-router.name": "React Router",
-    "Framework.card.react-router.description": "The standard routing library for React",
+    "Framework.card.react-router.description":
+      "The standard routing library for React",
     "Framework.card.react-router.url": "https://reactrouter.com/",
     "Framework.card.zod.name": "Zod",
     "Framework.card.zod.description": "TypeScript-first schema validation",
     "Framework.card.zod.url": "https://zod.dev/",
     "Framework.card.ahooks.name": "ahooks",
-    "Framework.card.ahooks.description": "High-quality and reliable React Hooks library",
+    "Framework.card.ahooks.description":
+      "High-quality and reliable React Hooks library",
     "Framework.card.ahooks.url": "https://ahooks.js.org/",
 
     "Settings.tabs.search": "Search",
     "Settings.tabs.general": "General",
-    "Settings.search.description": "Search all settings and review recent activity",
+    "Settings.search.description":
+      "Search all settings and review recent activity",
     "Settings.general.description": "Manage common application preferences",
     "Settings.search.placeholder": "Search settings...",
     "Settings.search.history": "Recent searches",
@@ -117,12 +123,14 @@ export const I18nTexts = {
     "Tray.menu.quit": "Quit",
 
     "About.title": "About {name}",
-    "About.tagline": "A Tauri + React application template",
+    "About.tagline": "A native interface for the Kittens Game simulation",
     "About.version": "Version",
     "About.frontend": "Frontend",
     "About.identifier": "Identifier",
     "About.website": "Website",
-    "About.copyright": "Released under the MIT License",
+    "About.gameLicense": "Game logic license",
+    "About.copyright":
+      "Framework MIT · Kittens Game logic under WET PAWS LICENSE",
 
     "SuperCommand.navigate.home": "Navigate to home page",
     "SuperCommand.navigate.settings": "Navigate to settings page",
@@ -135,9 +143,9 @@ export const I18nTexts = {
     "SuperCommand.devtools.open": "Open developer tools",
   },
   "zh-CN": {
-    "Titlebar.default.title": "应用模板",
+    "Titlebar.default.title": "猫国建设者",
     "Titlebar.menu.turnto": "转到",
-    "Titlebar.menu.turnto.home": "首页",
+    "Titlebar.menu.turnto.home": "游戏",
     "Titlebar.menu.turnto.settings": "设置",
     "Titlebar.menu.turnto.theme": "主题模式",
     "Titlebar.menu.turnto.exit": "退出",
@@ -162,7 +170,7 @@ export const I18nTexts = {
     "Command.super.error": "命令执行失败",
     "Command.super.confirm": "确认执行",
     "Command.turnto": "转到",
-    "Command.turnto.home": "首页",
+    "Command.turnto.home": "打开猫国建设者",
 
     "Titlebar.menu.edit": "编辑",
     "Titlebar.menu.edit.undo": "撤销",
@@ -175,7 +183,7 @@ export const I18nTexts = {
     "Titlebar.menu.help": "帮助",
     "Command.turnto.settings": "设置",
 
-    "Home.title": "首页",
+    "Home.title": "猫国建设者",
     "Software.title": "软件",
     "Framework.title": "框架",
     "Framework.intro": "本应用使用以下技术构建",
@@ -195,7 +203,8 @@ export const I18nTexts = {
     "Framework.card.tauri.description": "构建更小、更快、更安全的桌面应用",
     "Framework.card.tauri.url": "https://tauri.app/",
     "Framework.card.radix.name": "shadcn/ui",
-    "Framework.card.radix.description": "使用 Radix UI 和 Tailwind CSS 构建的精美设计组件",
+    "Framework.card.radix.description":
+      "使用 Radix UI 和 Tailwind CSS 构建的精美设计组件",
     "Framework.card.radix.url": "https://ui.shadcn.com/",
     "Framework.card.react-router.name": "React Router",
     "Framework.card.react-router.description": " React 标准路由库",
@@ -249,12 +258,14 @@ export const I18nTexts = {
     "Tray.menu.quit": "退出",
 
     "About.title": "关于 {name}",
-    "About.tagline": "Tauri + React 桌面应用模板",
+    "About.tagline": "猫国建设者模拟内核的原生桌面界面",
     "About.version": "版本",
     "About.frontend": "前端运行时",
     "About.identifier": "应用标识",
     "About.website": "项目主页",
-    "About.copyright": "基于 MIT 协议发布",
+    "About.gameLicense": "游戏逻辑许可",
+    "About.copyright":
+      "框架代码 MIT · 猫国建设者逻辑采用 WET PAWS LICENSE",
 
     "SuperCommand.navigate.home": "跳转到首页",
     "SuperCommand.navigate.settings": "跳转到设置页面",

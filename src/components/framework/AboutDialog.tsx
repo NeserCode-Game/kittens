@@ -59,10 +59,11 @@ export default function AboutDialog({ open, onOpenChange }: AboutDialogProps) {
     { label: t("About.version"), value: meta?.version ?? "—" },
     { label: t("About.frontend"), value: meta?.tauriVersion ?? "—" },
     { label: t("About.identifier"), value: meta?.identifier ?? "—" },
+    { label: t("About.gameLicense"), value: "WET PAWS LICENSE" },
   ];
 
   const openWebsite = async () => {
-    await openUrl("https://tauri.app/").catch(() => {});
+    await openUrl("https://kittensgame.com/web/").catch(() => {});
   };
 
   return (

@@ -157,15 +157,15 @@
     @apply flex flex-row items-center gap-1;
   }
   .row-label {
-    @apply flex items-center gap-1.5 text-xs font-medium text-muted-foreground;
+    @apply text-muted-foreground flex items-center gap-1.5 text-xs font-medium;
   }
 
   /* ===== 文本 ===== */
   .text-muted-sm {
-    @apply text-sm text-muted-foreground;
+    @apply text-muted-foreground text-sm;
   }
   .text-muted-xs {
-    @apply text-xs text-muted-foreground;
+    @apply text-muted-foreground text-xs;
   }
 
   /* ===== 图标 ===== */
@@ -176,8 +176,7 @@
     @apply h-3.5 w-3.5;
   }
   .icon-action {
-    @apply h-3.5 w-3.5 shrink-0 text-muted-foreground transition-colors
-      group-hover:text-accent-foreground;
+    @apply text-muted-foreground group-hover:text-accent-foreground h-3.5 w-3.5 shrink-0 transition-colors;
   }
 
   /* ===== 应用骨架 ===== */
@@ -185,9 +184,7 @@
     @apply flex h-screen w-screen flex-row items-center justify-center;
   }
   .app-body {
-    @apply fixed bottom-0 flex h-[calc(100vh-2rem)] w-screen flex-col
-      items-center justify-center bg-neutral-50 select-none
-      transition-colors duration-100 ease-in-out dark:bg-neutral-700;
+    @apply fixed bottom-0 flex h-[calc(100vh-2rem)] w-screen flex-col items-center justify-center bg-neutral-50 transition-colors duration-100 ease-in-out select-none dark:bg-neutral-700;
   }
 
   /* ===== 视图容器 ===== */
@@ -207,15 +204,17 @@
     @apply mx-auto w-full max-w-4xl px-6 pt-6 pb-8;
   }
 
+  /* ===== Kittens Game ===== */
+  .kittens-game-view {
+    @apply fixed inset-x-0 top-8 bottom-0 z-0 overflow-hidden;
+  }
+
   /* ===== 标题栏操作按钮 =====
      作用在自有 <span> 上，非 shadcn 组件，故可收纳于此。
      注意：标题栏里的 <Separator> 是 shadcn 组件，其样式在调用处平铺。
   */
   .titlebar-op {
-    @apply inline-flex h-full w-fit cursor-pointer items-center justify-center
-      px-2.5 py-0.5 transition-colors delay-0 duration-100 ease-in-out
-      hover:bg-neutral-200 dark:hover:bg-neutral-600
-      last:hover:bg-red-400 dark:last:hover:bg-red-600;
+    @apply inline-flex h-full w-fit cursor-pointer items-center justify-center px-2.5 py-0.5 transition-colors delay-0 duration-100 ease-in-out hover:bg-neutral-200 last:hover:bg-red-400 dark:hover:bg-neutral-600 dark:last:hover:bg-red-600;
   }
   .titlebar-op-icon {
     @apply h-4 w-4 transition-all duration-100 ease-in-out;

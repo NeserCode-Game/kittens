@@ -1,0 +1,48 @@
+{
+  "manifestVersion": 2,
+  "source": {
+    "repository": "https://github.com/nuclear-unicorn/kittensgame",
+    "commit": "781e379f79f1e7512d168849cba21ed111502644"
+  },
+  "gameVersion": "1.6.1.6",
+  "license": "WET PAWS LICENSE",
+  "runtime": {
+    "page": false,
+    "iframe": false,
+    "compatibility": [
+      "compat/dojo-declare.js",
+      "compat/jquery.js",
+      "compat/lz-string.js"
+    ]
+  },
+  "files": {
+    "compat/dojo-declare.js": "bba8ef2a57a4fa188719e58f9f1eac2658ce7d527f39d7680e3ba59f2c89821f",
+    "compat/jquery.js": "ee11e902416a1d896f538103110337b39a0e2e2606bc1faf5cd0652914891127",
+    "compat/lz-string.js": "1fbcf447601de022a923f9f9edfe9b9c96cf05076f9f62bc9592981f924888fc",
+    "config.js": "fe7f145824d094e96215e66cdd38cd25412f1b9e161a028388c61c1f39d33630",
+    "core.js": "06ec792f4fcb3cbd28064628caa904e32f253bd345401aa1163a56cae08f5453",
+    "game.js": "4897ced6b0a25b650abcc323f17db3d5f1c935e7c23129c13482c1e3366b6d2b",
+    "js/achievements.js": "557e815d1c26a802f648af7fe7ee7875bf9cc55a7b56516befb36135c2067d8f",
+    "js/buildings.js": "2e5618753bdcece8a118bc52cfe726ff53d1032fa3c1a3634ea90ff2cb3fac53",
+    "js/calendar.js": "0f7b787d32e4a229fc9368aedfc6f7d94c617e6511c6074571713cb340301a4a",
+    "js/challenges.js": "d9d004ca4147e2a1fc5b6048365b2b9a3856773fb10ba001170c70f344210576",
+    "js/diplomacy.js": "7d232c4c8e7ddaf1256581e41f20510618b3ca4a31e27e120878dddb9b1d0e78",
+    "js/math.js": "0db0cddebcdfff2d44edd99bcf41f2ca785dacf5bc9b2e53bc340723cdc51e74",
+    "js/prestige.js": "8447f9c95a52769260a44c0f3660b230e40fe28e24b20444df2e661ba02dac46",
+    "js/preview.js": "015ae16a7aa512397061885238261e4a02465b1350594d83ce69140ed8bd776f",
+    "js/religion.js": "74502ac8e932f97684f1d3bc540407e9c794c7095ddcec8b8d63bebac3b16bb9",
+    "js/resources.js": "199f36458775495ec27a374c2a22405d6b3ef89feb7adce6753d1b5a0f6cb02f",
+    "js/science.js": "49298f00b7b770f7cdf887b54390920f9ab74e555fac07fa6e0833aa578170e5",
+    "js/settings.js": "4f9cca2d4d69b9e2191b260db0b7e3f7389ffb84ba52ee1449fc942df7fba74d",
+    "js/space.js": "eeaae7f33770f4374a232308ea5de298da1a11d47fdd190701dab9849e1f3369",
+    "js/stats.js": "6edce443a70948e0479f135806ebfef391b3724dc8a9ac5ff772836ce08e2f39",
+    "js/time.js": "ac45c98359a5f60aa0605312aef7470f266246ee33cc0db5b06f61ff4ea7aca0",
+    "js/village.js": "ce34d782150629b71efc05897c4ab73d2405a5221b9403f82549598a32780931",
+    "js/void.js": "a290478b170b23ae3fbc1a1006811312a2219f93a375762232d0fa0fd1d5a136",
+    "js/workshop.js": "8e49902fb2d63ca0c27b7995be9514c722904554ae11aee71ba9225b9e8eb407",
+    "license.txt": "155bb3dead77670572574fda611c07818975fefe1cc8bbb45c69ad86c9ecc983",
+    "res/i18n/crowdin/en.json": "cabde6dcc917cd40ca1936cd9ad1ca0c2c48e54932cb4b3a284c411f8d36ea2a",
+    "res/i18n/crowdin/zh.json": "80d8e572495bafd1e0e4411635172ef34f0b3ca0e68fe4341b8f44555daba077",
+    "version.json": "1d3325b80bc710afc07de3d503c118f4154e5fc8732df5883a04174a7e79063e"
+  }
+}

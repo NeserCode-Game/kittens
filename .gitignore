@@ -10,6 +10,8 @@ lerna-debug.log*
 node_modules
 dist
 dist-ssr
+test-results
+playwright-report
 *.local
 
 # Editor directories and files
@@ -27,6 +29,7 @@ dist-ssr
 .workbuddy/
 
 # Agent workspace data
+.agent/
 .agents/
 .omo/
 

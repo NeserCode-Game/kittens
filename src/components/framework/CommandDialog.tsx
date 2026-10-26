@@ -42,7 +42,12 @@ export default function CommandMenu() {
   // cmdk 搜索值
   const [cmdkSearch, setCmdkSearch] = React.useState("");
 
-  const superCmd = useSuperCommand({ navigate: navigator, setLang, setTheme, openSettings });
+  const superCmd = useSuperCommand({
+    navigate: navigator,
+    setLang,
+    setTheme,
+    openSettings,
+  });
 
   // ── Super 模式判定 ────────────────────────────────────────
   const isSuperMode = cmdkSearch.startsWith(SUPER_PREFIX + " ");
@@ -57,7 +62,7 @@ export default function CommandMenu() {
       ? superCmd.commands.filter(
           (cmd) =>
             cmd.id.toLowerCase().includes(superQuery) ||
-            cmd.keywords.some((k) => k.toLowerCase().includes(superQuery)),
+            cmd.keywords.some((k) => k.toLowerCase().includes(superQuery))
         )
       : superCmd.commands
     : [];
@@ -69,7 +74,7 @@ export default function CommandMenu() {
       icon: Home,
       label: t("Command.turnto.home"),
       shortcut: "⌘H",
-      keywords: ["home", "index", "首页", "主页"],
+      keywords: ["game", "kittens", "catnip", "游戏", "猫国", "首页"],
     },
     {
       value: "settings::open",

@@ -53,7 +53,7 @@ pub fn run() {
 
             TrayIconBuilder::new()
                 .icon(icon)
-                .tooltip("App Template")
+                .tooltip("Kittens Game")
                 .on_tray_icon_event(|tray, event| {
                     let (rx, ry, rw, is_right) = match event {
                         TrayIconEvent::Click {
