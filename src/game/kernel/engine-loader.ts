@@ -170,6 +170,93 @@ dojo.mixin = function(target) {
   }
   return target;
 };
+dojo.Deferred = function() {
+  var state = "pending";
+  var result;
+  var handlers = [];
+
+  function settle(nextState, value) {
+    if (state !== "pending") return;
+    state = nextState;
+    result = value;
+    var pending = handlers.splice(0);
+    for (var index = 0; index < pending.length; index++) {
+      pending[index]();
+    }
+  }
+
+  function attach(callback, errback) {
+    function run() {
+      var handler = state === "resolved" ? callback : errback;
+      if (typeof handler === "function") handler(result);
+    }
+    if (state === "pending") handlers.push(run);
+    else run();
+  }
+
+  this.callback = function(value) {
+    settle("resolved", value);
+    return this;
+  };
+  this.errback = function(value) {
+    settle("rejected", value);
+    return this;
+  };
+  this.resolve = this.callback;
+  this.reject = this.errback;
+  this.addCallback = function(callback) {
+    attach(callback, null);
+    return this;
+  };
+  this.addErrback = function(errback) {
+    attach(null, errback);
+    return this;
+  };
+  this.addBoth = function(callback) {
+    attach(callback, callback);
+    return this;
+  };
+  this.addCallbacks = function(callback, errback) {
+    attach(callback, errback);
+    return this;
+  };
+  this.then = function(callback, errback) {
+    var next = new dojo.Deferred();
+    attach(
+      function(value) {
+        try {
+          var nextValue = typeof callback === "function" ? callback(value) : value;
+          if (nextValue && typeof nextValue.then === "function") {
+            nextValue.then(
+              function(chainedValue) { next.callback(chainedValue); },
+              function(error) { next.errback(error); }
+            );
+          } else {
+            next.callback(nextValue);
+          }
+        } catch (error) {
+          next.errback(error);
+        }
+      },
+      function(error) {
+        if (typeof errback !== "function") {
+          next.errback(error);
+          return;
+        }
+        try {
+          next.callback(errback(error));
+        } catch (nextError) {
+          next.errback(nextError);
+        }
+      }
+    );
+    return next;
+  };
+  this.cancel = function() {
+    this.errback(new Error("Deferred cancelled"));
+    return this;
+  };
+};
 
 window.classes = classes;
 window.com = com;
@@ -260,10 +347,7 @@ let engineContext: EngineContext | null = null;
 export function getEngineContext(locale = "zh"): EngineContext {
   if (engineContext) return engineContext;
 
-  const createEngine = new Function(
-    "sandbox",
-    ENGINE_CODE
-  ) as (sandbox: {
+  const createEngine = new Function("sandbox", ENGINE_CODE) as (sandbox: {
     window: Window;
     document: Document;
     storage: Storage;

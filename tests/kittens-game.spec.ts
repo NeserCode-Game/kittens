@@ -1,11 +1,13 @@
 import { expect, test, type Locator } from "@playwright/test";
+import { readFileSync } from "node:fs";
 
 const SAVE_KEY = "com.nuclearunicorn.kittengame.savedata";
+const M2_SAVE = readFileSync(
+  new URL("./fixtures/m2-save.json", import.meta.url),
+  "utf8"
+);
 
-async function clickMany(
-  locator: Locator,
-  count: number
-) {
+async function clickMany(locator: Locator, count: number) {
   await locator.evaluate((element, total) => {
     const button = element as HTMLElement;
     for (let index = 0; index < total; index += 1) button.click();
@@ -36,15 +38,10 @@ test("runs the native game kernel and persists resources", async ({
   await expect(catnip).toBeVisible();
   const before = Number(await catnip.getAttribute("data-resource-value"));
 
-  await clickMany(
-    page.getByRole("button", { name: "采集猫薄荷" }),
-    500
-  );
+  await clickMany(page.getByRole("button", { name: "采集猫薄荷" }), 500);
 
   await expect
-    .poll(async () =>
-      Number(await catnip.getAttribute("data-resource-value"))
-    )
+    .poll(async () => Number(await catnip.getAttribute("data-resource-value")))
     .toBeGreaterThan(before);
 
   await clickMany(page.getByRole("button", { name: "精炼木材" }), 5);
@@ -69,9 +66,7 @@ test("runs the native game kernel and persists resources", async ({
     .poll(() => page.evaluate((key) => localStorage.getItem(key), SAVE_KEY))
     .not.toBeNull();
 
-  const savedCatnip = Number(
-    await catnip.getAttribute("data-resource-value")
-  );
+  const savedCatnip = Number(await catnip.getAttribute("data-resource-value"));
 
   await page.screenshot({
     path: ".agent/smoke/desktop-native.png",
@@ -113,6 +108,162 @@ test("runs the native game kernel and persists resources", async ({
         null,
         2
       )
+    ),
+    contentType: "application/json",
+  });
+
+  expect(consoleErrors).toEqual([]);
+  expect(pageErrors).toEqual([]);
+});
+
+test("drives village, research, workshop, upgrades and settings", async ({
+  page,
+}, testInfo) => {
+  const consoleErrors: string[] = [];
+  const pageErrors: string[] = [];
+
+  page.on("console", (message) => {
+    if (message.type() === "error") consoleErrors.push(message.text());
+  });
+  page.on("pageerror", (error) => {
+    pageErrors.push(error.stack ?? error.message);
+  });
+
+  await page.addInitScript(
+    ({ key, save }) => {
+      if (!localStorage.getItem(key)) localStorage.setItem(key, save);
+    },
+    { key: SAVE_KEY, save: M2_SAVE }
+  );
+  await page.goto("/", { waitUntil: "domcontentloaded" });
+
+  await expect(page.locator("iframe")).toHaveCount(0);
+  await expect(page.getByRole("heading", { name: "营火" })).toBeVisible({
+    timeout: 30_000,
+  });
+
+  await page.getByRole("button", { name: /^村庄/ }).click();
+  await expect(
+    page.getByRole("heading", { name: "村庄", level: 1 })
+  ).toBeVisible();
+  const farmer = page.locator('[data-job-id="farmer"]');
+  await expect(farmer).toHaveAttribute("data-job-value", "8");
+  await page.locator('[data-job-assign="farmer"]').click();
+  await expect(farmer).toHaveAttribute("data-job-value", "9");
+
+  await page.getByRole("button", { name: /^科学/ }).click();
+  await expect(
+    page.getByRole("heading", { name: "科学", level: 1 })
+  ).toBeVisible();
+  const calendar = page.locator('[data-research-id="calendar"]');
+  await expect(calendar).toHaveAttribute("data-research-researched", "false");
+  await calendar.getByRole("button", { name: /^研究/ }).click();
+  await expect(calendar).toHaveAttribute("data-research-researched", "true");
+
+  await page.getByRole("tab", { name: /^政策/ }).click();
+  const liberty = page.locator('[data-research-id="liberty"]');
+  await expect(liberty).toBeVisible();
+  await liberty.locator("button").click();
+  const confirmation = page.locator('[role="dialog"]');
+  await expect(confirmation).toBeVisible();
+  await confirmation.getByRole("button", { name: "取消" }).click();
+  await expect(confirmation).toBeHidden();
+  await expect(liberty).toHaveAttribute("data-research-researched", "false");
+
+  await liberty.locator("button").click();
+  await expect(confirmation).toBeVisible();
+  await confirmation.getByRole("button", { name: "确认" }).click();
+  await expect(confirmation).toBeHidden();
+  await expect(liberty).toHaveAttribute("data-research-researched", "true");
+
+  await page.getByRole("button", { name: /^工坊/ }).click();
+  await expect(
+    page.getByRole("heading", { name: "工坊", level: 1 })
+  ).toBeVisible();
+  const woodBefore = Number(
+    await page
+      .locator('[data-resource-id="wood"]')
+      .getAttribute("data-resource-value")
+  );
+  const beam = page.locator('[data-craft-id="beam"]');
+  await expect(beam).toHaveAttribute("data-craft-can-craft", "true");
+  await beam.getByRole("button", { name: /^制作/ }).first().click();
+  await expect
+    .poll(async () =>
+      Number(
+        await page
+          .locator('[data-resource-id="wood"]')
+          .getAttribute("data-resource-value")
+      )
+    )
+    .toBeLessThan(woodBefore);
+
+  const mineralHoes = page.locator('[data-upgrade-id="mineralHoes"]');
+  await expect(mineralHoes).toHaveAttribute("data-upgrade-researched", "false");
+  await mineralHoes.getByRole("button", { name: /^购买/ }).click();
+  await expect(mineralHoes).toHaveAttribute("data-upgrade-researched", "true");
+
+  await page.getByRole("button", { name: /^游戏设置/ }).click();
+  await expect(
+    page.getByRole("heading", { name: "游戏设置", level: 1 })
+  ).toBeVisible();
+  const precision = page.locator('[data-setting-id="forceHighPrecision"]');
+  await expect(precision).toHaveAttribute("data-setting-value", "false");
+  await precision.getByRole("switch").click();
+  await expect(precision).toHaveAttribute("data-setting-value", "true");
+
+  await page.getByRole("button", { name: "保存游戏" }).click();
+  await expect
+    .poll(() => page.evaluate((key) => localStorage.getItem(key), SAVE_KEY))
+    .not.toBeNull();
+
+  await page.reload({ waitUntil: "domcontentloaded" });
+  await expect(page.getByRole("heading", { name: "营火" })).toBeVisible({
+    timeout: 30_000,
+  });
+  await page.getByRole("button", { name: /^村庄/ }).click();
+  await expect(page.locator('[data-job-id="farmer"]')).toHaveAttribute(
+    "data-job-value",
+    "9"
+  );
+  await page.getByRole("button", { name: /^科学/ }).click();
+  await expect(page.locator('[data-research-id="calendar"]')).toHaveAttribute(
+    "data-research-researched",
+    "true"
+  );
+
+  await page.screenshot({
+    path: ".agent/smoke/m2-science-desktop.png",
+    fullPage: false,
+    animations: "disabled",
+  });
+
+  await page.setViewportSize({ width: 800, height: 600 });
+  await page.getByRole("button", { name: "打开系统导航" }).click();
+  const mobileNavigation = page.locator('[role="dialog"]');
+  await expect(mobileNavigation).toBeVisible();
+  await page.screenshot({
+    path: ".agent/smoke/m2-800x600-navigation.png",
+    fullPage: false,
+    animations: "disabled",
+  });
+  await mobileNavigation.getByRole("button", { name: /^工坊/ }).click();
+  await expect(
+    page.getByRole("heading", { name: "工坊", level: 1 })
+  ).toBeVisible();
+  await page.screenshot({
+    path: ".agent/smoke/m2-workshop-800x600.png",
+    fullPage: false,
+    animations: "disabled",
+  });
+  const horizontalOverflow = await page.evaluate(
+    () => document.documentElement.scrollWidth - window.innerWidth
+  );
+  expect(horizontalOverflow).toBeLessThanOrEqual(1);
+
+  await testInfo.attach("m2-diagnostics.json", {
+    body: Buffer.from(
+      JSON.stringify({ woodBefore, consoleErrors, pageErrors }, null, 2)
     ),
     contentType: "application/json",
   });

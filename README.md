@@ -6,17 +6,22 @@ Kittens Game 的原生桌面重制界面。项目保留固定版本的上游模�
 
 ## 当前状态
 
-已交付 M1 内核与营火核心流程：
+已交付 M1 内核、M2 核心界面与营火、村庄、科学、工坊流程：
 
 - 无原版页面 UI 启动完整 `GamePage` 模拟内核。
 - 5 Hz 游戏循环、资源生产、采集、精炼和价格增长由上游逻辑驱动。
 - 建筑解锁、可购状态、建造与批量数量展示来自上游模型。
+- 村庄职业分配、空闲猫、幸福度与职业效果来自上游村庄管理器。
+- 科技与政策研究复用上游控制器，政策确认和取消由新 UI 对话框承接。
+- 工坊制作、批量制作、工程猫进度和永久升级沿用上游价格与购买规则。
+- 游戏设置直接读写上游布尔选项，并通过原版存档格式保留。
 - 使用原版 `com.nuclearunicorn.kittengame.savedata` 存档键和序列化格式。
 - 新的资源总览、营火界面、建筑列表、存档面板和响应式应用外壳。
-- Playwright 覆盖采集、精炼、建造、保存和刷新恢复。
+- Playwright 覆盖采集、精炼、建造、职业分配、研究、政策确认、制作、升级、
+  设置、保存和刷新恢复。
 
-后续里程碑包括村庄、科技、工坊、贸易、宗教、空间、时间、挑战、统计以及完整
-存档迁移和无障碍验收。
+后续里程碑包括贸易、宗教、空间、时间、挑战、成就、统计以及完整存档迁移和
+无障碍验收。
 
 ## 架构
 
@@ -34,7 +39,8 @@ src/views/KittensGame    全新游戏界面
 ```
 
 React 不直接修改管理器内部对象。内核将可序列化状态映射为快照，并通过
-`gather`、`craftWood`、`buyBuilding`、`save` 等命令执行原版逻辑。
+`gather`、`craftWood`、`buyBuilding`、`assignJob`、`research`、`craft`、
+`buyUpgrade`、`setSetting`、`save` 等命令执行原版逻辑。
 
 ## 开发
 
@@ -54,6 +60,7 @@ pnpm lint
 pnpm build
 cargo check --manifest-path src-tauri/Cargo.toml
 pnpm kittensgame:smoke
+pnpm test
 ```
 
 开发服务器默认使用 `http://localhost:8888`。
