@@ -1,8 +1,8 @@
 [package]
 name = "kittens-game"
-version = "0.1.0"
-description = "Kittens Game desktop integration"
-authors = ["nesercode"]
+version = "1.0.0"
+description = "Native desktop remake of Kittens Game with a rebuilt interface."
+authors = ["NeserCode"]
 edition = "2021"
 
 [lib]

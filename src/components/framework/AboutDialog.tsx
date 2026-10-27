@@ -52,7 +52,7 @@ export default function AboutDialog({ open, onOpenChange }: AboutDialogProps) {
     };
   }, [open, meta]);
 
-  const appName = meta?.name ?? "App Template";
+  const appName = meta?.name ?? "猫国建设者 / Kittens Game";
   const title = t("About.title").replace("{name}", appName);
 
   const rows: { label: string; value: string }[] = [
@@ -71,20 +71,16 @@ export default function AboutDialog({ open, onOpenChange }: AboutDialogProps) {
       <DialogContent className="sm:max-w-md">
         <div className="flex flex-col items-center gap-1 pt-2 text-center">
           <DialogTitle className="text-lg">{title}</DialogTitle>
-          <p className="text-muted-xs">
-            {t("About.tagline")}
-          </p>
+          <p className="text-muted-xs">{t("About.tagline")}</p>
         </div>
 
-        <dl className="mt-2 divide-y divide-border overflow-hidden rounded-lg border border-border/60">
+        <dl className="divide-border border-border/60 mt-2 divide-y overflow-hidden rounded-lg border">
           {rows.map((row) => (
             <div
               key={row.label}
-              className="flex items-baseline gap-4 bg-muted/30 px-3 py-2"
+              className="bg-muted/30 flex items-baseline gap-4 px-3 py-2"
             >
-              <dt className="w-24 shrink-0 text-muted-xs">
-                {row.label}
-              </dt>
+              <dt className="text-muted-xs w-24 shrink-0">{row.label}</dt>
               <dd className="min-w-0 flex-1 truncate font-mono text-xs">
                 {row.value}
               </dd>
@@ -92,9 +88,7 @@ export default function AboutDialog({ open, onOpenChange }: AboutDialogProps) {
           ))}
         </dl>
 
-        <p className="text-center text-muted-xs">
-          {t("About.copyright")}
-        </p>
+        <p className="text-muted-xs text-center">{t("About.copyright")}</p>
 
         <div className="flex items-center justify-between gap-2">
           <Button

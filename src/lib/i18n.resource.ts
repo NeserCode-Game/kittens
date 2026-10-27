@@ -124,7 +124,8 @@ export const I18nTexts = {
     "Tray.menu.quit": "Quit",
 
     "About.title": "About {name}",
-    "About.tagline": "A native interface for the Kittens Game simulation",
+    "About.tagline":
+      "A native desktop remake powered by the original Kittens Game simulation",
     "About.version": "Version",
     "About.frontend": "Frontend",
     "About.identifier": "Identifier",
@@ -260,7 +261,7 @@ export const I18nTexts = {
     "Tray.menu.quit": "退出",
 
     "About.title": "关于 {name}",
-    "About.tagline": "猫国建设者模拟内核的原生桌面界面",
+    "About.tagline": "基于原版内核与存档格式的原生桌面重制版",
     "About.version": "版本",
     "About.frontend": "前端运行时",
     "About.identifier": "应用标识",

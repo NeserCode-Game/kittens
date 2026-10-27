@@ -6,6 +6,10 @@
 项目保留固定版本的 Kittens Game 上游模拟逻辑和原版存档格式，但不加载原版
 页面、原版 CSS 或 iframe；游戏界面由 React 和 Tailwind 重新实现。
 
+当前应用版本：`1.0.0`；上游逻辑版本：`1.6.1.6`。
+产品名为“猫国建设者”，应用标识为 `com.nesercode.kittensgame`，二进制名为
+`kittens-game`。
+
 ## 当前状态
 
 已交付 M1 内核、M2 核心界面、M3 中后期系统、M4 工程闭环和 M5 数值验收：
@@ -86,6 +90,12 @@ pnpm kittensgame:smoke
 pnpm test
 ```
 
+更新上游图标或 `app-icon.png` 后，使用 Tauri 官方生成器重建平台图标：
+
+```bash
+pnpm tauri icon app-icon.png
+```
+
 开发服务器默认使用 `http://localhost:8888`。
 
 ## 上游来源
@@ -95,9 +105,42 @@ pnpm test
 - 版本：`1.6.1.6`
 - 逻辑目录：`src/game/upstream/`
 - 文件哈希清单：`src/game/upstream/SOURCE.json`
+- 图标源：上游 `res/favicon.gif`，SHA-256
+  `A2A05F1658F7ED95E8B920C6DF01FEB75AA50872E364F76C3FD3F5F8E82FF1AB`
+- 图标中间源：`app-icon.png`，由原版图标的透明像素按最近邻整数倍率放大
+- 平台图标：`src-tauri/icons/`，由 `pnpm tauri icon app-icon.png` 生成
 
 `pnpm kittensgame:manifest` 更新清单，`pnpm kittensgame:verify` 校验固定逻辑
 源没有被意外修改。
+
+## 发布打包
+
+发布前依次通过 Lint、TypeScript/Vite 构建、Rust 检查和浏览器测试，然后执行：
+
+```bash
+pnpm tauri build
+```
+
+Windows 安装包输出在 `src-tauri/target/release/bundle/`。制作安装包前不得用
+开发构建替换上游哈希清单或 `src/game/upstream/` 源文件。
+
+本次 `1.0.0` 发布构建结果：
+
+- MSI：
+  `src-tauri/target/release/bundle/msi/猫国建设者_1.0.0_x64_zh-CN.msi`，
+  `6.10 MiB`，SHA-256
+  `C22C1BDB586AA4A967DC5ED8027063D31C73194B0D15EC158BB6E3F34A31918F`。
+- NSIS：
+  `src-tauri/target/release/bundle/nsis/猫国建设者_1.0.0_x64-setup.exe`，
+  `4.35 MiB`，SHA-256
+  `135DE80A159D93C748193AA1EB8B78F50296DA0298FE620C4EA5B9B50E703096`。
+- 独立可执行文件：
+  `src-tauri/target/release/kittens-game.exe`，`16.17 MiB`，SHA-256
+  `B229CAA1B3963AD60A09D80823AFDF15CE3CDFB772B85B052C97E1678D69B99F`。
+
+Windows NSIS 与 MSI 安装器当前均未签名。发布或分发前应使用可信代码签名证书
+签名；签名会改变安装包哈希，因此发布页必须记录实际分发文件的哈希。
+MSI 固定升级代码为 `975c22c7-2402-5a53-94e6-76c690ef7d25`，不能随版本变化。
 
 ## 许可
 

@@ -6,7 +6,7 @@ export interface TitleContextValue {
 }
 
 export const TitleContext = createContext<TitleContextValue>({
-  title: "App template",
+  title: "猫国建设者",
   setTitle: () => {},
 });
 

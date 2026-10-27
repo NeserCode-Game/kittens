@@ -24,6 +24,16 @@ not permit commercial use or creation of derivative works for commercial gain.
 The in-game navigation exposes the official game, wiki, source repository, and
 Chinese wiki links.
 
+The application, bundle, and tray icons are derived from the upstream
+`res/favicon.gif` file at the pinned commit. The tracked `public/favicon.gif`
+is byte-identical to that source (SHA-256
+`A2A05F1658F7ED95E8B920C6DF01FEB75AA50872E364F76C3FD3F5F8E82FF1AB`).
+`app-icon.png` is a transparent square enlargement generated with
+nearest-neighbor scaling, and the platform icon files under
+`src-tauri/icons/` are generated from it by the official Tauri icon tool. These
+icon assets remain covered by the WET PAWS LICENSE and are not relicensed under
+MIT.
+
 The vendored logic files and their SHA-256 hashes are recorded in
 [`src/game/upstream/SOURCE.json`](src/game/upstream/SOURCE.json). The compatibility
 layer supplies browser implementations of Dojo declaration helpers, jQuery, and

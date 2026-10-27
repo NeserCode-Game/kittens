@@ -1,8 +1,9 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "Kittens Game",
-  "version": "0.1.0",
+  "productName": "猫国建设者",
+  "version": "1.0.0",
   "identifier": "com.nesercode.kittensgame",
+  "mainBinaryName": "kittens-game",
   "build": {
     "beforeDevCommand": "pnpm dev",
     "devUrl": "http://localhost:8888",
@@ -47,6 +48,17 @@
   "bundle": {
     "active": true,
     "targets": "all",
+    "publisher": "NeserCode",
+    "copyright": "Copyright © 2026 NeserCode",
+    "category": "SimulationGame",
+    "shortDescription": "基于原版 Kittens Game 逻辑重制的原生桌面版。",
+    "longDescription": "猫国建设者使用全新 React 界面承载 Kittens Game 1.6.1.6 单机模拟逻辑，支持原版存档、中文与英文、亮暗主题以及独立资源浮窗。",
+    "windows": {
+      "wix": {
+        "language": "zh-CN",
+        "upgradeCode": "975c22c7-2402-5a53-94e6-76c690ef7d25"
+      }
+    },
     "icon": [
       "icons/32x32.png",
       "icons/128x128.png",
