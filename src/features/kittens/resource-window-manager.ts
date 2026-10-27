@@ -14,10 +14,13 @@ import {
   computeAttachedWindowPosition,
   RESOURCE_WINDOW_HEIGHT,
   RESOURCE_WINDOW_WIDTH,
+  resolveAttachedWindowSide,
+  type ResourceWindowSide,
 } from "./resource-window-layout";
 
 const log = createLogger("ResourceWindow");
 const RESOURCE_WINDOW_LABEL = "resources";
+const USER_MOVE_SETTLE_DELAY = 240;
 
 let snapGeneration = 0;
 let disposeSnap: (() => void) | null = null;
@@ -31,12 +34,19 @@ async function attachToMainWindow(mainWindow: Window, resourceWindow: Window) {
   const generation = ++snapGeneration;
   disposeSnapListeners();
 
-  await resourceWindow.setSize(
-    new LogicalSize(RESOURCE_WINDOW_WIDTH, RESOURCE_WINDOW_HEIGHT)
-  );
+  await Promise.all([
+    resourceWindow.setSize(
+      new LogicalSize(RESOURCE_WINDOW_WIDTH, RESOURCE_WINDOW_HEIGHT)
+    ),
+    resourceWindow.setAlwaysOnTop(false),
+  ]);
 
+  let preferredSide: ResourceWindowSide = "above";
   let syncing = false;
   let syncQueued = false;
+  let latestAppliedPosition: { x: number; y: number } | null = null;
+  let userMoveTimer: ReturnType<typeof setTimeout> | null = null;
+  let latestUserPosition: { x: number; y: number } | null = null;
 
   const syncPosition = async () => {
     if (syncing) {
@@ -70,8 +80,10 @@ async function attachToMainWindow(mainWindow: Window, resourceWindow: Window) {
             height: monitor.size.height,
           },
           Math.round(RESOURCE_WINDOW_WIDTH * scale),
-          Math.round(RESOURCE_WINDOW_HEIGHT * scale)
+          Math.round(RESOURCE_WINDOW_HEIGHT * scale),
+          preferredSide
         );
+        latestAppliedPosition = position;
         await resourceWindow.setPosition(
           new PhysicalPosition(position.x, position.y)
         );
@@ -83,29 +95,83 @@ async function attachToMainWindow(mainWindow: Window, resourceWindow: Window) {
     }
   };
 
-  await resourceWindow.setAlwaysOnTop(true);
+  const applyDraggedSide = async () => {
+    userMoveTimer = null;
+    if (!latestUserPosition) return;
+
+    try {
+      const [mainPosition, mainSize, monitor] = await Promise.all([
+        mainWindow.outerPosition(),
+        mainWindow.outerSize(),
+        currentMonitor(),
+      ]);
+      if (!monitor) return;
+
+      preferredSide = resolveAttachedWindowSide(
+        {
+          x: mainPosition.x,
+          y: mainPosition.y,
+          width: mainSize.width,
+          height: mainSize.height,
+        },
+        latestUserPosition.y,
+        Math.round(RESOURCE_WINDOW_HEIGHT * monitor.scaleFactor)
+      );
+      await syncPosition();
+    } catch (error) {
+      log.debug("resource window snap skipped", error);
+    }
+  };
+
+  const handleResourceMoved = ({ payload }: { payload: PhysicalPosition }) => {
+    if (
+      latestAppliedPosition &&
+      Math.abs(payload.x - latestAppliedPosition.x) <= 1 &&
+      Math.abs(payload.y - latestAppliedPosition.y) <= 1
+    ) {
+      if (userMoveTimer) clearTimeout(userMoveTimer);
+      userMoveTimer = null;
+      latestUserPosition = null;
+      return;
+    }
+
+    latestUserPosition = payload;
+    if (userMoveTimer) clearTimeout(userMoveTimer);
+    userMoveTimer = setTimeout(
+      () => void applyDraggedSide(),
+      USER_MOVE_SETTLE_DELAY
+    );
+  };
+
   await syncPosition();
 
-  const [unlistenMoved, unlistenResized, unlistenDestroyed] = await Promise.all(
-    [
-      mainWindow.onMoved(() => void syncPosition()),
-      mainWindow.onResized(() => void syncPosition()),
-      resourceWindow.once("tauri://destroyed", () => {
-        if (generation === snapGeneration) disposeSnapListeners();
-      }),
-    ]
-  );
+  const [
+    unlistenMoved,
+    unlistenResized,
+    unlistenResourceMoved,
+    unlistenDestroyed,
+  ] = await Promise.all([
+    mainWindow.onMoved(() => void syncPosition()),
+    mainWindow.onResized(() => void syncPosition()),
+    resourceWindow.onMoved(handleResourceMoved),
+    resourceWindow.once("tauri://destroyed", () => {
+      if (generation === snapGeneration) disposeSnapListeners();
+    }),
+  ]);
 
   if (generation !== snapGeneration) {
     unlistenMoved();
     unlistenResized();
+    unlistenResourceMoved();
     unlistenDestroyed();
     return;
   }
 
   disposeSnap = () => {
+    if (userMoveTimer) clearTimeout(userMoveTimer);
     unlistenMoved();
     unlistenResized();
+    unlistenResourceMoved();
     unlistenDestroyed();
   };
 }
@@ -132,7 +198,9 @@ async function openTauriResourceWindow(): Promise<void> {
     maximizable: false,
     minimizable: false,
     skipTaskbar: true,
-    alwaysOnTop: true,
+    alwaysOnTop: false,
+    parent: mainWindow,
+    transparent: true,
     shadow: false,
     focus: false,
     center: false,

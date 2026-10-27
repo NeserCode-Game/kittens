@@ -232,6 +232,29 @@ test("integrates game controls into the titlebar and streams the resource window
   await expect(
     resourceWindow.getByRole("heading", { name: "营火" })
   ).toHaveCount(0);
+  const resourceDragHandle = resourceWindow.locator(
+    "[data-resource-drag-handle]"
+  );
+  await expect(resourceDragHandle).toHaveCount(1);
+  await expect(resourceDragHandle).toHaveAttribute("data-tauri-drag-region");
+  await expect(
+    resourceWindow.locator("[data-resource-window][data-tauri-drag-region]")
+  ).toHaveCount(0);
+  const resourceSurface = resourceWindow.locator("[data-resource-surface]");
+  const resourceSurfaceStyle = await resourceSurface.evaluate((element) => {
+    const style = getComputedStyle(element);
+    return {
+      background: style.backgroundColor,
+      radius: style.borderTopLeftRadius,
+      overflow: style.overflow,
+    };
+  });
+  expect(resourceSurfaceStyle).toEqual({
+    background: expect.any(String),
+    radius: "8px",
+    overflow: "hidden",
+  });
+  expect(resourceSurfaceStyle.background).not.toBe("rgba(0, 0, 0, 0)");
   await resourceWindow.screenshot({
     path: ".agent/smoke/resource-window-popup.png",
     animations: "disabled",
@@ -289,30 +312,60 @@ test("integrates game controls into the titlebar and streams the resource window
   const positions = await page.evaluate(async () => {
     const { computeAttachedWindowPosition } =
       await import("/src/features/kittens/resource-window-layout.ts");
+    const { resolveAttachedWindowSide } =
+      await import("/src/features/kittens/resource-window-layout.ts");
     return {
-      below: computeAttachedWindowPosition(
+      above: computeAttachedWindowPosition(
         { x: 100, y: 80, width: 800, height: 600 },
         { x: 0, y: 0, width: 1920, height: 1080 },
         720,
         32
       ),
-      above: computeAttachedWindowPosition(
+      below: computeAttachedWindowPosition(
+        { x: 100, y: 80, width: 800, height: 600 },
+        { x: 0, y: 0, width: 1920, height: 1080 },
+        720,
+        32,
+        "below"
+      ),
+      aboveFallback: computeAttachedWindowPosition(
         { x: 500, y: 700, width: 800, height: 400 },
         { x: 0, y: 0, width: 1920, height: 1080 },
         720,
         32
       ),
-      fallback: computeAttachedWindowPosition(
+      belowFallback: computeAttachedWindowPosition(
+        { x: 500, y: 700, width: 800, height: 400 },
+        { x: 0, y: 0, width: 1920, height: 1080 },
+        720,
+        32,
+        "below"
+      ),
+      edgeFallback: computeAttachedWindowPosition(
         { x: 0, y: 0, width: 1600, height: 1080 },
         { x: 0, y: 0, width: 1920, height: 1080 },
         720,
         32
       ),
+      draggedAbove: resolveAttachedWindowSide(
+        { x: 100, y: 80, width: 800, height: 600 },
+        40,
+        32
+      ),
+      draggedBelow: resolveAttachedWindowSide(
+        { x: 100, y: 80, width: 800, height: 600 },
+        700,
+        32
+      ),
     };
   });
+  expect(positions.above).toEqual({ x: 140, y: 48 });
   expect(positions.below).toEqual({ x: 140, y: 680 });
-  expect(positions.above).toEqual({ x: 540, y: 668 });
-  expect(positions.fallback).toEqual({ x: 440, y: 1048 });
+  expect(positions.aboveFallback).toEqual({ x: 540, y: 668 });
+  expect(positions.belowFallback).toEqual({ x: 540, y: 668 });
+  expect(positions.edgeFallback).toEqual({ x: 440, y: 0 });
+  expect(positions.draggedAbove).toBe("above");
+  expect(positions.draggedBelow).toBe("below");
 
   const initiallyDark = await resourceWindow.evaluate(() =>
     document.documentElement.classList.contains("dark")

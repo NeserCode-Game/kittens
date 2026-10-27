@@ -1,5 +1,5 @@
 import { Cat, LoaderCircle, X } from "lucide-react";
-import { useMemo } from "react";
+import { useEffect, useMemo } from "react";
 
 import { ScrollArea } from "@/components/ui/scroll-area";
 import type { ResourceSnapshot } from "@/game/kernel/types";
@@ -69,6 +69,18 @@ function ResourceWindowItem({ resource }: { resource: ResourceSnapshot }) {
 
 export default function ResourceWindow() {
   const state = useResourceWindowState();
+
+  useEffect(() => {
+    const htmlBackground = document.documentElement.style.backgroundColor;
+    const bodyBackground = document.body.style.backgroundColor;
+    document.documentElement.style.backgroundColor = "transparent";
+    document.body.style.backgroundColor = "transparent";
+    return () => {
+      document.documentElement.style.backgroundColor = htmlBackground;
+      document.body.style.backgroundColor = bodyBackground;
+    };
+  }, []);
+
   const resources = useMemo(() => {
     if (!state) return [];
     const byId = new Map(
@@ -90,49 +102,55 @@ export default function ResourceWindow() {
 
   return (
     <main
-      className="kittens-game-theme bg-kg-chrome text-kg-body border-kg-line flex h-screen w-screen items-center gap-1 overflow-hidden border px-1"
+      className="kittens-game-theme h-screen w-screen overflow-hidden bg-transparent p-px"
       data-resource-window
-      data-tauri-drag-region
+      data-resource-side="attached"
     >
-      <span
-        className="text-kg-accent relative flex size-6 shrink-0 items-center justify-center"
-        data-tauri-drag-region
-        title={state?.paused ? "游戏已暂停" : "资源"}
+      <div
+        className="bg-kg-chrome text-kg-body border-kg-line flex h-full w-full items-center gap-1 overflow-hidden rounded-md border px-1"
+        data-resource-surface
       >
-        <Cat className="size-3.5" />
-        {state?.paused ? (
-          <span className="absolute right-0.5 bottom-0.5 size-1 rounded-full bg-amber-400" />
-        ) : null}
-      </span>
-
-      {state ? (
-        <ScrollArea
-          type="hover"
-          className="h-full min-w-0 flex-1"
-          aria-label="资源栏"
-          data-resource-scroll
+        <span
+          className="text-kg-accent relative flex size-6 shrink-0 cursor-grab items-center justify-center active:cursor-grabbing"
+          data-tauri-drag-region
+          data-resource-drag-handle
+          title="拖动可切换上下吸附"
         >
-          <div className="flex h-[28px] w-max items-center">
-            {resources.map((resource) => (
-              <ResourceWindowItem key={resource.id} resource={resource} />
-            ))}
-          </div>
-        </ScrollArea>
-      ) : (
-        <span className="text-kg-muted flex min-w-0 flex-1 items-center gap-2 text-[10px]">
-          <LoaderCircle className="text-kg-accent size-3.5 animate-spin" />
-          等待游戏数据
+          <Cat className="size-3.5" />
+          {state?.paused ? (
+            <span className="absolute right-0.5 bottom-0.5 size-1 rounded-full bg-amber-400" />
+          ) : null}
         </span>
-      )}
 
-      <button
-        type="button"
-        className="text-kg-muted hover:bg-kg-hover-strong hover:text-kg-strong flex size-6 shrink-0 items-center justify-center rounded-sm transition-colors"
-        aria-label="关闭资源浮窗"
-        onClick={close}
-      >
-        <X className="size-3.5" />
-      </button>
+        {state ? (
+          <ScrollArea
+            type="hover"
+            className="h-full min-w-0 flex-1"
+            aria-label="资源栏"
+            data-resource-scroll
+          >
+            <div className="flex h-[28px] w-max items-center">
+              {resources.map((resource) => (
+                <ResourceWindowItem key={resource.id} resource={resource} />
+              ))}
+            </div>
+          </ScrollArea>
+        ) : (
+          <span className="text-kg-muted flex min-w-0 flex-1 items-center gap-2 text-[10px]">
+            <LoaderCircle className="text-kg-accent size-3.5 animate-spin" />
+            等待游戏数据
+          </span>
+        )}
+
+        <button
+          type="button"
+          className="text-kg-muted hover:bg-kg-hover-strong hover:text-kg-strong flex size-6 shrink-0 items-center justify-center rounded-sm transition-colors"
+          aria-label="关闭资源浮窗"
+          onClick={close}
+        >
+          <X className="size-3.5" />
+        </button>
+      </div>
     </main>
   );
 }
