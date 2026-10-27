@@ -145,11 +145,11 @@ test("matches upstream state and prices for an identical command sequence", asyn
               const accessor = game.bld.getBuildingExt(id);
               if (!accessor) continue;
               const meta = accessor.getMeta();
-              if (!meta.unlocked) continue;
               const model = buildingController.fetchModel({
                 key: id,
                 building: id,
               });
+              if (!model.visible) continue;
               buildings[id] = {
                 value: meta.val,
                 enabled: meta.on,

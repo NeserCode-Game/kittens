@@ -124,6 +124,189 @@ test("runs the native game kernel and persists resources", async ({
   expect(pageErrors).toEqual([]);
 });
 
+test("uses live staged-building unlocks and rejects locked construction", async ({
+  page,
+}) => {
+  await page.addInitScript(
+    ({ key, save }) => {
+      localStorage.setItem(key, save);
+    },
+    { key: SAVE_KEY, save: M3_SAVE }
+  );
+  await page.goto("/", { waitUntil: "domcontentloaded" });
+
+  await expect(page.getByRole("heading", { name: "营火" })).toBeVisible({
+    timeout: 30_000,
+  });
+  await expect(page.locator('[data-building-id="library"]')).toBeVisible();
+  await expect(page.locator('[data-building-id="academy"]')).toHaveCount(0);
+
+  const results = await page.evaluate(async () => {
+    const { getGameKernel } = await import("/src/game/kernel/game-kernel.ts");
+    const kernel = getGameKernel();
+    kernel.game.tick();
+    return {
+      locked: kernel.buyBuilding("academy"),
+      unlocked: kernel.buyBuilding("library"),
+    };
+  });
+
+  expect(results.locked).toEqual({ ok: false, reason: "locked" });
+  expect(results.unlocked).toMatchObject({ ok: true, reason: "ok" });
+  await expect(page.locator('[data-building-id="academy"]')).toHaveCount(0);
+  await expect(page.locator('[data-building-id="library"]')).toHaveAttribute(
+    "data-building-enabled",
+    "1"
+  );
+});
+
+test("unlocks a staged building when live resources cross its threshold", async ({
+  page,
+}) => {
+  await page.goto("/tauri.svg", { waitUntil: "domcontentloaded" });
+
+  const states = await page.evaluate(
+    async ({ key }) => {
+      localStorage.removeItem(key);
+      const { GameKernel } = await import("/src/game/kernel/game-kernel.ts");
+      const kernel = new GameKernel("zh");
+      kernel.setPaused(false);
+      const wood = kernel.game.resPool.get("wood");
+
+      wood.value = 7.4;
+      kernel.game.tick();
+      kernel.gather();
+      const before = kernel
+        .getSnapshot()
+        .buildings.some((building) => building.id === "library");
+
+      wood.value = 7.6;
+      kernel.game.tick();
+      const rootUnlocked = Boolean(kernel.game.bld.get("library").unlocked);
+      const cachedUnlocked = Boolean(
+        kernel.game.bld.getBuildingExt("library").getMeta().unlocked
+      );
+      kernel.gather();
+      const after = kernel
+        .getSnapshot()
+        .buildings.some((building) => building.id === "library");
+
+      return { before, rootUnlocked, cachedUnlocked, after };
+    },
+    { key: SAVE_KEY }
+  );
+
+  expect(states).toEqual({
+    before: false,
+    rootUnlocked: true,
+    cachedUnlocked: false,
+    after: true,
+  });
+});
+
+test("rejects locked actions across every manager", async ({ page }) => {
+  await page.goto("/tauri.svg", { waitUntil: "domcontentloaded" });
+
+  const results = await page.evaluate(
+    async ({ key, save }) => {
+      localStorage.setItem(key, save);
+      const { GameKernel } = await import("/src/game/kernel/game-kernel.ts");
+      const kernel = new GameKernel("zh");
+      kernel.setPaused(false);
+      kernel.game.tick();
+      const game = kernel.game;
+      const requireLocked = <T extends { name: string }>(
+        item: T | undefined,
+        manager: string
+      ): T => {
+        if (!item) throw new Error(`No locked ${manager} fixture item`);
+        return item;
+      };
+
+      const building = requireLocked(
+        game.bld.buildingsData.find((item) => !item.unlocked),
+        "building"
+      );
+      const job = requireLocked(
+        game.village.jobs.find((item) => !item.unlocked),
+        "job"
+      );
+      const tech = requireLocked(
+        game.science.techs.find((item) => !item.unlocked),
+        "tech"
+      );
+      const policy = requireLocked(
+        game.science.policies.find((item) => !item.unlocked),
+        "policy"
+      );
+      const craft = requireLocked(
+        game.workshop.crafts.find((item) => !item.unlocked),
+        "craft"
+      );
+      const upgrade = requireLocked(
+        game.workshop.upgrades.find((item) => !item.unlocked),
+        "upgrade"
+      );
+      const race = requireLocked(
+        game.diplomacy.races.find((item) => !item.unlocked),
+        "trade race"
+      );
+      game.religion.faith = 0;
+      const religion = requireLocked(
+        game.religion.religionUpgrades.find(
+          (item) => item.on <= 0 && (item.faith ?? 0) > 0
+        ),
+        "religion upgrade"
+      );
+      const program = requireLocked(
+        game.space.programs.find((item) => !item.unlocked),
+        "space program"
+      );
+      const spaceBuilding = requireLocked(
+        game.space.planets
+          .flatMap((planet) => planet.buildings ?? [])
+          .find((item) => !item.unlocked),
+        "space building"
+      );
+      const chronoforge = requireLocked(
+        game.time.chronoforgeUpgrades.find((item) => item.unlocked === false),
+        "chronoforge upgrade"
+      );
+      const voidspace = requireLocked(
+        game.time.voidspaceUpgrades.find((item) => item.unlocked === false),
+        "voidspace upgrade"
+      );
+      const challenge = requireLocked(
+        game.challenges.challenges.find((item) => !item.unlocked),
+        "challenge"
+      );
+
+      return {
+        building: kernel.buyBuilding(building.name),
+        job: kernel.assignJob(job.name),
+        tech: kernel.research(tech.name),
+        policy: kernel.research(policy.name, "policy"),
+        craft: kernel.craft(craft.name),
+        craftAll: kernel.craftAll(craft.name),
+        upgrade: kernel.buyUpgrade(upgrade.name),
+        trade: kernel.trade(race.name),
+        embassy: kernel.buyEmbassy(race.name),
+        religion: kernel.buyReligionUpgrade(religion.name, "religion"),
+        program: kernel.launchSpaceProgram(program.name),
+        spaceBuilding: kernel.buySpaceBuilding(spaceBuilding.name),
+        chronoforge: kernel.buyTimeUpgrade(chronoforge.name, "chronoforge"),
+        voidspace: kernel.buyTimeUpgrade(voidspace.name, "voidspace"),
+        challenge: kernel.toggleChallenge(challenge.name),
+      };
+    },
+    { key: SAVE_KEY, save: M3_SAVE }
+  );
+
+  for (const [manager, result] of Object.entries(results)) {
+    expect(result, manager).toEqual({ ok: false, reason: "locked" });
+  }
+});
+
 test("drives village, research, workshop, upgrades and settings", async ({
   page,
 }, testInfo) => {

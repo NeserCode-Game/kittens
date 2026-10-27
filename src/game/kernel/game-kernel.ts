@@ -215,6 +215,7 @@ interface LegacyReligionUpgrade {
   label: string;
   description: string;
   prices: LegacyPrice[];
+  faith?: number;
   val: number;
   on: number;
   unlocked?: boolean;
@@ -1788,17 +1789,29 @@ export class GameKernel {
   }
 
   buyBuilding(id: string, amount = 1): ActionResult {
+    const accessor = this.game.bld.getBuildingExt(id);
+    if (!accessor) {
+      this.lastMessage = "未找到建筑";
+      this.refreshSnapshot();
+      return { ok: false, reason: "unknown" };
+    }
+
     const controller = new this.classes.ui.btn.BuildingBtnModernController(
       this.game
     );
     const model = controller.fetchModel({ key: id, building: id });
+    if (!model.visible) {
+      this.lastMessage = "建筑尚未解锁";
+      this.refreshSnapshot();
+      return { ok: false, reason: "locked" };
+    }
     if (!model.enabled) {
       this.lastMessage = "资源不足或尚未解锁";
       this.refreshSnapshot();
       return { ok: false, reason: "not-enabled" };
     }
 
-    const meta = this.game.bld.getBuildingExt(id).getMeta();
+    const meta = accessor.getMeta();
     const controllerWithBuild = controller as unknown as {
       build: (buildingModel: LegacyBuildingModel, count: number) => void;
     };
@@ -2330,10 +2343,10 @@ export class GameKernel {
     return leaves.flatMap((name) => {
       const accessor = this.game.bld.getBuildingExt(name);
       if (!accessor) return [];
-      const meta = accessor.getMeta();
-      if (!meta.unlocked) return [];
 
       const model = controller.fetchModel({ key: name, building: name });
+      const meta = accessor.getMeta();
+      if (!model.visible) return [];
       const group = groupByBuilding.get(name);
       const prices = (model.prices ?? []).map((price) => {
         const resource = this.game.resPool.get(price.name);
