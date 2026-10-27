@@ -208,11 +208,7 @@ function Navigation({
       className="flex min-h-0 flex-1 flex-col"
       data-game-navigation
     >
-      <ScrollArea
-        type="auto"
-        className="min-h-0 flex-1"
-        viewportClassName="pr-1"
-      >
+      <ScrollArea type="auto" className="min-h-0 flex-1">
         <div className="flex flex-col gap-1 pb-2">
           {SYSTEM_NAV_ITEMS.map(renderItem)}
         </div>
@@ -625,7 +621,7 @@ export default function KittensGame() {
           <ScrollArea
             type="hover"
             className="h-full w-full"
-            viewportClassName="pr-2 focus-visible:ring-inset"
+            viewportClassName="focus-visible:ring-inset"
             data-game-main-scroll
           >
             <div className="min-h-full pb-12">
@@ -735,11 +731,7 @@ export default function KittensGame() {
             </div>
           </div>
 
-          <ScrollArea
-            type="hover"
-            className="min-h-0 flex-1"
-            viewportClassName="pr-2"
-          >
+          <ScrollArea type="hover" className="min-h-0 flex-1">
             <div className="p-4 pb-8">
               <div className="text-kg-muted text-[10px] font-semibold tracking-[0.16em] uppercase">
                 进度

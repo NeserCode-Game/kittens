@@ -607,6 +607,33 @@ test("keeps game scrolling inside ScrollArea with stable geometry", async ({
       (element) => getComputedStyle(element).backgroundColor
     )
   ).toBe("rgba(0, 0, 0, 0)");
+  const scrollMetrics = await page
+    .locator("[data-game-main-scroll]")
+    .evaluate((root) => {
+      const viewport = root.querySelector<HTMLElement>(
+        "[data-slot='scroll-area-viewport']"
+      );
+      const content = viewport?.firstElementChild;
+      const scrollbar = root.querySelector<HTMLElement>(
+        "[data-slot='scroll-area-scrollbar']"
+      );
+      if (!viewport || !content || !scrollbar) {
+        throw new Error("Scroll area metrics are missing");
+      }
+      return {
+        rootWidth: root.getBoundingClientRect().width,
+        viewportWidth: viewport.getBoundingClientRect().width,
+        contentWidth: content.getBoundingClientRect().width,
+        viewportPaddingRight: Number.parseFloat(
+          getComputedStyle(viewport).paddingRight
+        ),
+        scrollbarPosition: getComputedStyle(scrollbar).position,
+      };
+    });
+  expect(scrollMetrics.viewportWidth).toBeCloseTo(scrollMetrics.rootWidth, 0);
+  expect(scrollMetrics.contentWidth).toBeCloseTo(scrollMetrics.rootWidth, 0);
+  expect(scrollMetrics.viewportPaddingRight).toBe(0);
+  expect(scrollMetrics.scrollbarPosition).toBe("absolute");
   await page.mouse.move(0, 0);
   await expect(gameScrollbar).toHaveCount(0);
 

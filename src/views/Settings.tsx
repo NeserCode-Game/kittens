@@ -91,7 +91,6 @@ function SettingsScroll({
     <ScrollArea
       type="hover"
       className="h-full"
-      viewportClassName="pr-3"
       data-settings-tab-scroll={value}
     >
       <div className="pb-12">{children}</div>

@@ -247,11 +247,7 @@ export function SaveManagementDialog({
           </DialogDescription>
         </DialogHeader>
 
-        <ScrollArea
-          type="hover"
-          className="min-h-0 flex-1"
-          viewportClassName="pr-2"
-        >
+        <ScrollArea type="hover" className="min-h-0 flex-1">
           <div className="pb-6">
             <div
               className="border-kg-line bg-kg-inset grid grid-cols-2 border-b md:grid-cols-4"
