@@ -664,10 +664,38 @@ test("keeps game scrolling inside ScrollArea with stable geometry", async ({
   await openAppSettings(page);
   const settingsDialog = page.getByRole("dialog", { name: "设置" });
   await expect(settingsDialog).toBeVisible();
+  await settingsDialog.getByRole("tab", { name: "通用" }).click();
+  const generalSettingsItemStyle = await settingsDialog
+    .locator("[data-settings-shell]")
+    .first()
+    .evaluate((element) => {
+      const style = getComputedStyle(element);
+      return {
+        background: style.backgroundColor,
+        border: style.borderColor,
+        radius: style.borderRadius,
+        padding: style.padding,
+      };
+    });
   await settingsDialog.getByRole("tab", { name: "游戏" }).click();
   await expect(
     settingsDialog.getByRole("tab", { name: "游戏" })
   ).toHaveAttribute("aria-selected", "true");
+  const gameSettings = settingsDialog.locator("[data-game-settings]");
+  await expect(gameSettings).not.toHaveClass(/kittens-game-theme/);
+  const gameSettingsItemStyle = await gameSettings
+    .locator("[data-settings-shell]")
+    .first()
+    .evaluate((element) => {
+      const style = getComputedStyle(element);
+      return {
+        background: style.backgroundColor,
+        border: style.borderColor,
+        radius: style.borderRadius,
+        padding: style.padding,
+      };
+    });
+  expect(gameSettingsItemStyle).toEqual(generalSettingsItemStyle);
   const settingsViewport = settingsDialog.locator(
     "[data-settings-tab-scroll='game'] [data-slot='scroll-area-viewport']"
   );
@@ -1274,9 +1302,9 @@ test("keeps the native game readable in light and dark themes", async ({
   await openAppSettings(page);
   const gameSettingsDialog = page.getByRole("dialog", { name: "设置" });
   await gameSettingsDialog.getByRole("tab", { name: "游戏" }).click();
-  await expect(gameSettingsDialog.locator("[data-game-settings]")).toHaveClass(
-    /kittens-game-theme/
-  );
+  await expect(
+    gameSettingsDialog.locator("[data-game-settings]")
+  ).not.toHaveClass(/kittens-game-theme/);
   await page.screenshot({
     path: ".agent/smoke/theme-light-game-settings-desktop.png",
     fullPage: false,
@@ -1360,9 +1388,9 @@ test("keeps the native game readable in light and dark themes", async ({
 
   await openAppSettings(page);
   await gameSettingsDialog.getByRole("tab", { name: "游戏" }).click();
-  await expect(gameSettingsDialog.locator("[data-game-settings]")).toHaveClass(
-    /kittens-game-theme/
-  );
+  await expect(
+    gameSettingsDialog.locator("[data-game-settings]")
+  ).not.toHaveClass(/kittens-game-theme/);
   await page.screenshot({
     path: ".agent/smoke/theme-dark-game-settings-desktop.png",
     fullPage: false,

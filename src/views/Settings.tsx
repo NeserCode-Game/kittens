@@ -128,7 +128,6 @@ function GameSettingsSection() {
     <div data-game-settings-section>
       <GameSettingsPanel
         snapshot={snapshot}
-        embedded
         onSet={(id, value) => {
           const result = kernel.setSetting(id, value);
           if (result.ok) {
