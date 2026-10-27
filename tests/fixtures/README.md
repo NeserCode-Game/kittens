@@ -13,3 +13,11 @@ used by real saves. Tests do not mutate manager internals after load.
 contains unlocked diplomacy, religion, space, time, challenge, achievement,
 badge, historical-stat, and current-run-stat data, with resources sufficient
 to exercise the native M3 controllers without bypassing their pricing rules.
+
+`m5-save.json` combines the midgame unlocks with an upstream-generated village
+of 14 kittens, active farmer and scholar assignments, and the same resource
+coverage. Command, season, offline and random-trade parity use it without
+mutating manager internals after load. Timeline-reset parity applies the same
+controlled pre-reset state to both isolated upstream and kernel paths so
+prestige, cryochamber, challenge, perk and serialized-save inheritance can be
+compared exactly.

@@ -10,6 +10,10 @@ const M3_SAVE = readFileSync(
   new URL("./fixtures/m3-save.json", import.meta.url),
   "utf8"
 );
+const M5_SAVE = readFileSync(
+  new URL("./fixtures/m5-save.json", import.meta.url),
+  "utf8"
+);
 
 async function clickMany(locator: Locator, count: number) {
   await locator.evaluate((element, total) => {
@@ -467,6 +471,131 @@ test("drives trade, religion, space, time, challenges and progress", async ({
         2
       )
     ),
+    contentType: "application/json",
+  });
+
+  expect(consoleErrors).toEqual([]);
+  expect(pageErrors).toEqual([]);
+});
+
+test("previews and confirms a native timeline reset", async ({
+  page,
+}, testInfo) => {
+  const consoleErrors: string[] = [];
+  const pageErrors: string[] = [];
+
+  page.on("console", (message) => {
+    if (message.type() === "error") consoleErrors.push(message.text());
+  });
+  page.on("pageerror", (error) => {
+    pageErrors.push(error.stack ?? error.message);
+  });
+
+  await page.addInitScript(
+    ({ key, save }) => {
+      if (!localStorage.getItem(key)) localStorage.setItem(key, save);
+    },
+    { key: SAVE_KEY, save: M5_SAVE }
+  );
+  await page.goto("/", { waitUntil: "domcontentloaded" });
+  await expect(page.getByRole("heading", { name: "营火" })).toBeVisible({
+    timeout: 30_000,
+  });
+
+  await page.getByRole("button", { name: /^时间/ }).click();
+  await expect(
+    page.getByRole("heading", { name: "时间", level: 1 })
+  ).toBeVisible();
+  const resetPreview = page.locator("[data-reset-kittens]");
+  await expect(resetPreview).toHaveAttribute("data-reset-kittens", "14");
+  await expect(resetPreview).toHaveAttribute("data-reset-paragon", "0");
+  await expect(page.locator('[data-action="reset-timeline"]')).toBeEnabled();
+  await page.screenshot({
+    path: ".agent/smoke/m5-reset-desktop.png",
+    fullPage: false,
+    animations: "disabled",
+  });
+
+  await page.setViewportSize({ width: 800, height: 600 });
+  await page.getByRole("button", { name: "打开系统导航" }).click();
+  const mobileNavigation = page.locator('[role="dialog"]');
+  await mobileNavigation.getByRole("button", { name: /^时间/ }).click();
+  await expect(
+    page.getByRole("heading", { name: "时间", level: 1 })
+  ).toBeVisible();
+  await page.screenshot({
+    path: ".agent/smoke/m5-reset-800x600.png",
+    fullPage: false,
+    animations: "disabled",
+  });
+  const horizontalOverflow = await page.evaluate(
+    () => document.documentElement.scrollWidth - window.innerWidth
+  );
+  expect(horizontalOverflow).toBeLessThanOrEqual(1);
+
+  await page.locator('[data-action="reset-timeline"]').click();
+  const confirmation = page.locator("[data-confirmation-dialog]");
+  await expect(confirmation).toBeVisible();
+  await expect(confirmation).toContainText("重置时间线");
+  await confirmation.getByRole("button", { name: "取消" }).click();
+  await expect(confirmation).toBeHidden();
+  await expect
+    .poll(() =>
+      page.evaluate((key) => {
+        const raw = localStorage.getItem(key);
+        return raw ? JSON.parse(raw).stats : [];
+      }, SAVE_KEY)
+    )
+    .not.toContainEqual(
+      expect.objectContaining({ name: "totalResets", val: 1 })
+    );
+
+  await page.locator('[data-action="reset-timeline"]').click();
+  await expect(confirmation).toBeVisible();
+  await confirmation.getByRole("button", { name: "确认" }).click();
+  await expect(confirmation).toBeHidden();
+  await expect
+    .poll(() =>
+      page.evaluate((key) => {
+        const raw = localStorage.getItem(key);
+        if (!raw) return null;
+        const save = JSON.parse(raw);
+        const stat = (name: string) =>
+          save.stats.find((entry: { name: string }) => entry.name === name)
+            ?.val;
+        return {
+          totalResets: stat("totalResets"),
+          totalParagon: stat("totalParagon"),
+          karmaKittens: save.game.karmaKittens,
+          deadKittens: save.game.deadKittens,
+          kittens: save.village.kittens.length,
+        };
+      }, SAVE_KEY)
+    )
+    .toEqual({
+      totalResets: 1,
+      totalParagon: 0,
+      karmaKittens: 0,
+      deadKittens: 0,
+      kittens: 0,
+    });
+
+  await page.reload({ waitUntil: "domcontentloaded" });
+  await expect(page.getByRole("heading", { name: "营火" })).toBeVisible({
+    timeout: 30_000,
+  });
+  await page.getByRole("button", { name: "打开系统导航" }).click();
+  await page
+    .locator('[role="dialog"]')
+    .getByRole("button", { name: /^进度/ })
+    .click();
+  await page.getByRole("tab", { name: "统计" }).click();
+  await expect(
+    page.locator('[data-stat-group="group-0"][data-stat-id="totalResets"]')
+  ).toContainText("2");
+
+  await testInfo.attach("m5-reset-diagnostics.json", {
+    body: Buffer.from(JSON.stringify({ consoleErrors, pageErrors }, null, 2)),
     contentType: "application/json",
   });
 

@@ -7,6 +7,7 @@ import {
   Handshake,
   Hourglass,
   Lock,
+  RotateCcw,
   Rocket,
   Sparkles,
   Star,
@@ -801,14 +802,18 @@ export function TimePanel({
   onShatter,
   onUseHeat,
   onBuyUpgrade,
+  onResetTimeline,
 }: {
   snapshot: GameSnapshot;
   onAccelerate: () => void;
   onShatter: () => void;
   onUseHeat: () => void;
   onBuyUpgrade: (id: string, kind: TimeUpgradeKind) => void;
+  onResetTimeline: () => void;
 }) {
   const time = snapshot.time;
+  const prestige = snapshot.prestige;
+  const reset = prestige.reset;
   const heatPercent =
     time.heatMax > 0 ? Math.min(100, (time.heat / time.heatMax) * 100) : 0;
   const groups: Array<{
@@ -915,6 +920,75 @@ export function TimePanel({
           <PricePills prices={time.shatterPrices} className="ml-0 sm:ml-2" />
         </div>
       </div>
+
+      <section
+        className="border-b border-white/[0.07] bg-[#17120f]/45 px-5 py-4"
+        data-reset-kittens={reset.kittens}
+        data-reset-karma={reset.karmaPoints}
+        data-reset-paragon={reset.paragonPoints}
+      >
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center gap-2 text-sm font-semibold text-stone-200">
+              <RotateCcw className="size-4 text-amber-300" />
+              开始新一轮
+            </div>
+            <div className="mt-3 grid grid-cols-2 gap-x-6 gap-y-3 sm:grid-cols-4">
+              <div className="min-w-0">
+                <div className="text-[10px] text-stone-600">业力</div>
+                <div className="mt-0.5 font-mono text-xs text-stone-200">
+                  +{formatNumber(reset.karmaPoints)}
+                </div>
+                <div className="mt-0.5 truncate text-[10px] text-stone-600">
+                  累计 {formatNumber(reset.karmaKittens)}
+                </div>
+              </div>
+              <div className="min-w-0">
+                <div className="text-[10px] text-stone-600">领导力</div>
+                <div className="mt-0.5 font-mono text-xs text-stone-200">
+                  +{formatNumber(reset.paragonPoints)}
+                </div>
+                <div className="mt-0.5 truncate text-[10px] text-stone-600">
+                  现有 {formatNumber(prestige.paragon)}
+                </div>
+              </div>
+              <div className="min-w-0">
+                <div className="text-[10px] text-stone-600">幸福度</div>
+                <div className="mt-0.5 font-mono text-xs text-emerald-200/80">
+                  +{formatPercent(reset.happinessBonus)}
+                </div>
+                <div className="mt-0.5 text-[10px] text-stone-600">
+                  来自业力
+                </div>
+              </div>
+              <div className="min-w-0">
+                <div className="text-[10px] text-stone-600">存储 / 产出</div>
+                <div className="mt-0.5 truncate font-mono text-xs text-amber-200/80">
+                  +{formatPercent(reset.storageBonus)} / +
+                  {formatPercent(reset.productionBonus)}
+                </div>
+                <div className="mt-0.5 truncate text-[10px] text-stone-600">
+                  {prestige.ironWill
+                    ? `铁猫额外斑马 ${formatNumber(reset.zebraKittens)}`
+                    : "业力斑马保留"}
+                </div>
+              </div>
+            </div>
+          </div>
+          <Button
+            type="button"
+            size="sm"
+            variant="outline"
+            className="shrink-0 border-rose-400/20 bg-rose-400/[0.03] text-rose-200 hover:bg-rose-400/10"
+            disabled={!reset.canReset}
+            onClick={onResetTimeline}
+            data-action="reset-timeline"
+          >
+            <RotateCcw className="size-3.5" />
+            开始新一轮
+          </Button>
+        </div>
+      </section>
 
       {time.upgrades.length > 0 ? (
         groups.map((group) => (

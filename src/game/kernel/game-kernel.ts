@@ -11,6 +11,7 @@ import type {
   GameSnapshot,
   GameSettingSnapshot,
   JobSnapshot,
+  PrestigeSnapshot,
   PriceSnapshot,
   ProgressSnapshot,
   ReligionSnapshot,
@@ -353,6 +354,11 @@ interface LegacyGame {
   isPaused: boolean;
   saveVersion: number;
   currentSaveIsBroken: boolean;
+  karmaKittens: number;
+  karmaZebras: number;
+  deadKittens: number;
+  ironWill: boolean;
+  isCMBREnabled: boolean;
   opts: Record<string, unknown>;
   resPool: {
     resources: LegacyResource[];
@@ -387,6 +393,10 @@ interface LegacyGame {
     getFreeKittens: () => number;
     getJob: (id: string) => LegacyJob;
     getJobLimit: (id: string) => number;
+    loadoutController: {
+      loadouts: unknown[] | null;
+      toggleDefaultLoadouts: () => void;
+    };
   };
   science: {
     techs: LegacyTech[];
@@ -470,10 +480,23 @@ interface LegacyGame {
     getCountPending: () => number;
     getCountCompletions: () => number;
     applyPending: (isIronWillPending?: boolean) => void;
+    onRunReset: () => void;
   };
   achievements: {
     achievements: LegacyAchievement[];
     badges: LegacyBadge[];
+    unlockBadge: (id: string) => void;
+  };
+  prestige: {
+    getPerk: (id: string) => { researched: boolean };
+    getResetBonusBreakdown: (
+      extraParagon: number,
+      extraKarma: number
+    ) => {
+      happiness: number;
+      storage: number;
+      production: number;
+    };
   };
   stats: {
     stats: LegacyStat[];
@@ -517,6 +540,13 @@ interface LegacyGame {
   getEffect: (id: string) => number;
   getResCraftRatio: (id: string) => number;
   getCraftRatio: () => number;
+  getUnlimitedDR: (value: number, stripe: number) => number;
+  getResetPrestige: () => {
+    karmaKittens: number;
+    paragonPoints: number;
+  };
+  _getBonusZebras: () => number;
+  _resetInternal: () => Record<string, unknown>;
   getDisplayValueExt: (value: number) => string;
   getEffectDisplayParams: (
     effectName: string,
@@ -1770,9 +1800,11 @@ export class GameKernel {
 
     const meta = this.game.bld.getBuildingExt(id).getMeta();
     const controllerWithBuild = controller as unknown as {
-      build: (buildingModel: LegacyBuildingModel, count: number) => number;
+      build: (buildingModel: LegacyBuildingModel, count: number) => void;
     };
-    const built = controllerWithBuild.build(model, amount);
+    const builtBefore = meta.val;
+    controllerWithBuild.build(model, amount);
+    const built = meta.val - builtBefore;
     this.game.updateCaches();
     this.game.updateResources();
     this.lastMessage =
@@ -1969,6 +2001,123 @@ export class GameKernel {
     return { ok: false, reason: "requires-confirmation" };
   }
 
+  resetTimeline(): ActionResult {
+    if (
+      this.saveHealth === "unavailable" ||
+      this.saveHealth === "corrupt" ||
+      this.runtimeError
+    ) {
+      this.lastMessage =
+        this.saveHealth === "corrupt"
+          ? "当前存档损坏，无法计算重置收益"
+          : this.runtimeError
+            ? "模拟运行异常，无法重置时间线"
+            : "浏览器存储不可用，无法重置时间线";
+      this.refreshSnapshot();
+      return {
+        ok: false,
+        reason:
+          this.saveHealth === "corrupt"
+            ? "invalid-save"
+            : this.runtimeError
+              ? "blocked"
+              : "storage-unavailable",
+      };
+    }
+
+    const preview = this.mapPrestige().reset;
+    this.game.ui.confirm(
+      "重置时间线",
+      `当前时间线将结束并重新开始。将获得 ${preview.karmaPoints} 点业力与 ${preview.paragonPoints} 点领导力。统计、成就和已继承的升级会保留。确认开始新一轮？`,
+      () => this.applyTimelineReset()
+    );
+    this.lastMessage = "等待确认重置时间线";
+    this.refreshSnapshot();
+    return { ok: false, reason: "requires-confirmation" };
+  }
+
+  private applyTimelineReset(): void {
+    const previousSave = readStorage(SAVE_KEY);
+    const previousBackup = readStorage(SAVE_BACKUP_KEY);
+    const previousHealth = this.saveHealth;
+    const previousSourceVersion = this.sourceSaveVersion;
+    const previousMigrated = this.saveMigrated;
+    const previousRuntimeError = this.runtimeError;
+
+    try {
+      this.game.save();
+      const current = readStorage(SAVE_KEY);
+      if (
+        this.lastPersistFailed ||
+        !current.ok ||
+        !current.value ||
+        !this.backupRawSave(current.value)
+      ) {
+        throw new Error("Unable to create reset recovery point");
+      }
+
+      const game = this.game;
+      game.challenges.onRunReset();
+      if (game.calendar.day < 0) {
+        game.achievements.unlockBadge("abOwo");
+      }
+      for (const challenge of game.challenges.challenges) {
+        challenge.pending = false;
+      }
+      if (game.village.loadoutController.loadouts?.length === 0) {
+        game.village.loadoutController.toggleDefaultLoadouts();
+      }
+
+      game._resetInternal();
+      const resetSave = readStorage(SAVE_KEY);
+      if (!resetSave.ok || !resetSave.value) {
+        throw new Error("Unable to persist reset timeline save");
+      }
+      const loaded = game.load();
+      if (!loaded || game.currentSaveIsBroken) {
+        throw new Error("Unable to load reset timeline save");
+      }
+
+      game.isPaused = false;
+      game.updateCaches();
+      game.updateWinterCatnip();
+      game.updateResources();
+      this.saveHealth = "healthy";
+      this.sourceSaveVersion = game.saveVersion;
+      this.saveMigrated = false;
+      this.runtimeError = null;
+      this.lastPersistFailed = false;
+      this.updateSaveMetadata({ lastSavedAt: Date.now() });
+      this.lastMessage = "新一轮已经开始，继承状态已载入";
+    } catch (cause) {
+      console.error("Unable to reset Kittens Game timeline", cause);
+      if (previousSave.ok && previousSave.value) {
+        writeStorage(SAVE_KEY, previousSave.value);
+      } else {
+        removeStorage(SAVE_KEY);
+      }
+      if (previousBackup.ok && previousBackup.value) {
+        writeStorage(SAVE_BACKUP_KEY, previousBackup.value);
+      } else {
+        removeStorage(SAVE_BACKUP_KEY);
+      }
+      const restored =
+        previousSave.ok && previousSave.value ? this.game.load() : false;
+      this.saveHealth =
+        previousHealth === "new"
+          ? "new"
+          : restored && !this.game.currentSaveIsBroken
+            ? previousHealth
+            : "corrupt";
+      this.sourceSaveVersion = previousSourceVersion;
+      this.saveMigrated = previousMigrated;
+      this.runtimeError = previousRuntimeError;
+      this.game.isPaused = true;
+      this.lastMessage = "重置时间线失败，已恢复重置前状态";
+      throw cause;
+    }
+  }
+
   setPaused(paused: boolean): void {
     this.game.isPaused =
       this.saveHealth === "corrupt" || this.runtimeError ? true : paused;
@@ -2121,6 +2270,7 @@ export class GameKernel {
       religion: this.mapReligion(),
       space: this.mapSpace(),
       time: this.mapTime(),
+      prestige: this.mapPrestige(),
       challenges: this.mapChallenges(),
       progress: this.mapProgress(),
       settings: this.mapSettings(),
@@ -2650,6 +2800,44 @@ export class GameKernel {
           };
         }),
       upgrades,
+    };
+  }
+
+  private mapPrestige(): PrestigeSnapshot {
+    const reset = this.game.getResetPrestige();
+    const karmaPoints =
+      this.game.getUnlimitedDR(reset.karmaKittens, 5) -
+      this.game.getUnlimitedDR(this.game.karmaKittens, 5);
+    const bonus = this.game.prestige.getResetBonusBreakdown(
+      reset.paragonPoints,
+      karmaPoints
+    );
+    const kittens = Math.round(
+      this.game.resPool.get("kittens").value *
+        (1 + this.game.getEffect("simScalingRatio"))
+    );
+
+    return {
+      paragon: this.game.resPool.get("paragon").value,
+      burnedParagon: this.game.resPool.get("burnedParagon").value,
+      karma: this.game.resPool.get("karma").value,
+      karmaKittens: this.game.karmaKittens,
+      karmaZebras: this.game.karmaZebras,
+      ironWill: this.game.ironWill,
+      reset: {
+        kittens,
+        karmaKittens: reset.karmaKittens,
+        paragonPoints: reset.paragonPoints,
+        karmaPoints: Math.floor(karmaPoints * 100) / 100,
+        happinessBonus: bonus.happiness,
+        storageBonus: bonus.storage,
+        productionBonus: bonus.production,
+        zebraKittens: this.game.ironWill ? this.game._getBonusZebras() : 0,
+        canReset:
+          this.saveHealth !== "unavailable" &&
+          this.saveHealth !== "corrupt" &&
+          !this.runtimeError,
+      },
     };
   }
 

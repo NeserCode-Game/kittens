@@ -460,6 +460,9 @@ export default function KittensGame() {
             onBuyUpgrade={(id, kind) =>
               runAction("时间装置已购买", () => kernel.buyTimeUpgrade(id, kind))
             }
+            onResetTimeline={() =>
+              runAction("已请求重置时间线", () => kernel.resetTimeline())
+            }
           />
         );
       case "challenges":

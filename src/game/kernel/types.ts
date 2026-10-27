@@ -244,6 +244,28 @@ export interface TimeSnapshot {
   upgrades: TimeUpgradeSnapshot[];
 }
 
+export interface PrestigeResetSnapshot {
+  kittens: number;
+  karmaKittens: number;
+  paragonPoints: number;
+  karmaPoints: number;
+  happinessBonus: number;
+  storageBonus: number;
+  productionBonus: number;
+  zebraKittens: number;
+  canReset: boolean;
+}
+
+export interface PrestigeSnapshot {
+  paragon: number;
+  burnedParagon: number;
+  karma: number;
+  karmaKittens: number;
+  karmaZebras: number;
+  ironWill: boolean;
+  reset: PrestigeResetSnapshot;
+}
+
 export interface ChallengeSnapshot {
   id: string;
   label: string;
@@ -353,6 +375,7 @@ export interface GameSnapshot {
   religion: ReligionSnapshot;
   space: SpaceSnapshot;
   time: TimeSnapshot;
+  prestige: PrestigeSnapshot;
   challenges: ChallengesSnapshot;
   progress: ProgressSnapshot;
   settings: GameSettingSnapshot[];
