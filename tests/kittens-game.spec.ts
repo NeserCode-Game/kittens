@@ -1,4 +1,4 @@
-import { expect, test, type Locator } from "@playwright/test";
+import { expect, test, type Locator, type Page } from "@playwright/test";
 import { readFileSync } from "node:fs";
 
 const SAVE_KEY = "com.nuclearunicorn.kittengame.savedata";
@@ -20,6 +20,11 @@ async function clickMany(locator: Locator, count: number) {
     const button = element as HTMLElement;
     for (let index = 0; index < total; index += 1) button.click();
   }, count);
+}
+
+async function openAppSettings(page: Page) {
+  await page.getByRole("menuitem", { name: "转到" }).click();
+  await page.locator('[data-action="open-app-settings"]').click();
 }
 
 test("runs the native game kernel and persists resources", async ({
@@ -394,14 +399,22 @@ test("drives village, research, workshop, upgrades and settings", async ({
   await mineralHoes.getByRole("button", { name: /^购买/ }).click();
   await expect(mineralHoes).toHaveAttribute("data-upgrade-researched", "true");
 
-  await page.getByRole("button", { name: /^游戏设置/ }).click();
+  await openAppSettings(page);
+  const settingsDialog = page.getByRole("dialog", { name: "设置" });
+  await expect(settingsDialog).toBeVisible();
+  await settingsDialog.getByRole("tab", { name: "游戏" }).click();
   await expect(
-    page.getByRole("heading", { name: "游戏设置", level: 1 })
+    settingsDialog.getByRole("tab", { name: "游戏" })
+  ).toHaveAttribute("aria-selected", "true");
+  await expect(
+    settingsDialog.getByRole("heading", { name: "游戏设置", level: 2 })
   ).toBeVisible();
   const precision = page.locator('[data-setting-id="forceHighPrecision"]');
   await expect(precision).toHaveAttribute("data-setting-value", "false");
   await precision.getByRole("switch").click();
   await expect(precision).toHaveAttribute("data-setting-value", "true");
+  await page.keyboard.press("Escape");
+  await expect(settingsDialog).toBeHidden();
 
   await page.getByRole("button", { name: "保存游戏" }).click();
   await expect
@@ -455,6 +468,280 @@ test("drives village, research, workshop, upgrades and settings", async ({
   await testInfo.attach("m2-diagnostics.json", {
     body: Buffer.from(
       JSON.stringify({ woodBefore, consoleErrors, pageErrors }, null, 2)
+    ),
+    contentType: "application/json",
+  });
+
+  expect(consoleErrors).toEqual([]);
+  expect(pageErrors).toEqual([]);
+});
+
+test("keeps game scrolling inside ScrollArea with stable geometry", async ({
+  page,
+}, testInfo) => {
+  const consoleErrors: string[] = [];
+  const pageErrors: string[] = [];
+
+  page.on("console", (message) => {
+    if (message.type() === "error") consoleErrors.push(message.text());
+  });
+  page.on("pageerror", (error) => {
+    pageErrors.push(error.stack ?? error.message);
+  });
+
+  await page.addInitScript(
+    ({ key, save }) => {
+      localStorage.setItem(key, save);
+    },
+    { key: SAVE_KEY, save: M3_SAVE }
+  );
+  await page.goto("/", { waitUntil: "domcontentloaded" });
+  await expect(page.getByRole("heading", { name: "营火" })).toBeVisible({
+    timeout: 30_000,
+  });
+
+  const readLayout = () =>
+    page.evaluate(() => {
+      const rect = (element: Element | null) => {
+        if (!element) throw new Error("Layout target is missing");
+        const bounds = element.getBoundingClientRect();
+        return {
+          x: bounds.x,
+          y: bounds.y,
+          width: bounds.width,
+          height: bounds.height,
+        };
+      };
+      const game = document.querySelector(".kittens-game-view");
+      const viewport = document.querySelector<HTMLElement>(
+        "[data-game-main-scroll] [data-slot='scroll-area-viewport']"
+      );
+      const navigation = document.querySelector<HTMLElement>(
+        "[data-game-navigation]"
+      );
+      const bottomNav = document.querySelector<HTMLElement>(
+        "[data-nav-bottom-group]"
+      );
+      const bottomNavItems = [
+        ...(bottomNav?.querySelectorAll<HTMLElement>("[data-nav-id]") ?? []),
+      ].map((element) => element.dataset.navId);
+      const resources = [
+        ...document.querySelectorAll<HTMLElement>("[data-resource-id]"),
+      ].map((element) => ({
+        id: element.dataset.resourceId,
+        ...rect(element),
+      }));
+
+      if (!viewport || !navigation || !bottomNav) {
+        throw new Error("Game layout target is missing");
+      }
+      return {
+        header: rect(game?.querySelector("header") ?? null),
+        main: rect(document.querySelector("#kittens-main")),
+        navigation: rect(navigation),
+        bottomNav: rect(bottomNav),
+        bottomNavItems,
+        bottomNavBorder: getComputedStyle(bottomNav).borderTopWidth,
+        settingsNavItems: document.querySelectorAll('[data-nav-id="settings"]')
+          .length,
+        resources,
+        overflowY: getComputedStyle(viewport).overflowY,
+        nativeVerticalScrollContainers: document.querySelectorAll(
+          ".kittens-game-view .overflow-y-auto"
+        ).length,
+      };
+    });
+
+  const initial = await readLayout();
+  expect(initial.overflowY).toBe("scroll");
+  expect(initial.nativeVerticalScrollContainers).toBe(0);
+  expect(initial.resources).toHaveLength(7);
+  await expect(page.getByText("原生逻辑与存档")).toHaveCount(0);
+  expect(initial.settingsNavItems).toBe(0);
+  expect(initial.bottomNavItems).toEqual(["challenges", "progress"]);
+  expect(initial.bottomNavBorder).toBe("0px");
+  expect(
+    initial.navigation.y +
+      initial.navigation.height -
+      (initial.bottomNav.y + initial.bottomNav.height)
+  ).toBeLessThanOrEqual(12);
+
+  const catnip = page.locator('[data-resource-id="catnip"]');
+  const catnipBefore = Number(await catnip.getAttribute("data-resource-value"));
+  await clickMany(page.getByRole("button", { name: "采集猫薄荷" }), 40);
+  await expect
+    .poll(async () => Number(await catnip.getAttribute("data-resource-value")))
+    .not.toBe(catnipBefore);
+  await page.waitForTimeout(600);
+  const afterTick = await readLayout();
+
+  for (const key of ["header", "main", "navigation"] as const) {
+    expect(afterTick[key].x).toBeCloseTo(initial[key].x, 0);
+    expect(afterTick[key].y).toBeCloseTo(initial[key].y, 0);
+    expect(afterTick[key].width).toBeCloseTo(initial[key].width, 0);
+    expect(afterTick[key].height).toBeCloseTo(initial[key].height, 0);
+  }
+  expect(
+    afterTick.resources.map(({ id, x, width }) => ({ id, x, width }))
+  ).toEqual(initial.resources.map(({ id, x, width }) => ({ id, x, width })));
+
+  await page.getByRole("button", { name: /^工坊/ }).click();
+  await expect(
+    page.getByRole("heading", { name: "工坊", level: 1 })
+  ).toBeVisible();
+  const gameViewport = page.locator(
+    "[data-game-main-scroll] [data-slot='scroll-area-viewport']"
+  );
+  const gameScroll = await gameViewport.evaluate((element) => ({
+    clientHeight: element.clientHeight,
+    scrollHeight: element.scrollHeight,
+  }));
+  expect(gameScroll.scrollHeight).toBeGreaterThan(gameScroll.clientHeight);
+  await page.locator("[data-game-main-scroll]").hover();
+  const gameScrollbar = page.locator(
+    "[data-game-main-scroll] [data-slot='scroll-area-scrollbar']"
+  );
+  await expect(gameScrollbar).toHaveAttribute("data-state", "visible");
+  expect(
+    await gameScrollbar.evaluate(
+      (element) => getComputedStyle(element).backgroundColor
+    )
+  ).toBe("rgba(0, 0, 0, 0)");
+  await page.mouse.move(0, 0);
+  await expect(gameScrollbar).toHaveCount(0);
+
+  await gameViewport.evaluate((element) => {
+    element.scrollTo({ top: element.scrollHeight });
+  });
+  await expect
+    .poll(() => gameViewport.evaluate((element) => element.scrollTop))
+    .toBeGreaterThan(0);
+
+  const lastUpgrade = gameViewport.locator("[data-upgrade-id]").last();
+  await expect(lastUpgrade).toBeVisible();
+  const gameBounds = await Promise.all([
+    gameViewport.boundingBox(),
+    lastUpgrade.boundingBox(),
+  ]);
+  expect(gameBounds[0]).not.toBeNull();
+  expect(gameBounds[1]).not.toBeNull();
+  expect(gameBounds[1]!.y + gameBounds[1]!.height).toBeLessThanOrEqual(
+    gameBounds[0]!.y + gameBounds[0]!.height - 24
+  );
+  await page.screenshot({
+    path: ".agent/smoke/ui-workshop-scroll-desktop.png",
+    fullPage: false,
+    animations: "disabled",
+  });
+
+  await openAppSettings(page);
+  const settingsDialog = page.getByRole("dialog", { name: "设置" });
+  await expect(settingsDialog).toBeVisible();
+  await settingsDialog.getByRole("tab", { name: "游戏" }).click();
+  await expect(
+    settingsDialog.getByRole("tab", { name: "游戏" })
+  ).toHaveAttribute("aria-selected", "true");
+  const settingsViewport = settingsDialog.locator(
+    "[data-settings-tab-scroll='game'] [data-slot='scroll-area-viewport']"
+  );
+  const settingsScroll = await settingsViewport.evaluate((element) => ({
+    clientHeight: element.clientHeight,
+    scrollHeight: element.scrollHeight,
+  }));
+  expect(settingsScroll.scrollHeight).toBeGreaterThan(
+    settingsScroll.clientHeight
+  );
+  await settingsViewport.evaluate((element) => {
+    element.scrollTo({ top: element.scrollHeight });
+  });
+  await expect
+    .poll(() => settingsViewport.evaluate((element) => element.scrollTop))
+    .toBeGreaterThan(0);
+
+  const lastSetting = settingsViewport.locator("[data-setting-id]").last();
+  const settingBounds = await Promise.all([
+    settingsViewport.boundingBox(),
+    lastSetting.boundingBox(),
+  ]);
+  expect(settingBounds[0]).not.toBeNull();
+  expect(settingBounds[1]).not.toBeNull();
+  expect(settingBounds[1]!.y + settingBounds[1]!.height).toBeLessThanOrEqual(
+    settingBounds[0]!.y + settingBounds[0]!.height - 24
+  );
+  await page.screenshot({
+    path: ".agent/smoke/ui-settings-scroll-desktop.png",
+    fullPage: false,
+    animations: "disabled",
+  });
+
+  await page.keyboard.press("Escape");
+  await expect(settingsDialog).toBeHidden();
+  await page.setViewportSize({ width: 800, height: 600 });
+  await page.getByRole("button", { name: "打开系统导航" }).click();
+  const mobileNavigation = page.getByRole("dialog", { name: "猫国建设者" });
+  await expect(mobileNavigation).toBeVisible();
+  await expect(
+    mobileNavigation.locator('[data-nav-id="settings"]')
+  ).toHaveCount(0);
+  await page.keyboard.press("Escape");
+  await expect(mobileNavigation).toBeHidden();
+  await openAppSettings(page);
+  await expect(settingsDialog).toBeVisible();
+  await settingsDialog.getByRole("tab", { name: "游戏" }).click();
+  await expect(
+    settingsDialog.getByRole("tab", { name: "游戏" })
+  ).toHaveAttribute("aria-selected", "true");
+  const mobileSettingsBounds = await settingsDialog.boundingBox();
+  expect(mobileSettingsBounds).not.toBeNull();
+  expect(mobileSettingsBounds!.x).toBeGreaterThanOrEqual(8);
+  expect(
+    mobileSettingsBounds!.x + mobileSettingsBounds!.width
+  ).toBeLessThanOrEqual(792);
+  const mobileSettingsViewport = settingsDialog.locator(
+    "[data-settings-tab-scroll='game'] [data-slot='scroll-area-viewport']"
+  );
+  await mobileSettingsViewport.evaluate((element) => {
+    element.scrollTo({ top: element.scrollHeight });
+  });
+  await expect
+    .poll(() => mobileSettingsViewport.evaluate((element) => element.scrollTop))
+    .toBeGreaterThan(0);
+  const mobileLastSetting = mobileSettingsViewport
+    .locator("[data-setting-id]")
+    .last();
+  await expect(mobileLastSetting).toBeVisible();
+  const mobileSettingBounds = await mobileLastSetting.boundingBox();
+  expect(mobileSettingBounds).not.toBeNull();
+  expect(
+    mobileSettingBounds!.y + mobileSettingBounds!.height
+  ).toBeLessThanOrEqual(592);
+  await page.screenshot({
+    path: ".agent/smoke/ui-settings-scroll-800x600.png",
+    fullPage: false,
+    animations: "disabled",
+  });
+  expect(
+    await page.evaluate(
+      () =>
+        document.documentElement.scrollWidth -
+        document.documentElement.clientWidth
+    )
+  ).toBeLessThanOrEqual(1);
+
+  await testInfo.attach("ui-layout-diagnostics.json", {
+    body: Buffer.from(
+      JSON.stringify(
+        {
+          initial,
+          afterTick,
+          gameScroll,
+          settingsScroll,
+          consoleErrors,
+          pageErrors,
+        },
+        null,
+        2
+      )
     ),
     contentType: "application/json",
   });
@@ -957,6 +1244,20 @@ test("keeps the native game readable in light and dark themes", async ({
   await page.keyboard.press("Escape");
   await expect(saveDialog).toBeHidden();
 
+  await openAppSettings(page);
+  const gameSettingsDialog = page.getByRole("dialog", { name: "设置" });
+  await gameSettingsDialog.getByRole("tab", { name: "游戏" }).click();
+  await expect(gameSettingsDialog.locator("[data-game-settings]")).toHaveClass(
+    /kittens-game-theme/
+  );
+  await page.screenshot({
+    path: ".agent/smoke/theme-light-game-settings-desktop.png",
+    fullPage: false,
+    animations: "disabled",
+  });
+  await page.keyboard.press("Escape");
+  await expect(gameSettingsDialog).toBeHidden();
+
   await page.setViewportSize({ width: 1024, height: 720 });
   await page.getByRole("button", { name: /^贸易/ }).click();
   await expect(
@@ -1029,6 +1330,19 @@ test("keeps the native game readable in light and dark themes", async ({
   });
   await page.keyboard.press("Escape");
   await expect(saveDialog).toBeHidden();
+
+  await openAppSettings(page);
+  await gameSettingsDialog.getByRole("tab", { name: "游戏" }).click();
+  await expect(gameSettingsDialog.locator("[data-game-settings]")).toHaveClass(
+    /kittens-game-theme/
+  );
+  await page.screenshot({
+    path: ".agent/smoke/theme-dark-game-settings-desktop.png",
+    fullPage: false,
+    animations: "disabled",
+  });
+  await page.keyboard.press("Escape");
+  await expect(gameSettingsDialog).toBeHidden();
 
   await page.setViewportSize({ width: 1024, height: 720 });
   await page.getByRole("button", { name: /^贸易/ }).click();

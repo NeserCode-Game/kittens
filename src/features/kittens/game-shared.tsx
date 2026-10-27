@@ -22,7 +22,7 @@ export function ResourceChip({ resource }: { resource: ResourceSnapshot }) {
     <Tooltip>
       <TooltipTrigger asChild>
         <div
-          className="group border-kg-line bg-kg-wash relative min-w-28 overflow-hidden rounded-md border px-3 py-2"
+          className="group border-kg-line bg-kg-wash relative h-[52px] w-32 shrink-0 overflow-hidden rounded-md border px-2.5 py-1.5"
           data-resource-id={resource.id}
           data-resource-value={resource.value}
         >
@@ -43,13 +43,15 @@ export function ResourceChip({ resource }: { resource: ResourceSnapshot }) {
               {formatRate(resource.perTick)}
             </span>
           </div>
-          <div className="text-kg-strong mt-0.5 text-right font-mono text-[15px] font-semibold tabular-nums">
-            {formatNumber(resource.value)}
-            {resource.maxValue > 0 ? (
-              <span className="text-kg-muted ml-1 text-[10px] font-normal">
-                / {formatNumber(resource.maxValue)}
-              </span>
-            ) : null}
+          <div className="text-kg-strong mt-0.5 overflow-hidden text-right font-mono text-[15px] font-semibold whitespace-nowrap tabular-nums">
+            <span className="block overflow-hidden text-ellipsis">
+              {formatNumber(resource.value)}
+              {resource.maxValue > 0 ? (
+                <span className="text-kg-muted ml-1 text-[10px] font-normal">
+                  / {formatNumber(resource.maxValue)}
+                </span>
+              ) : null}
+            </span>
           </div>
           {capacity !== null ? (
             <div className="bg-kg-track absolute inset-x-0 bottom-0 h-0.5">

@@ -79,6 +79,7 @@ export const I18nTexts = {
 
     "Settings.tabs.search": "Search",
     "Settings.tabs.general": "General",
+    "Settings.tabs.game": "Game",
     "Settings.search.description":
       "Search all settings and review recent activity",
     "Settings.general.description": "Manage common application preferences",
@@ -218,6 +219,7 @@ export const I18nTexts = {
 
     "Settings.tabs.search": "搜索",
     "Settings.tabs.general": "通用",
+    "Settings.tabs.game": "游戏",
     "Settings.search.description": "搜索所有设置项，查看近期搜索与修改记录",
     "Settings.general.description": "管理应用的常用配置",
     "Settings.search.placeholder": "搜索设置项...",
@@ -264,8 +266,7 @@ export const I18nTexts = {
     "About.identifier": "应用标识",
     "About.website": "项目主页",
     "About.gameLicense": "游戏逻辑许可",
-    "About.copyright":
-      "框架代码 MIT · 猫国建设者逻辑采用 WET PAWS LICENSE",
+    "About.copyright": "框架代码 MIT · 猫国建设者逻辑采用 WET PAWS LICENSE",
 
     "SuperCommand.navigate.home": "跳转到首页",
     "SuperCommand.navigate.settings": "跳转到设置页面",

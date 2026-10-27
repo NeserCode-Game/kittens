@@ -55,6 +55,7 @@ export default function Titlebar() {
               {t("Titlebar.menu.turnto.home")}
             </MenubarItem>
             <MenubarItem
+              data-action="open-app-settings"
               onSelect={() => {
                 openSettings();
               }}

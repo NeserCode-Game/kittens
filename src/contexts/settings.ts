@@ -1,7 +1,9 @@
 import { createContext, useContext } from "react";
 
+export type SettingsSection = "search" | "general" | "game";
+
 export interface SettingsDialogContextValue {
-  openSettings: () => void;
+  openSettings: (section?: SettingsSection) => void;
   openAbout: () => void;
 }
 

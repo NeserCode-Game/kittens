@@ -118,6 +118,7 @@ interface LegacyPrice {
 
 interface LegacyBuildingModel {
   enabled: boolean;
+  visible: boolean;
   prices: LegacyPrice[];
 }
 

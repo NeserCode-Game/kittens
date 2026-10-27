@@ -281,7 +281,7 @@
     @apply flex h-screen w-screen flex-row items-center justify-center;
   }
   .app-body {
-    @apply fixed bottom-0 flex h-[calc(100vh-2rem)] w-screen flex-col items-center justify-center bg-neutral-50 transition-colors duration-100 ease-in-out select-none dark:bg-neutral-700;
+    @apply fixed bottom-0 flex h-[calc(100vh-2rem)] w-screen flex-col items-stretch justify-stretch overflow-hidden bg-neutral-50 transition-colors duration-100 ease-in-out select-none dark:bg-neutral-700;
   }
 
   /* ===== 视图容器 ===== */
@@ -295,7 +295,7 @@
     @apply h-full w-fit text-2xl font-semibold;
   }
   .view-settings {
-    @apply flex h-auto w-full flex-col gap-6;
+    @apply flex h-full min-h-0 w-full flex-col gap-0;
   }
   .view-framework {
     @apply mx-auto w-full max-w-4xl px-6 pt-6 pb-8;
@@ -303,7 +303,7 @@
 
   /* ===== Kittens Game ===== */
   .kittens-game-view {
-    @apply fixed inset-x-0 top-8 bottom-0 z-0 overflow-hidden;
+    @apply relative z-0 h-full min-h-0 w-full overflow-hidden;
     font-family: "Candara", "Noto Sans SC", "Microsoft YaHei UI", sans-serif;
     background-image:
       linear-gradient(var(--kg-grid-line) 1px, transparent 1px),
@@ -325,6 +325,17 @@
     border-radius: 999px;
   }
   .kittens-game-view ::-webkit-scrollbar-thumb:hover {
+    background: var(--kg-scroll-thumb-hover);
+  }
+  .kittens-game-theme [data-slot="scroll-area-scrollbar"] {
+    background: transparent;
+  }
+  .kittens-game-theme [data-slot="scroll-area-thumb"] {
+    background: var(--kg-scroll-thumb);
+  }
+  .kittens-game-theme
+    [data-slot="scroll-area-scrollbar"]:hover
+    [data-slot="scroll-area-thumb"] {
     background: var(--kg-scroll-thumb-hover);
   }
 

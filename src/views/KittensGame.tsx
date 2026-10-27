@@ -16,7 +16,6 @@ import {
   RefreshCw,
   Rocket,
   Save,
-  Settings2,
   Sprout,
   Trophy,
   Wrench,
@@ -40,6 +39,8 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
+import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
+import { useKittensGameContext } from "@/contexts/kittens-game-context";
 import {
   actionReasonLabel,
   formatPercent,
@@ -47,7 +48,6 @@ import {
 } from "@/features/kittens/game-format";
 import {
   BonfirePanel,
-  GameSettingsPanel,
   SciencePanel,
   VillagePanel,
   WorkshopPanel,
@@ -62,11 +62,10 @@ import {
 } from "@/features/kittens/game-midgame-panels";
 import { SaveManagementDialog } from "@/features/kittens/game-save-dialog";
 import { ResourceChip } from "@/features/kittens/game-shared";
-import { useKittensGame } from "@/features/kittens/use-kittens-game";
 import type { ActionResult, GameSnapshot } from "@/game/kernel/types";
 import { cn } from "@/lib/utils";
 
-const NAV_ITEMS: Array<{
+interface NavItem {
   id:
     | "bonfire"
     | "village"
@@ -77,12 +76,13 @@ const NAV_ITEMS: Array<{
     | "space"
     | "time"
     | "challenges"
-    | "progress"
-    | "settings";
+    | "progress";
   label: string;
   caption: string;
   icon: LucideIcon;
-}> = [
+}
+
+const SYSTEM_NAV_ITEMS: NavItem[] = [
   {
     id: "bonfire",
     label: "营火",
@@ -131,6 +131,9 @@ const NAV_ITEMS: Array<{
     caption: "通量与热机",
     icon: Clock3,
   },
+];
+
+const BOTTOM_NAV_ITEMS: NavItem[] = [
   {
     id: "challenges",
     label: "挑战",
@@ -143,15 +146,10 @@ const NAV_ITEMS: Array<{
     caption: "成就与统计",
     icon: Activity,
   },
-  {
-    id: "settings",
-    label: "游戏设置",
-    caption: "显示与存档",
-    icon: Settings2,
-  },
 ];
 
-type NavId = (typeof NAV_ITEMS)[number]["id"];
+const NAV_ITEMS = [...SYSTEM_NAV_ITEMS, ...BOTTOM_NAV_ITEMS];
+type NavId = NavItem["id"];
 
 function Navigation({
   activeNav,
@@ -162,53 +160,69 @@ function Navigation({
   onNavigate: (id: NavId) => void;
   compact?: boolean;
 }) {
+  const renderItem = (item: NavItem) => {
+    const Icon = item.icon;
+    const active = activeNav === item.id;
+    return (
+      <button
+        key={item.id}
+        type="button"
+        className={cn(
+          "group flex w-full items-center gap-3 rounded-md px-2.5 py-2 text-left transition-colors",
+          active
+            ? "text-kg-accent bg-amber-400/12"
+            : "text-kg-muted hover:bg-kg-hover hover:text-kg-body"
+        )}
+        onClick={() => onNavigate(item.id)}
+        aria-current={active ? "page" : undefined}
+        data-nav-id={item.id}
+      >
+        <span
+          className={cn(
+            "flex size-8 shrink-0 items-center justify-center rounded-md border transition-colors",
+            active
+              ? "text-kg-accent border-amber-400/20 bg-amber-400/10"
+              : "border-kg-line-subtle bg-kg-inset text-kg-muted group-hover:text-kg-body"
+          )}
+        >
+          <Icon className="size-4" />
+        </span>
+        <span className="min-w-0 flex-1">
+          <span className="block truncate text-xs font-medium">
+            {item.label}
+          </span>
+          {!compact ? (
+            <span className="text-kg-faint mt-0.5 block truncate text-[10px]">
+              {item.caption}
+            </span>
+          ) : null}
+        </span>
+        {active ? <ChevronRight className="size-3.5" /> : null}
+      </button>
+    );
+  };
+
   return (
     <nav
       aria-label="游戏系统"
-      className="flex min-h-0 flex-1 flex-col gap-1 overflow-y-auto pr-1"
+      className="flex min-h-0 flex-1 flex-col"
+      data-game-navigation
     >
-      {NAV_ITEMS.map((item) => {
-        const Icon = item.icon;
-        const active = activeNav === item.id;
-        return (
-          <button
-            key={item.id}
-            type="button"
-            className={cn(
-              "group flex w-full items-center gap-3 rounded-md px-2.5 py-2 text-left transition-colors",
-              active
-                ? "text-kg-accent bg-amber-400/12"
-                : "text-kg-muted hover:bg-kg-hover hover:text-kg-body",
-              item.id === "settings" &&
-                "border-kg-line-subtle mt-2 border-t pt-3"
-            )}
-            onClick={() => onNavigate(item.id)}
-            aria-current={active ? "page" : undefined}
-          >
-            <span
-              className={cn(
-                "flex size-8 shrink-0 items-center justify-center rounded-md border transition-colors",
-                active
-                  ? "text-kg-accent border-amber-400/20 bg-amber-400/10"
-                  : "border-kg-line-subtle bg-kg-inset text-kg-muted group-hover:text-kg-body"
-              )}
-            >
-              <Icon className="size-4" />
-            </span>
-            <span className="min-w-0 flex-1">
-              <span className="block truncate text-xs font-medium">
-                {item.label}
-              </span>
-              {!compact ? (
-                <span className="text-kg-faint mt-0.5 block truncate text-[10px]">
-                  {item.caption}
-                </span>
-              ) : null}
-            </span>
-            {active ? <ChevronRight className="size-3.5" /> : null}
-          </button>
-        );
-      })}
+      <ScrollArea
+        type="auto"
+        className="min-h-0 flex-1"
+        viewportClassName="pr-1"
+      >
+        <div className="flex flex-col gap-1 pb-2">
+          {SYSTEM_NAV_ITEMS.map(renderItem)}
+        </div>
+      </ScrollArea>
+      <div
+        className="flex shrink-0 flex-col gap-1 pt-3 pb-2"
+        data-nav-bottom-group
+      >
+        {BOTTOM_NAV_ITEMS.map(renderItem)}
+      </div>
     </nav>
   );
 }
@@ -265,7 +279,7 @@ function GameConfirmation({
 }
 
 export default function KittensGame() {
-  const { kernel, snapshot, error } = useKittensGame();
+  const { kernel, snapshot, error } = useKittensGameContext();
   const [lastAction, setLastAction] = useState<string | null>(null);
   const [activeNav, setActiveNav] = useState<NavId>("bonfire");
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
@@ -480,15 +494,6 @@ export default function KittensGame() {
         );
       case "progress":
         return <ProgressPanel snapshot={snapshot} />;
-      case "settings":
-        return (
-          <GameSettingsPanel
-            snapshot={snapshot}
-            onSet={(id, value) =>
-              runAction("设置已更新", () => kernel.setSetting(id, value))
-            }
-          />
-        );
     }
   };
 
@@ -504,7 +509,7 @@ export default function KittensGame() {
       >
         跳到主要内容
       </a>
-      <header className="border-kg-line bg-kg-chrome flex min-w-0 items-center gap-2 border-b px-3 py-2 sm:gap-3 sm:px-4">
+      <header className="border-kg-line bg-kg-chrome flex min-h-16 min-w-0 items-center gap-2 border-b px-3 py-2 sm:gap-3 sm:px-4">
         <Sheet open={mobileNavOpen} onOpenChange={setMobileNavOpen}>
           <SheetTrigger asChild>
             <Button
@@ -519,7 +524,7 @@ export default function KittensGame() {
           </SheetTrigger>
           <SheetContent
             side="left"
-            className="kittens-game-theme border-kg-line bg-kg-sidebar text-kg-body w-[280px]"
+            className="kittens-game-theme border-kg-line bg-kg-sidebar text-kg-body flex w-[280px] flex-col overflow-hidden"
           >
             <SheetHeader className="border-kg-line border-b pb-5 text-left">
               <SheetTitle className="text-kg-strong flex items-center gap-2 font-serif text-lg">
@@ -551,15 +556,23 @@ export default function KittensGame() {
           </div>
         </div>
 
-        <div className="flex min-w-0 flex-1 items-stretch gap-1.5 overflow-x-auto pb-0.5 sm:gap-2">
-          {resources.map((resource) => (
-            <ResourceChip key={resource.id} resource={resource} />
-          ))}
-        </div>
+        <ScrollArea
+          type="hover"
+          className="h-14 min-w-0 flex-1"
+          aria-label="资源栏"
+          data-resource-scroll
+        >
+          <div className="flex h-[52px] w-max items-stretch gap-1.5 pr-2 sm:gap-2">
+            {resources.map((resource) => (
+              <ResourceChip key={resource.id} resource={resource} />
+            ))}
+          </div>
+          <ScrollBar orientation="horizontal" className="h-1.5" />
+        </ScrollArea>
 
-        <div className="border-kg-line hidden shrink-0 items-center gap-3 border-l pl-4 md:flex">
-          <div className="text-right">
-            <div className="text-kg-muted text-[10px]">
+        <div className="border-kg-line hidden min-w-[132px] shrink-0 items-center gap-3 border-l pl-4 md:flex">
+          <div className="min-w-0 flex-1 text-right">
+            <div className="text-kg-muted truncate text-[10px]">
               {snapshot.calendar.seasonLabel} · 第 {snapshot.calendar.year} 年
             </div>
             <div className="text-kg-body mt-0.5 font-mono text-xs tabular-nums">
@@ -595,56 +608,63 @@ export default function KittensGame() {
         </Button>
       </header>
 
-      <div className="grid min-h-0 grid-cols-1 lg:grid-cols-[168px_minmax(0,1fr)] xl:grid-cols-[176px_minmax(0,1fr)_280px]">
+      <div className="grid min-h-0 grid-cols-1 overflow-hidden lg:grid-cols-[168px_minmax(0,1fr)] xl:grid-cols-[176px_minmax(0,1fr)_280px]">
         <aside className="border-kg-line bg-kg-sidebar hidden min-h-0 border-r p-2.5 lg:flex lg:flex-col">
           <div className="text-kg-faint mb-3 px-2 text-[10px] font-semibold tracking-[0.18em] uppercase">
             发展阶段
           </div>
           <Navigation activeNav={activeNav} onNavigate={navigate} />
-          <div className="border-kg-line-subtle text-kg-faint mt-4 border-t px-2 pt-3 text-[10px] leading-relaxed">
-            M4 原生系统
-          </div>
         </aside>
 
         <main
           ref={mainRef}
           id="kittens-main"
           tabIndex={-1}
-          className="bg-kg-main focus-visible:ring-kg-accent/60 min-h-0 min-w-0 overflow-y-auto focus:outline-none focus:ring-inset focus-visible:ring-2"
+          className="bg-kg-main focus-visible:ring-kg-accent/60 min-h-0 min-w-0 overflow-hidden focus:outline-none focus:ring-inset focus-visible:ring-2"
         >
-          {snapshot.saveStatus.health === "corrupt" || snapshot.runtimeError ? (
-            <div
-              className="text-kg-danger flex flex-col gap-3 border-b border-rose-400/20 bg-rose-400/[0.06] px-5 py-3 text-xs sm:flex-row sm:items-center sm:justify-between"
-              role="alert"
-              data-recovery-banner
-            >
-              <div className="flex min-w-0 items-start gap-2">
-                <CircleAlert className="text-kg-danger mt-0.5 size-4 shrink-0" />
-                <div className="min-w-0">
-                  <div className="font-semibold">
-                    {snapshot.saveStatus.health === "corrupt"
-                      ? "本地存档无法读取"
-                      : "游戏模拟已暂停"}
+          <ScrollArea
+            type="hover"
+            className="h-full w-full"
+            viewportClassName="pr-2 focus-visible:ring-inset"
+            data-game-main-scroll
+          >
+            <div className="min-h-full pb-12">
+              {snapshot.saveStatus.health === "corrupt" ||
+              snapshot.runtimeError ? (
+                <div
+                  className="text-kg-danger flex flex-col gap-3 border-b border-rose-400/20 bg-rose-400/[0.06] px-5 py-3 text-xs sm:flex-row sm:items-center sm:justify-between"
+                  role="alert"
+                  data-recovery-banner
+                >
+                  <div className="flex min-w-0 items-start gap-2">
+                    <CircleAlert className="text-kg-danger mt-0.5 size-4 shrink-0" />
+                    <div className="min-w-0">
+                      <div className="font-semibold">
+                        {snapshot.saveStatus.health === "corrupt"
+                          ? "本地存档无法读取"
+                          : "游戏模拟已暂停"}
+                      </div>
+                      <div className="text-kg-danger/65 mt-0.5">
+                        {snapshot.runtimeError ??
+                          "自动保存已停止，请导入有效存档或恢复备份。"}
+                      </div>
+                    </div>
                   </div>
-                  <div className="text-kg-danger/65 mt-0.5">
-                    {snapshot.runtimeError ??
-                      "自动保存已停止，请导入有效存档或恢复备份。"}
-                  </div>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    className="text-kg-danger shrink-0 border-rose-300/20 bg-rose-300/[0.05] hover:bg-rose-300/10"
+                    onClick={() => setSaveDialogOpen(true)}
+                    data-action="open-save-recovery"
+                  >
+                    打开存档恢复
+                  </Button>
                 </div>
-              </div>
-              <Button
-                type="button"
-                size="sm"
-                variant="outline"
-                className="text-kg-danger shrink-0 border-rose-300/20 bg-rose-300/[0.05] hover:bg-rose-300/10"
-                onClick={() => setSaveDialogOpen(true)}
-                data-action="open-save-recovery"
-              >
-                打开存档恢复
-              </Button>
+              ) : null}
+              {renderPanel()}
             </div>
-          ) : null}
-          {renderPanel()}
+          </ScrollArea>
         </main>
 
         <aside className="border-kg-line bg-kg-sidebar hidden min-h-0 flex-col border-l xl:flex">
@@ -707,7 +727,7 @@ export default function KittensGame() {
               最近行动
             </div>
             <div
-              className="bg-kg-inset text-kg-muted mt-3 min-h-16 border-l-2 border-amber-400/35 px-3 py-2 text-xs leading-relaxed"
+              className="bg-kg-inset text-kg-muted mt-3 h-[74px] overflow-hidden border-l-2 border-amber-400/35 px-3 py-2 text-xs leading-relaxed"
               aria-live="polite"
               data-action-feedback
             >
@@ -715,41 +735,47 @@ export default function KittensGame() {
             </div>
           </div>
 
-          <div className="min-h-0 flex-1 overflow-y-auto p-4">
-            <div className="text-kg-muted text-[10px] font-semibold tracking-[0.16em] uppercase">
-              进度
+          <ScrollArea
+            type="hover"
+            className="min-h-0 flex-1"
+            viewportClassName="pr-2"
+          >
+            <div className="p-4 pb-8">
+              <div className="text-kg-muted text-[10px] font-semibold tracking-[0.16em] uppercase">
+                进度
+              </div>
+              <div className="mt-3 space-y-2 text-[11px]">
+                <div className="flex items-center justify-between gap-3">
+                  <span className="text-kg-muted">可用研究</span>
+                  <span className="text-kg-body font-mono">
+                    {snapshot.science.availableCount}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between gap-3">
+                  <span className="text-kg-muted">已完成研究</span>
+                  <span className="text-kg-body font-mono">
+                    {snapshot.science.researchedCount}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between gap-3">
+                  <span className="text-kg-muted">工坊配方</span>
+                  <span className="text-kg-body font-mono">
+                    {snapshot.workshop.crafts.length}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between gap-3">
+                  <span className="text-kg-muted">待购升级</span>
+                  <span className="text-kg-body font-mono">
+                    {
+                      snapshot.workshop.upgrades.filter(
+                        (upgrade) => !upgrade.researched
+                      ).length
+                    }
+                  </span>
+                </div>
+              </div>
             </div>
-            <div className="mt-3 space-y-2 text-[11px]">
-              <div className="flex items-center justify-between gap-3">
-                <span className="text-kg-muted">可用研究</span>
-                <span className="text-kg-body font-mono">
-                  {snapshot.science.availableCount}
-                </span>
-              </div>
-              <div className="flex items-center justify-between gap-3">
-                <span className="text-kg-muted">已完成研究</span>
-                <span className="text-kg-body font-mono">
-                  {snapshot.science.researchedCount}
-                </span>
-              </div>
-              <div className="flex items-center justify-between gap-3">
-                <span className="text-kg-muted">工坊配方</span>
-                <span className="text-kg-body font-mono">
-                  {snapshot.workshop.crafts.length}
-                </span>
-              </div>
-              <div className="flex items-center justify-between gap-3">
-                <span className="text-kg-muted">待购升级</span>
-                <span className="text-kg-body font-mono">
-                  {
-                    snapshot.workshop.upgrades.filter(
-                      (upgrade) => !upgrade.researched
-                    ).length
-                  }
-                </span>
-              </div>
-            </div>
-          </div>
+          </ScrollArea>
 
           <footer className="border-kg-line text-kg-faint border-t p-4 text-[10px] leading-relaxed">
             <div className="mb-3 grid grid-cols-2 gap-x-3 gap-y-1.5">

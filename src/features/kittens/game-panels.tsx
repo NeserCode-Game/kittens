@@ -816,7 +816,7 @@ function SettingRow({
 }) {
   return (
     <div
-      className="border-kg-line-subtle flex items-center justify-between gap-5 border-b px-5 py-4 last:border-b-0"
+      className="border-kg-line-subtle flex min-h-[84px] items-center justify-between gap-5 border-b px-5 py-4 last:border-b-0"
       data-setting-id={setting.id}
       data-setting-value={setting.value}
     >
@@ -845,21 +845,45 @@ function SettingRow({
 export function GameSettingsPanel({
   snapshot,
   onSet,
+  embedded = false,
 }: {
   snapshot: GameSnapshot;
   onSet: (id: string, value: boolean) => void;
+  embedded?: boolean;
 }) {
   const standard = snapshot.settings.filter((setting) => !setting.advanced);
   const advanced = snapshot.settings.filter((setting) => setting.advanced);
 
   return (
-    <div className="animate-in fade-in-0 duration-200">
-      <PanelHeading
-        eyebrow="选项"
-        title="游戏设置"
-        description="调整显示精度、确认流程与存档行为。设置直接写入原版选项，并随存档保留。"
-        icon={Settings2}
-      />
+    <div
+      className={cn(
+        "kittens-game-theme text-kg-body",
+        !embedded && "animate-in fade-in-0 duration-200"
+      )}
+      data-game-settings
+    >
+      {embedded ? (
+        <header className="border-kg-line flex items-start gap-3 border-y px-5 py-4">
+          <span className="text-kg-accent flex size-9 shrink-0 items-center justify-center rounded-md bg-amber-400/10">
+            <Settings2 className="size-4" />
+          </span>
+          <div className="min-w-0">
+            <h2 className="text-kg-strong font-serif text-lg font-semibold">
+              游戏设置
+            </h2>
+            <p className="text-kg-muted mt-1 text-xs leading-relaxed">
+              调整确认流程、离线进度与显示精度。设置写入原版存档并即时生效。
+            </p>
+          </div>
+        </header>
+      ) : (
+        <PanelHeading
+          eyebrow="选项"
+          title="游戏设置"
+          description="调整显示精度、确认流程与存档行为。设置直接写入原版选项，并随存档保留。"
+          icon={Settings2}
+        />
+      )}
 
       <section>
         <SectionLabel aside={standard.length}>常规</SectionLabel>

@@ -14,6 +14,7 @@ import {
   useState,
   useCallback,
   useRef,
+  type ReactNode,
 } from "react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useLocalStorageState } from "ahooks";
@@ -29,11 +30,10 @@ import { lifecycle } from "@/lifecycle";
 import SettingsDialog from "@/components/framework/SettingsDialog";
 import AboutDialog from "@/components/framework/AboutDialog";
 import { SettingsDialogContext } from "@/contexts/settings";
+import type { SettingsSection } from "@/contexts/settings";
+import { KittensGameProvider } from "@/contexts/kittens-game";
 import { createLogger } from "@/lib/logger";
-import {
-  getCurrentWindowOrNull,
-  isTauriRuntime,
-} from "@/lib/tauri-runtime";
+import { getCurrentWindowOrNull, isTauriRuntime } from "@/lib/tauri-runtime";
 
 const log = createLogger("App");
 
@@ -41,6 +41,14 @@ const KittensGame = lazy(() => import("@/views/KittensGame"));
 const Software = lazy(() => import("@/views/Software"));
 const Framework = lazy(() => import("@/views/Framework"));
 const TrayMenu = lazy(() => import("@/views/TrayMenu"));
+
+function ScrollablePage({ children }: { children: ReactNode }) {
+  return (
+    <ScrollArea className="h-full w-full">
+      <div className="min-h-full">{children}</div>
+    </ScrollArea>
+  );
+}
 
 /**
  * 应用就绪钩子：主窗口显示并聚焦。
@@ -83,7 +91,12 @@ function App() {
 
   /* 弹窗状态 */
   const [settingsOpen, setSettingsOpen] = useState(false);
-  const openSettings = useCallback(() => setSettingsOpen(true), []);
+  const [settingsSection, setSettingsSection] =
+    useState<SettingsSection>("search");
+  const openSettings = useCallback((section: SettingsSection = "search") => {
+    setSettingsSection(section);
+    setSettingsOpen(true);
+  }, []);
   const [aboutOpen, setAboutOpen] = useState(false);
   const openAbout = useCallback(() => setAboutOpen(true), []);
 
@@ -138,13 +151,7 @@ function App() {
       void unlistenPopup.then((fn) => fn());
       void unlistenNavigate.then((fn) => fn());
     };
-  }, [
-    navigate,
-    currentLabel,
-    openSettings,
-    openAbout,
-    tauriRuntime,
-  ]);
+  }, [navigate, currentLabel, openSettings, openAbout, tauriRuntime]);
 
   /* 固定 Context value 引用，避免任意状态变化导致所有消费者全量重渲染 */
   const i18nValue = useMemo(
@@ -181,28 +188,43 @@ function App() {
           <ThemeContext.Provider value={themeValue}>
             <TitleContext.Provider value={titleValue}>
               <NavigatorContext.Provider value={navigatorValue}>
-                <main id="app-main" className="app-shell">
-                  <Titlebar />
-                  <CommandDialog />
+                <KittensGameProvider>
+                  <main id="app-main" className="app-shell">
+                    <Titlebar />
+                    <CommandDialog />
 
-                  <div id="container" className="app-body">
-                    <ScrollArea className="h-[calc(100vh-2rem)] w-full">
+                    <div id="container" className="app-body">
                       <Suspense fallback={null}>
                         <Routes>
                           <Route path="/" index element={<KittensGame />} />
-                          <Route path="/software" element={<Software />} />
-                          <Route path="/framework" element={<Framework />} />
+                          <Route
+                            path="/software"
+                            element={
+                              <ScrollablePage>
+                                <Software />
+                              </ScrollablePage>
+                            }
+                          />
+                          <Route
+                            path="/framework"
+                            element={
+                              <ScrollablePage>
+                                <Framework />
+                              </ScrollablePage>
+                            }
+                          />
                         </Routes>
                       </Suspense>
-                    </ScrollArea>
-                  </div>
-                </main>
-                <SettingsDialog
-                  open={settingsOpen}
-                  onOpenChange={setSettingsOpen}
-                />
-                <AboutDialog open={aboutOpen} onOpenChange={setAboutOpen} />
-                <Toaster richColors theme={theme} position="bottom-right" />
+                    </div>
+                  </main>
+                  <SettingsDialog
+                    open={settingsOpen}
+                    initialSection={settingsSection}
+                    onOpenChange={setSettingsOpen}
+                  />
+                  <AboutDialog open={aboutOpen} onOpenChange={setAboutOpen} />
+                  <Toaster richColors theme={theme} position="bottom-right" />
+                </KittensGameProvider>
               </NavigatorContext.Provider>
             </TitleContext.Provider>
           </ThemeContext.Provider>
