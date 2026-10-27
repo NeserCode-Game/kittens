@@ -43,9 +43,9 @@ import {
 } from "./game-shared";
 
 const primaryActionClass =
-  "border-amber-400/25 bg-amber-400/90 text-stone-950 hover:bg-amber-300";
+  "border-amber-400/25 bg-amber-400/90 text-kg-accent-foreground hover:bg-amber-300";
 const quietActionClass =
-  "border-white/15 bg-transparent text-stone-300 hover:bg-white/10 hover:text-stone-100";
+  "border-kg-control bg-transparent text-kg-body hover:bg-kg-hover-strong hover:text-kg-strong";
 
 function matchesSearch(query: string, values: Array<string | undefined>) {
   const needle = query.trim().toLocaleLowerCase("zh-CN");
@@ -65,24 +65,24 @@ function BuildingRow({
   return (
     <article
       className={cn(
-        "grid grid-cols-[minmax(0,1fr)_auto] gap-3 border-b border-white/[0.07] px-5 py-4 transition-colors last:border-b-0",
-        building.canBuy ? "hover:bg-white/[0.025]" : "opacity-65"
+        "border-kg-line-subtle grid grid-cols-[minmax(0,1fr)_auto] gap-3 border-b px-5 py-4 transition-colors last:border-b-0",
+        building.canBuy ? "hover:bg-kg-hover-subtle" : "opacity-65"
       )}
       data-building-id={building.id}
       data-building-enabled={building.enabled}
     >
       <div className="min-w-0">
         <div className="flex min-w-0 items-center gap-2">
-          <h3 className="truncate text-sm font-semibold text-stone-100">
+          <h3 className="text-kg-strong truncate text-sm font-semibold">
             {building.label}
           </h3>
           {building.enabled > 0 ? (
-            <span className="shrink-0 rounded-sm bg-amber-400/15 px-1.5 py-px font-mono text-[10px] text-amber-300">
+            <span className="text-kg-accent shrink-0 rounded-sm bg-amber-400/15 px-1.5 py-px font-mono text-[10px]">
               {building.enabled}
             </span>
           ) : null}
         </div>
-        <p className="mt-1 line-clamp-2 text-xs leading-relaxed text-stone-500">
+        <p className="text-kg-muted mt-1 line-clamp-2 text-xs leading-relaxed">
           {building.description || "建筑设施"}
         </p>
         <PricePills prices={building.prices} className="mt-2.5" />
@@ -159,7 +159,7 @@ export function BonfirePanel({
         }
       />
 
-      <div className="grid grid-cols-2 border-b border-white/10 bg-black/10 lg:grid-cols-4">
+      <div className="border-kg-line bg-kg-inset grid grid-cols-2 border-b lg:grid-cols-4">
         <Metric
           label="猫薄荷"
           value={formatNumber(catnip?.value ?? 0)}
@@ -226,18 +226,18 @@ function JobRow({
 
   return (
     <article
-      className="grid gap-4 border-b border-white/[0.07] px-5 py-4 last:border-b-0 md:grid-cols-[minmax(0,1fr)_auto]"
+      className="border-kg-line-subtle grid gap-4 border-b px-5 py-4 last:border-b-0 md:grid-cols-[minmax(0,1fr)_auto]"
       data-job-id={job.id}
       data-job-value={job.value}
     >
       <div className="min-w-0">
         <div className="flex flex-wrap items-center gap-2">
-          <h3 className="text-sm font-semibold text-stone-100">{job.label}</h3>
-          <span className="rounded-sm bg-white/[0.05] px-1.5 py-px font-mono text-[10px] text-stone-400">
+          <h3 className="text-kg-strong text-sm font-semibold">{job.label}</h3>
+          <span className="bg-kg-wash-strong text-kg-muted rounded-sm px-1.5 py-px font-mono text-[10px]">
             {job.value} / {job.limit >= 100000 ? "∞" : job.limit}
           </span>
         </div>
-        <p className="mt-1 max-w-2xl text-xs leading-relaxed text-stone-500">
+        <p className="text-kg-muted mt-1 max-w-2xl text-xs leading-relaxed">
           {job.description || "村庄职业"}
         </p>
         <div className="mt-2 flex flex-wrap gap-1.5">
@@ -245,16 +245,16 @@ function JobRow({
             job.effects.map((effect) => (
               <span
                 key={effect.id}
-                className="inline-flex items-center gap-1 rounded-sm border border-emerald-500/15 bg-emerald-500/[0.07] px-1.5 py-0.5 text-[10px] text-emerald-200/80"
+                className="text-kg-success/80 inline-flex items-center gap-1 rounded-sm border border-emerald-500/15 bg-emerald-500/[0.07] px-1.5 py-0.5 text-[10px]"
               >
                 {effect.label}
-                <strong className="font-mono font-medium text-emerald-300">
+                <strong className="text-kg-success font-mono font-medium">
                   {effect.valueLabel}
                 </strong>
               </span>
             ))
           ) : (
-            <span className="text-[10px] text-stone-600">基础职业</span>
+            <span className="text-kg-faint text-[10px]">基础职业</span>
           )}
         </div>
       </div>
@@ -296,7 +296,7 @@ function JobRow({
           type="button"
           variant="ghost"
           size="sm"
-          className="text-stone-400 hover:bg-white/[0.06] hover:text-stone-100"
+          className="text-kg-muted hover:bg-kg-hover hover:text-kg-strong"
           disabled={!job.canAssign || freeKittens <= 0}
           onClick={() => onAssign(job.id, freeKittens)}
           aria-label={`为${job.label}分配全部空闲猫`}
@@ -329,7 +329,7 @@ export function VillagePanel({
         icon={Cat}
       />
 
-      <div className="grid grid-cols-2 border-b border-white/10 bg-black/10 lg:grid-cols-4">
+      <div className="border-kg-line bg-kg-inset grid grid-cols-2 border-b lg:grid-cols-4">
         <Metric
           label="猫猫"
           value={village.kittens}
@@ -396,7 +396,7 @@ function ResearchRow({
   return (
     <article
       className={cn(
-        "grid gap-4 border-b border-white/[0.07] px-5 py-4 last:border-b-0 md:grid-cols-[minmax(0,1fr)_auto]",
+        "border-kg-line-subtle grid gap-4 border-b px-5 py-4 last:border-b-0 md:grid-cols-[minmax(0,1fr)_auto]",
         !item.canResearch && !item.researched && "opacity-70"
       )}
       data-research-id={item.id}
@@ -405,17 +405,17 @@ function ResearchRow({
     >
       <div className="min-w-0">
         <div className="flex flex-wrap items-center gap-2">
-          <h3 className="text-sm font-semibold text-stone-100">{item.label}</h3>
+          <h3 className="text-kg-strong text-sm font-semibold">{item.label}</h3>
           <span
             className={cn(
               "inline-flex items-center gap-1 rounded-sm px-1.5 py-px text-[10px]",
               item.researched
-                ? "bg-emerald-400/10 text-emerald-300"
+                ? "text-kg-success bg-emerald-400/10"
                 : item.blocked
-                  ? "bg-rose-400/10 text-rose-300"
+                  ? "text-kg-danger bg-rose-400/10"
                   : item.canResearch
-                    ? "bg-amber-400/10 text-amber-300"
-                    : "bg-white/[0.05] text-stone-500"
+                    ? "text-kg-accent bg-amber-400/10"
+                    : "bg-kg-wash-strong text-kg-muted"
             )}
           >
             {item.researched ? (
@@ -428,11 +428,11 @@ function ResearchRow({
             {stateLabel}
           </span>
         </div>
-        <p className="mt-1 max-w-2xl text-xs leading-relaxed text-stone-500">
+        <p className="text-kg-muted mt-1 max-w-2xl text-xs leading-relaxed">
           {item.description || item.flavor || "研究项目"}
         </p>
         {item.effectDescription ? (
-          <p className="mt-1.5 text-[11px] leading-relaxed text-emerald-200/65">
+          <p className="text-kg-success/65 mt-1.5 text-[11px] leading-relaxed">
             {item.effectDescription}
           </p>
         ) : null}
@@ -492,28 +492,28 @@ export function SciencePanel({
         icon={Leaf}
       />
 
-      <div className="flex flex-col gap-3 border-b border-white/10 bg-black/10 px-5 py-3 sm:flex-row sm:items-center sm:justify-between">
+      <div className="border-kg-line bg-kg-inset flex flex-col gap-3 border-b px-5 py-3 sm:flex-row sm:items-center sm:justify-between">
         <Tabs
           value={tab}
           onValueChange={(value) => setTab(value as "tech" | "policy")}
           className="gap-0"
         >
-          <TabsList className="h-8 rounded-md bg-black/20 p-0.5">
+          <TabsList className="bg-kg-inset-strong h-8 rounded-md p-0.5">
             <TabsTrigger
               value="tech"
-              className="h-7 px-3 text-xs data-[state=active]:bg-amber-400/15 data-[state=active]:text-amber-200"
+              className="data-[state=active]:text-kg-accent h-7 px-3 text-xs data-[state=active]:bg-amber-400/15"
             >
               科技
-              <span className="font-mono text-[10px] text-stone-500">
+              <span className="text-kg-muted font-mono text-[10px]">
                 {snapshot.science.techs.length}
               </span>
             </TabsTrigger>
             <TabsTrigger
               value="policy"
-              className="h-7 px-3 text-xs data-[state=active]:bg-amber-400/15 data-[state=active]:text-amber-200"
+              className="data-[state=active]:text-kg-accent h-7 px-3 text-xs data-[state=active]:bg-amber-400/15"
             >
               政策
-              <span className="font-mono text-[10px] text-stone-500">
+              <span className="text-kg-muted font-mono text-[10px]">
                 {snapshot.science.policies.length}
               </span>
             </TabsTrigger>
@@ -521,16 +521,16 @@ export function SciencePanel({
         </Tabs>
         <div className="flex items-center gap-3">
           <div className="relative min-w-0 sm:w-56">
-            <Search className="pointer-events-none absolute top-1/2 left-2.5 size-3.5 -translate-y-1/2 text-stone-600" />
+            <Search className="text-kg-faint pointer-events-none absolute top-1/2 left-2.5 size-3.5 -translate-y-1/2" />
             <Input
               value={query}
               onChange={(event) => setQuery(event.target.value)}
               placeholder="筛选研究"
               aria-label="筛选研究"
-              className="h-8 border-white/10 bg-black/15 pl-8 text-xs text-stone-200 placeholder:text-stone-600"
+              className="border-kg-line bg-kg-inset-strong text-kg-body placeholder:text-kg-faint h-8 pl-8 text-xs"
             />
           </div>
-          <span className="shrink-0 font-mono text-[10px] text-stone-500">
+          <span className="text-kg-muted shrink-0 font-mono text-[10px]">
             {snapshot.science.researchedCount} 完成 ·{" "}
             {snapshot.science.availableCount} 可用
           </span>
@@ -596,7 +596,7 @@ function CraftRow({
   return (
     <article
       className={cn(
-        "grid gap-4 border-b border-white/[0.07] px-5 py-4 last:border-b-0 md:grid-cols-[minmax(0,1fr)_auto]",
+        "border-kg-line-subtle grid gap-4 border-b px-5 py-4 last:border-b-0 md:grid-cols-[minmax(0,1fr)_auto]",
         !craft.canCraft && "opacity-70"
       )}
       data-craft-id={craft.id}
@@ -604,22 +604,22 @@ function CraftRow({
     >
       <div className="min-w-0">
         <div className="flex flex-wrap items-center gap-2">
-          <h3 className="text-sm font-semibold text-stone-100">
+          <h3 className="text-kg-strong text-sm font-semibold">
             {craft.label}
           </h3>
-          <span className="rounded-sm bg-white/[0.05] px-1.5 py-px font-mono text-[10px] text-stone-400">
+          <span className="bg-kg-wash-strong text-kg-muted rounded-sm px-1.5 py-px font-mono text-[10px]">
             {craft.value} 工程师
           </span>
-          <span className="rounded-sm bg-emerald-400/10 px-1.5 py-px font-mono text-[10px] text-emerald-300">
+          <span className="text-kg-success rounded-sm bg-emerald-400/10 px-1.5 py-px font-mono text-[10px]">
             产出 +{formatPercent(craft.craftRatio)}
           </span>
         </div>
-        <p className="mt-1 max-w-2xl text-xs leading-relaxed text-stone-500">
+        <p className="text-kg-muted mt-1 max-w-2xl text-xs leading-relaxed">
           {craft.description || "工坊制作配方"}
         </p>
         {craft.value > 0 ? (
           <div className="mt-2 max-w-sm">
-            <div className="mb-1 flex items-center justify-between font-mono text-[10px] text-stone-500">
+            <div className="text-kg-muted mb-1 flex items-center justify-between font-mono text-[10px]">
               <span>自动制作进度</span>
               <span>{formatNumber(craft.progress, 2)}%</span>
             </div>
@@ -659,7 +659,7 @@ function CraftRow({
           type="button"
           variant="ghost"
           size="sm"
-          className="text-stone-400 hover:bg-white/[0.06] hover:text-stone-100"
+          className="text-kg-muted hover:bg-kg-hover hover:text-kg-strong"
           disabled={!craft.canCraftAll}
           onClick={() => onCraftAll(craft.id)}
           aria-label={`全部制作${craft.label}`}
@@ -682,7 +682,7 @@ function UpgradeRow({
   return (
     <article
       className={cn(
-        "grid gap-4 border-b border-white/[0.07] px-5 py-4 last:border-b-0 md:grid-cols-[minmax(0,1fr)_auto]",
+        "border-kg-line-subtle grid gap-4 border-b px-5 py-4 last:border-b-0 md:grid-cols-[minmax(0,1fr)_auto]",
         !upgrade.canBuy && "opacity-70"
       )}
       data-upgrade-id={upgrade.id}
@@ -690,17 +690,17 @@ function UpgradeRow({
     >
       <div className="min-w-0">
         <div className="flex flex-wrap items-center gap-2">
-          <h3 className="text-sm font-semibold text-stone-100">
+          <h3 className="text-kg-strong text-sm font-semibold">
             {upgrade.label}
           </h3>
           {upgrade.researched ? (
-            <span className="inline-flex items-center gap-1 rounded-sm bg-emerald-400/10 px-1.5 py-px text-[10px] text-emerald-300">
+            <span className="text-kg-success inline-flex items-center gap-1 rounded-sm bg-emerald-400/10 px-1.5 py-px text-[10px]">
               <CircleCheck className="size-3" />
               已购买
             </span>
           ) : null}
         </div>
-        <p className="mt-1 max-w-2xl text-xs leading-relaxed text-stone-500">
+        <p className="text-kg-muted mt-1 max-w-2xl text-xs leading-relaxed">
           {upgrade.description || "工坊升级"}
         </p>
         <PricePills prices={upgrade.prices} className="mt-2.5" />
@@ -749,24 +749,24 @@ export function WorkshopPanel({
         icon={Wrench}
       />
 
-      <div className="flex flex-col gap-3 border-b border-white/10 bg-black/10 px-5 py-3 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex items-center gap-3 text-[11px] text-stone-500">
+      <div className="border-kg-line bg-kg-inset flex flex-col gap-3 border-b px-5 py-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="text-kg-muted flex items-center gap-3 text-[11px]">
           <span className="inline-flex items-center gap-1.5">
-            <Cog className="size-3.5 text-amber-400/75" />
+            <Cog className="text-kg-accent/75 size-3.5" />
             全局制作加成
           </span>
-          <span className="font-mono text-emerald-300">
+          <span className="text-kg-success font-mono">
             +{formatPercent(snapshot.workshop.craftRatio)}
           </span>
         </div>
         <div className="relative min-w-0 sm:w-56">
-          <Search className="pointer-events-none absolute top-1/2 left-2.5 size-3.5 -translate-y-1/2 text-stone-600" />
+          <Search className="text-kg-faint pointer-events-none absolute top-1/2 left-2.5 size-3.5 -translate-y-1/2" />
           <Input
             value={query}
             onChange={(event) => setQuery(event.target.value)}
             placeholder="筛选配方与升级"
             aria-label="筛选工坊"
-            className="h-8 border-white/10 bg-black/15 pl-8 text-xs text-stone-200 placeholder:text-stone-600"
+            className="border-kg-line bg-kg-inset-strong text-kg-body placeholder:text-kg-faint h-8 pl-8 text-xs"
           />
         </div>
       </div>
@@ -816,18 +816,18 @@ function SettingRow({
 }) {
   return (
     <div
-      className="flex items-center justify-between gap-5 border-b border-white/[0.07] px-5 py-4 last:border-b-0"
+      className="border-kg-line-subtle flex items-center justify-between gap-5 border-b px-5 py-4 last:border-b-0"
       data-setting-id={setting.id}
       data-setting-value={setting.value}
     >
       <div className="min-w-0">
         <label
           htmlFor={`game-setting-${setting.id}`}
-          className="cursor-pointer text-sm font-medium text-stone-200"
+          className="text-kg-body cursor-pointer text-sm font-medium"
         >
           {setting.label}
         </label>
-        <p className="mt-1 text-xs leading-relaxed text-stone-500">
+        <p className="text-kg-muted mt-1 text-xs leading-relaxed">
           {setting.description}
         </p>
       </div>
@@ -836,7 +836,7 @@ function SettingRow({
         checked={setting.value}
         onCheckedChange={(value) => onSet(setting.id, value)}
         aria-label={setting.label}
-        className="data-[state=checked]:bg-amber-400 data-[state=unchecked]:bg-white/15 [&_[data-slot=switch-thumb]]:bg-stone-950"
+        className="data-[state=unchecked]:bg-kg-control [&_[data-slot=switch-thumb]]:bg-kg-accent-foreground data-[state=checked]:bg-amber-400"
       />
     </div>
   );

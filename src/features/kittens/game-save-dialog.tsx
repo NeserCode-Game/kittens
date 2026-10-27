@@ -88,13 +88,13 @@ function SaveMetric({
   detail?: string;
 }) {
   return (
-    <div className="min-w-0 border-b border-white/[0.07] px-4 py-3 md:border-r md:last:border-r-0">
-      <div className="text-[10px] text-stone-600">{label}</div>
-      <div className="mt-1 truncate font-mono text-xs text-stone-200">
+    <div className="border-kg-line-subtle min-w-0 border-b px-4 py-3 md:border-r md:last:border-r-0">
+      <div className="text-kg-faint text-[10px]">{label}</div>
+      <div className="text-kg-body mt-1 truncate font-mono text-xs">
         {value}
       </div>
       {detail ? (
-        <div className="mt-0.5 truncate text-[10px] text-stone-600">
+        <div className="text-kg-faint mt-0.5 truncate text-[10px]">
           {detail}
         </div>
       ) : null}
@@ -229,25 +229,25 @@ export function SaveManagementDialog({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
-        className="max-h-[min(88vh,760px)] max-w-3xl gap-0 overflow-y-auto border-white/10 bg-[#151a15] p-0 text-stone-100"
+        className="kittens-game-theme border-kg-line bg-kg-dialog text-kg-body max-h-[min(88vh,760px)] max-w-3xl gap-0 overflow-y-auto p-0"
         aria-describedby="save-dialog-description"
         data-save-dialog
       >
-        <DialogHeader className="border-b border-white/10 px-5 py-4 pr-12 text-left">
-          <DialogTitle className="flex items-center gap-2 font-serif text-lg text-stone-50">
-            <HardDrive className="size-5 text-amber-300" />
+        <DialogHeader className="border-kg-line border-b px-5 py-4 pr-12 text-left">
+          <DialogTitle className="text-kg-strong flex items-center gap-2 font-serif text-lg">
+            <HardDrive className="text-kg-accent size-5" />
             存档管理
           </DialogTitle>
           <DialogDescription
             id="save-dialog-description"
-            className="text-xs leading-relaxed text-stone-500"
+            className="text-kg-muted text-xs leading-relaxed"
           >
             使用原版压缩与迁移格式管理本地进度。
           </DialogDescription>
         </DialogHeader>
 
         <div
-          className="grid grid-cols-2 border-b border-white/10 bg-black/10 md:grid-cols-4"
+          className="border-kg-line bg-kg-inset grid grid-cols-2 border-b md:grid-cols-4"
           data-save-health={saveStatus.health}
           data-save-version={saveStatus.currentVersion}
           data-save-source-version={saveStatus.sourceVersion ?? ""}
@@ -285,11 +285,11 @@ export function SaveManagementDialog({
             className={cn(
               "mx-5 mt-4 flex items-start gap-2 rounded-md border px-3 py-2 text-xs",
               notice.tone === "success" &&
-                "border-emerald-400/20 bg-emerald-400/[0.06] text-emerald-200",
+                "text-kg-success border-emerald-400/20 bg-emerald-400/[0.06]",
               notice.tone === "warning" &&
-                "border-amber-400/20 bg-amber-400/[0.06] text-amber-200",
+                "text-kg-accent border-amber-400/20 bg-amber-400/[0.06]",
               notice.tone === "error" &&
-                "border-rose-400/20 bg-rose-400/[0.06] text-rose-200"
+                "text-kg-danger border-rose-400/20 bg-rose-400/[0.06]"
             )}
             role="status"
             aria-live="polite"
@@ -311,23 +311,23 @@ export function SaveManagementDialog({
           }
           className="gap-0"
         >
-          <div className="border-b border-white/10 px-5 py-3">
-            <TabsList className="h-8 rounded-md bg-black/20 p-0.5">
+          <div className="border-kg-line border-b px-5 py-3">
+            <TabsList className="bg-kg-inset-strong h-8 rounded-md p-0.5">
               <TabsTrigger
                 value="export"
-                className="h-7 px-3 text-xs data-[state=active]:bg-amber-400/15 data-[state=active]:text-amber-200"
+                className="data-[state=active]:text-kg-accent h-7 px-3 text-xs data-[state=active]:bg-amber-400/15"
               >
                 导出
               </TabsTrigger>
               <TabsTrigger
                 value="import"
-                className="h-7 px-3 text-xs data-[state=active]:bg-amber-400/15 data-[state=active]:text-amber-200"
+                className="data-[state=active]:text-kg-accent h-7 px-3 text-xs data-[state=active]:bg-amber-400/15"
               >
                 导入
               </TabsTrigger>
               <TabsTrigger
                 value="recovery"
-                className="h-7 px-3 text-xs data-[state=active]:bg-amber-400/15 data-[state=active]:text-amber-200"
+                className="data-[state=active]:text-kg-accent h-7 px-3 text-xs data-[state=active]:bg-amber-400/15"
               >
                 恢复
               </TabsTrigger>
@@ -339,7 +339,7 @@ export function SaveManagementDialog({
               <Button
                 type="button"
                 size="sm"
-                className="bg-amber-400 text-stone-950 hover:bg-amber-300"
+                className="text-kg-accent-foreground bg-amber-400 hover:bg-amber-300"
                 onClick={exportSave}
                 disabled={busy}
                 data-action="generate-save-export"
@@ -351,7 +351,7 @@ export function SaveManagementDialog({
                 type="button"
                 size="sm"
                 variant="outline"
-                className="border-white/15 bg-white/[0.03] text-stone-200 hover:bg-white/10"
+                className="border-kg-control bg-kg-wash text-kg-body hover:bg-kg-hover-strong"
                 onClick={copyExport}
                 disabled={!exportData}
                 data-action="copy-save-export"
@@ -363,7 +363,7 @@ export function SaveManagementDialog({
                 type="button"
                 size="sm"
                 variant="outline"
-                className="border-white/15 bg-white/[0.03] text-stone-200 hover:bg-white/10"
+                className="border-kg-control bg-kg-wash text-kg-body hover:bg-kg-hover-strong"
                 onClick={downloadExport}
                 disabled={!exportData}
                 data-action="download-save-export"
@@ -377,7 +377,7 @@ export function SaveManagementDialog({
               value={exportData}
               placeholder="生成后在此显示原版压缩存档"
               aria-label="存档导出文本"
-              className="mt-3 min-h-48 resize-y border-white/10 bg-black/20 font-mono text-[11px] leading-relaxed text-stone-300"
+              className="border-kg-line bg-kg-inset-strong text-kg-body mt-3 min-h-48 resize-y font-mono text-[11px] leading-relaxed"
               data-save-export
             />
           </TabsContent>
@@ -396,7 +396,7 @@ export function SaveManagementDialog({
                 type="button"
                 size="sm"
                 variant="outline"
-                className="border-white/15 bg-white/[0.03] text-stone-200 hover:bg-white/10"
+                className="border-kg-control bg-kg-wash text-kg-body hover:bg-kg-hover-strong"
                 onClick={() => fileInputRef.current?.click()}
                 disabled={busy}
               >
@@ -406,7 +406,7 @@ export function SaveManagementDialog({
               <Button
                 type="button"
                 size="sm"
-                className="bg-amber-400 text-stone-950 hover:bg-amber-300"
+                className="text-kg-accent-foreground bg-amber-400 hover:bg-amber-300"
                 onClick={requestImport}
                 disabled={busy || !importData.trim()}
                 data-action="import-save"
@@ -415,7 +415,7 @@ export function SaveManagementDialog({
                 导入存档
               </Button>
             </div>
-            <p className="mt-3 border-l-2 border-amber-400/30 pl-3 text-[11px] leading-relaxed text-stone-500">
+            <p className="text-kg-muted mt-3 border-l-2 border-amber-400/30 pl-3 text-[11px] leading-relaxed">
               导入会替换当前进度。当前可读取存档会先保存为恢复点。
             </p>
             <Textarea
@@ -423,19 +423,19 @@ export function SaveManagementDialog({
               onChange={(event) => setImportData(event.target.value)}
               placeholder="粘贴原版存档文本"
               aria-label="待导入存档文本"
-              className="mt-3 min-h-48 resize-y border-white/10 bg-black/20 font-mono text-[11px] leading-relaxed text-stone-300"
+              className="border-kg-line bg-kg-inset-strong text-kg-body mt-3 min-h-48 resize-y font-mono text-[11px] leading-relaxed"
               data-save-import
             />
           </TabsContent>
 
           <TabsContent value="recovery" className="m-0 p-5">
             <div className="grid gap-3 sm:grid-cols-2">
-              <div className="border border-white/10 bg-black/10 p-4">
-                <div className="flex items-center gap-2 text-sm font-semibold text-stone-200">
-                  <ShieldCheck className="size-4 text-emerald-300" />
+              <div className="border-kg-line bg-kg-inset border p-4">
+                <div className="text-kg-body flex items-center gap-2 text-sm font-semibold">
+                  <ShieldCheck className="text-kg-success size-4" />
                   恢复点
                 </div>
-                <div className="mt-1 text-[11px] text-stone-500">
+                <div className="text-kg-muted mt-1 text-[11px]">
                   {saveStatus.hasBackup
                     ? `建立于 ${formatTimestamp(saveStatus.backupAt)}`
                     : "尚无可恢复的存档"}
@@ -445,7 +445,7 @@ export function SaveManagementDialog({
                     type="button"
                     size="sm"
                     variant="outline"
-                    className="border-white/15 bg-white/[0.03] text-stone-200 hover:bg-white/10"
+                    className="border-kg-control bg-kg-wash text-kg-body hover:bg-kg-hover-strong"
                     onClick={() =>
                       perform(actions.createBackup, "恢复点已建立")
                     }
@@ -459,7 +459,7 @@ export function SaveManagementDialog({
                     type="button"
                     size="sm"
                     variant="outline"
-                    className="border-white/15 bg-white/[0.03] text-stone-200 hover:bg-white/10"
+                    className="border-kg-control bg-kg-wash text-kg-body hover:bg-kg-hover-strong"
                     onClick={() =>
                       perform(actions.restoreBackup, "已请求恢复备份")
                     }
@@ -473,18 +473,18 @@ export function SaveManagementDialog({
               </div>
 
               <div className="border border-rose-400/15 bg-rose-400/[0.025] p-4">
-                <div className="flex items-center gap-2 text-sm font-semibold text-rose-200">
+                <div className="text-kg-danger flex items-center gap-2 text-sm font-semibold">
                   <Trash2 className="size-4" />
                   重置
                 </div>
-                <div className="mt-1 text-[11px] leading-relaxed text-stone-500">
+                <div className="text-kg-muted mt-1 text-[11px] leading-relaxed">
                   清除当前进度并返回新游戏状态。
                 </div>
                 <Button
                   type="button"
                   size="sm"
                   variant="outline"
-                  className="mt-4 border-rose-400/20 bg-rose-400/[0.03] text-rose-200 hover:bg-rose-400/10"
+                  className="text-kg-danger mt-4 border-rose-400/20 bg-rose-400/[0.03] hover:bg-rose-400/10"
                   onClick={() => perform(actions.resetGame, "已请求重置存档")}
                   disabled={busy}
                   data-action="reset-save"

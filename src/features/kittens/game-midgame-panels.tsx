@@ -44,9 +44,9 @@ import {
 } from "./game-shared";
 
 const primaryActionClass =
-  "border-amber-400/25 bg-amber-400/90 text-stone-950 hover:bg-amber-300";
+  "border-amber-400/25 bg-amber-400/90 text-kg-accent-foreground hover:bg-amber-300";
 const quietActionClass =
-  "border-white/15 bg-transparent text-stone-300 hover:bg-white/10 hover:text-stone-100";
+  "border-kg-control bg-transparent text-kg-body hover:bg-kg-hover-strong hover:text-kg-strong";
 
 function standingLabel(standing: number): string {
   if (standing >= 0.25) return "友好";
@@ -69,9 +69,9 @@ function OfferPill({
         "inline-flex items-center gap-1.5 border px-2 py-1 text-[10px]",
         offer.available
           ? kind === "buy"
-            ? "border-amber-400/20 bg-amber-400/[0.07] text-amber-200/85"
-            : "border-emerald-400/20 bg-emerald-400/[0.07] text-emerald-200/85"
-          : "border-white/[0.06] bg-black/10 text-stone-600"
+            ? "text-kg-accent/85 border-amber-400/20 bg-amber-400/[0.07]"
+            : "text-kg-success/85 border-emerald-400/20 bg-emerald-400/[0.07]"
+          : "border-kg-line-subtle bg-kg-inset text-kg-faint"
       )}
     >
       <span>{offer.label}</span>
@@ -79,7 +79,7 @@ function OfferPill({
         {formatNumber(offer.amount)}
       </strong>
       {kind === "sell" ? (
-        <span className="font-mono text-stone-500">
+        <span className="text-kg-muted font-mono">
           {formatPercent(Math.min(offer.chance, 1))}
         </span>
       ) : null}
@@ -98,7 +98,7 @@ function TradeRaceRow({
 }) {
   return (
     <article
-      className="border-b border-white/[0.07] px-5 py-4 last:border-b-0"
+      className="border-kg-line-subtle border-b px-5 py-4 last:border-b-0"
       data-trade-race-id={race.id}
       data-trade-max={race.maxTradeAmount}
       data-standing={race.standing}
@@ -107,14 +107,14 @@ function TradeRaceRow({
       <div className="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
-            <h3 className="text-sm font-semibold text-stone-100">
+            <h3 className="text-kg-strong text-sm font-semibold">
               {race.label}
             </h3>
-            <span className="rounded-sm border border-white/[0.07] bg-white/[0.04] px-1.5 py-px text-[10px] text-stone-400">
+            <span className="border-kg-line-subtle bg-kg-wash text-kg-muted rounded-sm border px-1.5 py-px text-[10px]">
               {standingLabel(race.standing)} {formatPercent(race.standing)}
             </span>
             {race.embassy.level > 0 ? (
-              <span className="rounded-sm bg-amber-400/10 px-1.5 py-px font-mono text-[10px] text-amber-300">
+              <span className="text-kg-accent rounded-sm bg-amber-400/10 px-1.5 py-px font-mono text-[10px]">
                 大使馆 {race.embassy.level}
               </span>
             ) : null}
@@ -122,7 +122,7 @@ function TradeRaceRow({
 
           <div className="mt-3 grid gap-3 lg:grid-cols-2">
             <div>
-              <div className="mb-1.5 text-[10px] tracking-wide text-stone-600">
+              <div className="text-kg-faint mb-1.5 text-[10px] tracking-wide">
                 商队支出
               </div>
               <div className="flex flex-wrap gap-1.5">
@@ -132,7 +132,7 @@ function TradeRaceRow({
               </div>
             </div>
             <div>
-              <div className="mb-1.5 text-[10px] tracking-wide text-stone-600">
+              <div className="text-kg-faint mb-1.5 text-[10px] tracking-wide">
                 可带回资源
               </div>
               <div className="flex flex-wrap gap-1.5">
@@ -143,22 +143,22 @@ function TradeRaceRow({
             </div>
           </div>
 
-          <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2 text-[10px] text-stone-500">
+          <div className="text-kg-muted mt-3 flex flex-wrap items-center gap-x-4 gap-y-2 text-[10px]">
             <span>
               单次容量{" "}
-              <strong className="font-mono text-stone-300">
+              <strong className="text-kg-body font-mono">
                 {race.maxTradeAmount || "0"}
               </strong>
             </span>
             <span>
               蓝图{" "}
-              <strong className="font-mono text-stone-300">
+              <strong className="text-kg-body font-mono">
                 {formatPercent(race.blueprintChance)}
               </strong>
             </span>
             <span>
               香料{" "}
-              <strong className="font-mono text-stone-300">
+              <strong className="text-kg-body font-mono">
                 {formatPercent(race.spiceChance)}
               </strong>
             </span>
@@ -194,7 +194,7 @@ function TradeRaceRow({
             type="button"
             size="sm"
             variant="ghost"
-            className="text-stone-400 hover:bg-white/[0.06] hover:text-amber-200"
+            className="text-kg-muted hover:bg-kg-hover hover:text-kg-accent"
             disabled={!race.embassy.canBuy}
             onClick={() => onEmbassy(race.id)}
             aria-label={`建造${race.label}大使馆`}
@@ -231,7 +231,7 @@ export function TradePanel({
         icon={Handshake}
       />
 
-      <div className="grid grid-cols-2 border-b border-white/10 bg-black/10 lg:grid-cols-4">
+      <div className="border-kg-line bg-kg-inset grid grid-cols-2 border-b lg:grid-cols-4">
         <Metric label="贸易种族" value={trade.races.length} />
         <Metric
           label="贸易容量"
@@ -287,7 +287,7 @@ function ReligionUpgradeRow({
   return (
     <article
       className={cn(
-        "grid gap-4 border-b border-white/[0.07] px-5 py-4 last:border-b-0 md:grid-cols-[minmax(0,1fr)_auto]",
+        "border-kg-line-subtle grid gap-4 border-b px-5 py-4 last:border-b-0 md:grid-cols-[minmax(0,1fr)_auto]",
         !upgrade.canBuy && "opacity-70"
       )}
       data-religion-upgrade-id={upgrade.id}
@@ -296,16 +296,16 @@ function ReligionUpgradeRow({
     >
       <div className="min-w-0">
         <div className="flex flex-wrap items-center gap-2">
-          <h3 className="text-sm font-semibold text-stone-100">
+          <h3 className="text-kg-strong text-sm font-semibold">
             {upgrade.label}
           </h3>
           {upgrade.enabled > 0 ? (
-            <span className="rounded-sm bg-amber-400/10 px-1.5 py-px font-mono text-[10px] text-amber-300">
+            <span className="text-kg-accent rounded-sm bg-amber-400/10 px-1.5 py-px font-mono text-[10px]">
               {upgrade.enabled}
             </span>
           ) : null}
         </div>
-        <p className="mt-1 max-w-2xl text-xs leading-relaxed text-stone-500">
+        <p className="text-kg-muted mt-1 max-w-2xl text-xs leading-relaxed">
           {upgrade.description || "宗教升级"}
         </p>
         <PricePills prices={upgrade.prices} className="mt-2.5" />
@@ -417,7 +417,7 @@ export function ReligionPanel({
         }
       />
 
-      <div className="grid grid-cols-2 border-b border-white/10 bg-black/10 lg:grid-cols-4">
+      <div className="border-kg-line bg-kg-inset grid grid-cols-2 border-b lg:grid-cols-4">
         <Metric
           label="信仰"
           value={formatNumber(religion.faith)}
@@ -442,9 +442,9 @@ export function ReligionPanel({
         />
       </div>
 
-      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-white/[0.07] px-5 py-3">
+      <div className="border-kg-line-subtle flex flex-wrap items-center justify-between gap-3 border-b px-5 py-3">
         <div className="min-w-40 flex-1">
-          <div className="mb-1 flex items-center justify-between text-[10px] text-stone-500">
+          <div className="text-kg-muted mb-1 flex items-center justify-between text-[10px]">
             <span>崇拜积累</span>
             <span className="font-mono">{formatNumber(religion.worship)}</span>
           </div>
@@ -464,7 +464,7 @@ export function ReligionPanel({
           type="button"
           size="sm"
           variant="ghost"
-          className="text-stone-400 hover:bg-white/[0.06] hover:text-rose-200"
+          className="text-kg-muted hover:bg-kg-hover hover:text-kg-danger"
           disabled={!religion.canSacrifice}
           onClick={onSacrifice}
           data-action="sacrifice-unicorns"
@@ -488,7 +488,7 @@ export function ReligionPanel({
                 />
               ))
             ) : (
-              <div className="px-5 py-4 text-xs text-stone-600">
+              <div className="text-kg-faint px-5 py-4 text-xs">
                 暂无可用项目
               </div>
             )}
@@ -517,7 +517,7 @@ function SpaceProgramRow({
   return (
     <article
       className={cn(
-        "grid gap-4 border-b border-white/[0.07] px-5 py-4 last:border-b-0 md:grid-cols-[minmax(0,1fr)_auto]",
+        "border-kg-line-subtle grid gap-4 border-b px-5 py-4 last:border-b-0 md:grid-cols-[minmax(0,1fr)_auto]",
         !program.canLaunch && "opacity-75"
       )}
       data-space-program-id={program.id}
@@ -525,16 +525,16 @@ function SpaceProgramRow({
     >
       <div className="min-w-0">
         <div className="flex flex-wrap items-center gap-2">
-          <h3 className="text-sm font-semibold text-stone-100">
+          <h3 className="text-kg-strong text-sm font-semibold">
             {program.label}
           </h3>
           {state ? (
-            <span className="rounded-sm bg-emerald-400/10 px-1.5 py-px text-[10px] text-emerald-300">
+            <span className="text-kg-success rounded-sm bg-emerald-400/10 px-1.5 py-px text-[10px]">
               {state}
             </span>
           ) : null}
         </div>
-        <p className="mt-1 max-w-2xl text-xs leading-relaxed text-stone-500">
+        <p className="text-kg-muted mt-1 max-w-2xl text-xs leading-relaxed">
           {program.description || "太空任务"}
         </p>
         <PricePills prices={program.prices} className="mt-2.5" />
@@ -565,7 +565,7 @@ function SpaceBuildingRow({
   return (
     <article
       className={cn(
-        "grid gap-4 border-b border-white/[0.07] px-5 py-4 last:border-b-0 md:grid-cols-[minmax(0,1fr)_auto]",
+        "border-kg-line-subtle grid gap-4 border-b px-5 py-4 last:border-b-0 md:grid-cols-[minmax(0,1fr)_auto]",
         !building.canBuy && "opacity-70"
       )}
       data-space-building-id={building.id}
@@ -573,16 +573,16 @@ function SpaceBuildingRow({
     >
       <div className="min-w-0">
         <div className="flex flex-wrap items-center gap-2">
-          <h3 className="text-sm font-semibold text-stone-100">
+          <h3 className="text-kg-strong text-sm font-semibold">
             {building.label}
           </h3>
           {building.value > 0 ? (
-            <span className="rounded-sm bg-amber-400/10 px-1.5 py-px font-mono text-[10px] text-amber-300">
+            <span className="text-kg-accent rounded-sm bg-amber-400/10 px-1.5 py-px font-mono text-[10px]">
               {building.enabled} / {building.value}
             </span>
           ) : null}
         </div>
-        <p className="mt-1 max-w-2xl text-xs leading-relaxed text-stone-500">
+        <p className="text-kg-muted mt-1 max-w-2xl text-xs leading-relaxed">
           {building.description || "太空建筑"}
         </p>
         <PricePills prices={building.prices} className="mt-2.5" />
@@ -628,7 +628,7 @@ export function SpacePanel({
         icon={Rocket}
       />
 
-      <div className="grid grid-cols-2 border-b border-white/10 bg-black/10 lg:grid-cols-4">
+      <div className="border-kg-line bg-kg-inset grid grid-cols-2 border-b lg:grid-cols-4">
         <Metric
           label="可用任务"
           value={space.programs.filter((program) => program.canLaunch).length}
@@ -661,23 +661,23 @@ export function SpacePanel({
         onValueChange={(value) => setTab(value as "programs" | "planets")}
         className="gap-0"
       >
-        <div className="border-b border-white/[0.07] bg-black/10 px-5 py-3">
-          <TabsList className="h-8 rounded-md bg-black/20 p-0.5">
+        <div className="border-kg-line-subtle bg-kg-inset border-b px-5 py-3">
+          <TabsList className="bg-kg-inset-strong h-8 rounded-md p-0.5">
             <TabsTrigger
               value="programs"
-              className="h-7 px-3 text-xs data-[state=active]:bg-amber-400/15 data-[state=active]:text-amber-200"
+              className="data-[state=active]:text-kg-accent h-7 px-3 text-xs data-[state=active]:bg-amber-400/15"
             >
               任务
-              <span className="font-mono text-[10px] text-stone-500">
+              <span className="text-kg-muted font-mono text-[10px]">
                 {space.programs.length}
               </span>
             </TabsTrigger>
             <TabsTrigger
               value="planets"
-              className="h-7 px-3 text-xs data-[state=active]:bg-amber-400/15 data-[state=active]:text-amber-200"
+              className="data-[state=active]:text-kg-accent h-7 px-3 text-xs data-[state=active]:bg-amber-400/15"
             >
               行星
-              <span className="font-mono text-[10px] text-stone-500">
+              <span className="text-kg-muted font-mono text-[10px]">
                 {visiblePlanets.length}
               </span>
             </TabsTrigger>
@@ -728,7 +728,7 @@ export function SpacePanel({
                     />
                   ))
                 ) : (
-                  <div className="px-5 py-4 text-xs text-stone-600">
+                  <div className="text-kg-faint px-5 py-4 text-xs">
                     任务抵达后开放建造。
                   </div>
                 )}
@@ -756,7 +756,7 @@ function TimeUpgradeRow({
   return (
     <article
       className={cn(
-        "grid gap-4 border-b border-white/[0.07] px-5 py-4 last:border-b-0 md:grid-cols-[minmax(0,1fr)_auto]",
+        "border-kg-line-subtle grid gap-4 border-b px-5 py-4 last:border-b-0 md:grid-cols-[minmax(0,1fr)_auto]",
         !upgrade.canBuy && "opacity-70"
       )}
       data-time-upgrade-id={upgrade.id}
@@ -765,16 +765,16 @@ function TimeUpgradeRow({
     >
       <div className="min-w-0">
         <div className="flex flex-wrap items-center gap-2">
-          <h3 className="text-sm font-semibold text-stone-100">
+          <h3 className="text-kg-strong text-sm font-semibold">
             {upgrade.label}
           </h3>
           {upgrade.value > 0 ? (
-            <span className="rounded-sm bg-amber-400/10 px-1.5 py-px font-mono text-[10px] text-amber-300">
+            <span className="text-kg-accent rounded-sm bg-amber-400/10 px-1.5 py-px font-mono text-[10px]">
               {upgrade.enabled} / {upgrade.value}
             </span>
           ) : null}
         </div>
-        <p className="mt-1 max-w-2xl text-xs leading-relaxed text-stone-500">
+        <p className="text-kg-muted mt-1 max-w-2xl text-xs leading-relaxed">
           {upgrade.description || "时间装置"}
         </p>
         <PricePills prices={upgrade.prices} className="mt-2.5" />
@@ -860,7 +860,7 @@ export function TimePanel({
         }
       />
 
-      <div className="grid grid-cols-2 border-b border-white/10 bg-black/10 lg:grid-cols-4">
+      <div className="border-kg-line bg-kg-inset grid grid-cols-2 border-b lg:grid-cols-4">
         <Metric
           label="时间通量"
           value={formatNumber(time.temporalFlux)}
@@ -885,8 +885,8 @@ export function TimePanel({
         />
       </div>
 
-      <div className="border-b border-white/[0.07] px-5 py-3">
-        <div className="mb-1 flex items-center justify-between text-[10px] text-stone-500">
+      <div className="border-kg-line-subtle border-b px-5 py-3">
+        <div className="text-kg-muted mb-1 flex items-center justify-between text-[10px]">
           <span>时间热量负载</span>
           <span className="font-mono">
             {formatPercent(time.heatMax > 0 ? time.heat / time.heatMax : 0)}
@@ -922,52 +922,50 @@ export function TimePanel({
       </div>
 
       <section
-        className="border-b border-white/[0.07] bg-[#17120f]/45 px-5 py-4"
+        className="border-kg-line-subtle bg-kg-warm border-b px-5 py-4"
         data-reset-kittens={reset.kittens}
         data-reset-karma={reset.karmaPoints}
         data-reset-paragon={reset.paragonPoints}
       >
         <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
           <div className="min-w-0 flex-1">
-            <div className="flex items-center gap-2 text-sm font-semibold text-stone-200">
-              <RotateCcw className="size-4 text-amber-300" />
+            <div className="text-kg-body flex items-center gap-2 text-sm font-semibold">
+              <RotateCcw className="text-kg-accent size-4" />
               开始新一轮
             </div>
             <div className="mt-3 grid grid-cols-2 gap-x-6 gap-y-3 sm:grid-cols-4">
               <div className="min-w-0">
-                <div className="text-[10px] text-stone-600">业力</div>
-                <div className="mt-0.5 font-mono text-xs text-stone-200">
+                <div className="text-kg-faint text-[10px]">业力</div>
+                <div className="text-kg-body mt-0.5 font-mono text-xs">
                   +{formatNumber(reset.karmaPoints)}
                 </div>
-                <div className="mt-0.5 truncate text-[10px] text-stone-600">
+                <div className="text-kg-faint mt-0.5 truncate text-[10px]">
                   累计 {formatNumber(reset.karmaKittens)}
                 </div>
               </div>
               <div className="min-w-0">
-                <div className="text-[10px] text-stone-600">领导力</div>
-                <div className="mt-0.5 font-mono text-xs text-stone-200">
+                <div className="text-kg-faint text-[10px]">领导力</div>
+                <div className="text-kg-body mt-0.5 font-mono text-xs">
                   +{formatNumber(reset.paragonPoints)}
                 </div>
-                <div className="mt-0.5 truncate text-[10px] text-stone-600">
+                <div className="text-kg-faint mt-0.5 truncate text-[10px]">
                   现有 {formatNumber(prestige.paragon)}
                 </div>
               </div>
               <div className="min-w-0">
-                <div className="text-[10px] text-stone-600">幸福度</div>
-                <div className="mt-0.5 font-mono text-xs text-emerald-200/80">
+                <div className="text-kg-faint text-[10px]">幸福度</div>
+                <div className="text-kg-success/80 mt-0.5 font-mono text-xs">
                   +{formatPercent(reset.happinessBonus)}
                 </div>
-                <div className="mt-0.5 text-[10px] text-stone-600">
-                  来自业力
-                </div>
+                <div className="text-kg-faint mt-0.5 text-[10px]">来自业力</div>
               </div>
               <div className="min-w-0">
-                <div className="text-[10px] text-stone-600">存储 / 产出</div>
-                <div className="mt-0.5 truncate font-mono text-xs text-amber-200/80">
+                <div className="text-kg-faint text-[10px]">存储 / 产出</div>
+                <div className="text-kg-accent/80 mt-0.5 truncate font-mono text-xs">
                   +{formatPercent(reset.storageBonus)} / +
                   {formatPercent(reset.productionBonus)}
                 </div>
-                <div className="mt-0.5 truncate text-[10px] text-stone-600">
+                <div className="text-kg-faint mt-0.5 truncate text-[10px]">
                   {prestige.ironWill
                     ? `铁猫额外斑马 ${formatNumber(reset.zebraKittens)}`
                     : "业力斑马保留"}
@@ -979,7 +977,7 @@ export function TimePanel({
             type="button"
             size="sm"
             variant="outline"
-            className="shrink-0 border-rose-400/20 bg-rose-400/[0.03] text-rose-200 hover:bg-rose-400/10"
+            className="text-kg-danger shrink-0 border-rose-400/20 bg-rose-400/[0.03] hover:bg-rose-400/10"
             disabled={!reset.canReset}
             onClick={onResetTimeline}
             data-action="reset-timeline"
@@ -1005,7 +1003,7 @@ export function TimePanel({
                 />
               ))
             ) : (
-              <div className="px-5 py-4 text-xs text-stone-600">
+              <div className="text-kg-faint px-5 py-4 text-xs">
                 暂无可用装置
               </div>
             )}
@@ -1031,7 +1029,7 @@ function ChallengeRow({
   return (
     <article
       className={cn(
-        "grid gap-4 border-b border-white/[0.07] px-5 py-4 last:border-b-0 md:grid-cols-[minmax(0,1fr)_auto]",
+        "border-kg-line-subtle grid gap-4 border-b px-5 py-4 last:border-b-0 md:grid-cols-[minmax(0,1fr)_auto]",
         !challenge.canToggle && "opacity-70"
       )}
       data-challenge-id={challenge.id}
@@ -1041,30 +1039,30 @@ function ChallengeRow({
     >
       <div className="min-w-0">
         <div className="flex flex-wrap items-center gap-2">
-          <h3 className="text-sm font-semibold text-stone-100">
+          <h3 className="text-kg-strong text-sm font-semibold">
             {challenge.label}
           </h3>
           {challenge.active ? (
-            <span className="rounded-sm bg-amber-400/10 px-1.5 py-px text-[10px] text-amber-300">
+            <span className="text-kg-accent rounded-sm bg-amber-400/10 px-1.5 py-px text-[10px]">
               进行中
             </span>
           ) : null}
           {challenge.pending ? (
-            <span className="rounded-sm bg-rose-400/10 px-1.5 py-px text-[10px] text-rose-300">
+            <span className="text-kg-danger rounded-sm bg-rose-400/10 px-1.5 py-px text-[10px]">
               待开始
             </span>
           ) : null}
           {challenge.completions > 0 ? (
-            <span className="rounded-sm bg-emerald-400/10 px-1.5 py-px font-mono text-[10px] text-emerald-300">
+            <span className="text-kg-success rounded-sm bg-emerald-400/10 px-1.5 py-px font-mono text-[10px]">
               ×{challenge.completions}
             </span>
           ) : null}
         </div>
-        <p className="mt-1 max-w-2xl text-xs leading-relaxed text-stone-500">
+        <p className="text-kg-muted mt-1 max-w-2xl text-xs leading-relaxed">
           {challenge.description || "挑战规则"}
         </p>
         {challenge.effectDescription ? (
-          <p className="mt-1.5 text-[11px] leading-relaxed text-emerald-200/65">
+          <p className="text-kg-success/65 mt-1.5 text-[11px] leading-relaxed">
             {challenge.effectDescription}
           </p>
         ) : null}
@@ -1125,7 +1123,7 @@ export function ChallengesPanel({
         }
       />
 
-      <div className="grid grid-cols-2 border-b border-white/10 bg-black/10 lg:grid-cols-4">
+      <div className="border-kg-line bg-kg-inset grid grid-cols-2 border-b lg:grid-cols-4">
         <Metric label="可用挑战" value={challenges.challenges.length} />
         <Metric
           label="进行中"
@@ -1171,7 +1169,7 @@ function AchievementRow({ achievement }: { achievement: AchievementSnapshot }) {
   return (
     <article
       className={cn(
-        "flex items-start gap-3 border-b border-white/[0.07] px-5 py-4 last:border-b-0",
+        "border-kg-line-subtle flex items-start gap-3 border-b px-5 py-4 last:border-b-0",
         !achievement.unlocked && !achievement.hidden && "opacity-65",
         achievement.unethical && "bg-rose-400/[0.025]"
       )}
@@ -1183,8 +1181,8 @@ function AchievementRow({ achievement }: { achievement: AchievementSnapshot }) {
         className={cn(
           "mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-md border",
           achievement.unlocked
-            ? "border-emerald-400/20 bg-emerald-400/10 text-emerald-300"
-            : "border-white/[0.06] bg-black/10 text-stone-600"
+            ? "text-kg-success border-emerald-400/20 bg-emerald-400/10"
+            : "border-kg-line-subtle bg-kg-inset text-kg-faint"
         )}
       >
         {achievement.starUnlocked ? (
@@ -1197,7 +1195,7 @@ function AchievementRow({ achievement }: { achievement: AchievementSnapshot }) {
       </span>
       <div className="min-w-0 flex-1">
         <div className="flex flex-wrap items-center gap-2">
-          <h3 className="text-sm font-semibold text-stone-100">
+          <h3 className="text-kg-strong text-sm font-semibold">
             {achievement.label}
           </h3>
           {achievement.hasStar ? (
@@ -1205,18 +1203,18 @@ function AchievementRow({ achievement }: { achievement: AchievementSnapshot }) {
               className={cn(
                 "size-3.5",
                 achievement.starUnlocked
-                  ? "fill-amber-300 text-amber-300"
-                  : "text-stone-600"
+                  ? "text-kg-accent fill-amber-300"
+                  : "text-kg-faint"
               )}
             />
           ) : null}
           {achievement.unethical ? (
-            <span className="rounded-sm border border-rose-400/15 bg-rose-400/[0.06] px-1.5 py-px text-[10px] text-rose-300/75">
+            <span className="text-kg-danger/75 rounded-sm border border-rose-400/15 bg-rose-400/[0.06] px-1.5 py-px text-[10px]">
               不计量
             </span>
           ) : null}
         </div>
-        <p className="mt-1 text-xs leading-relaxed text-stone-500">
+        <p className="text-kg-muted mt-1 text-xs leading-relaxed">
           {achievement.description}
         </p>
       </div>
@@ -1252,7 +1250,7 @@ export function ProgressPanel({ snapshot }: { snapshot: GameSnapshot }) {
         icon={Trophy}
       />
 
-      <div className="grid grid-cols-2 border-b border-white/10 bg-black/10 lg:grid-cols-4">
+      <div className="border-kg-line bg-kg-inset grid grid-cols-2 border-b lg:grid-cols-4">
         <Metric
           label="成就"
           value={`${progress.unlockedAchievements} / ${progress.totalAchievements}`}
@@ -1268,14 +1266,14 @@ export function ProgressPanel({ snapshot }: { snapshot: GameSnapshot }) {
       </div>
 
       {unlockedBadges.length > 0 ? (
-        <div className="flex flex-wrap items-center gap-2 border-b border-white/[0.07] px-5 py-3">
-          <span className="mr-1 text-[10px] tracking-wide text-stone-600">
+        <div className="border-kg-line-subtle flex flex-wrap items-center gap-2 border-b px-5 py-3">
+          <span className="text-kg-faint mr-1 text-[10px] tracking-wide">
             已获徽章
           </span>
           {unlockedBadges.map((badge) => (
             <span
               key={badge.id}
-              className="inline-flex items-center gap-1 rounded-sm border border-amber-400/15 bg-amber-400/[0.06] px-2 py-1 text-[10px] text-amber-200/80"
+              className="text-kg-accent/80 inline-flex items-center gap-1 rounded-sm border border-amber-400/15 bg-amber-400/[0.06] px-2 py-1 text-[10px]"
               data-badge-id={badge.id}
             >
               <Trophy className="size-3" />
@@ -1290,17 +1288,17 @@ export function ProgressPanel({ snapshot }: { snapshot: GameSnapshot }) {
         onValueChange={(value) => setTab(value as "achievements" | "stats")}
         className="gap-0"
       >
-        <div className="flex flex-col gap-3 border-b border-white/[0.07] bg-black/10 px-5 py-3 sm:flex-row sm:items-center sm:justify-between">
-          <TabsList className="h-8 w-fit rounded-md bg-black/20 p-0.5">
+        <div className="border-kg-line-subtle bg-kg-inset flex flex-col gap-3 border-b px-5 py-3 sm:flex-row sm:items-center sm:justify-between">
+          <TabsList className="bg-kg-inset-strong h-8 w-fit rounded-md p-0.5">
             <TabsTrigger
               value="achievements"
-              className="h-7 px-3 text-xs data-[state=active]:bg-amber-400/15 data-[state=active]:text-amber-200"
+              className="data-[state=active]:text-kg-accent h-7 px-3 text-xs data-[state=active]:bg-amber-400/15"
             >
               成就
             </TabsTrigger>
             <TabsTrigger
               value="stats"
-              className="h-7 px-3 text-xs data-[state=active]:bg-amber-400/15 data-[state=active]:text-amber-200"
+              className="data-[state=active]:text-kg-accent h-7 px-3 text-xs data-[state=active]:bg-amber-400/15"
             >
               统计
             </TabsTrigger>
@@ -1312,7 +1310,7 @@ export function ProgressPanel({ snapshot }: { snapshot: GameSnapshot }) {
                 onChange={(event) => setQuery(event.target.value)}
                 placeholder="筛选成就"
                 aria-label="筛选成就"
-                className="h-8 border-white/10 bg-black/15 text-xs text-stone-200 placeholder:text-stone-600"
+                className="border-kg-line bg-kg-inset-strong text-kg-body placeholder:text-kg-faint h-8 text-xs"
               />
             </div>
           ) : null}
@@ -1349,15 +1347,15 @@ export function ProgressPanel({ snapshot }: { snapshot: GameSnapshot }) {
                 {group.stats.map((stat) => (
                   <div
                     key={`${group.id}-${stat.id}`}
-                    className="flex items-center justify-between gap-4 border-b border-white/[0.06] px-5 py-3 md:border-r md:[&:nth-child(2n)]:border-r-0"
+                    className="border-kg-line-subtle flex items-center justify-between gap-4 border-b px-5 py-3 md:border-r md:[&:nth-child(2n)]:border-r-0"
                     data-stat-id={stat.id}
                     data-stat-group={group.id}
                     data-stat-unlocked={stat.unlocked}
                   >
-                    <span className="text-xs text-stone-500">
+                    <span className="text-kg-muted text-xs">
                       {stat.unlocked ? stat.label : "???"}
                     </span>
-                    <span className="shrink-0 font-mono text-xs text-stone-200">
+                    <span className="text-kg-body shrink-0 font-mono text-xs">
                       {stat.unlocked
                         ? typeof stat.value === "number"
                           ? formatNumber(stat.value)

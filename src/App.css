@@ -76,6 +76,77 @@
   --sidebar-ring: oklch(0.556 0 0);
 }
 
+/*
+ * Kittens Game palette
+ *
+ * The same semantic roles are shared by the native shell and its portalled
+ * dialogs. Light mode uses sage-toned paper surfaces with deep ink text;
+ * dark mode keeps the original forest-night atmosphere.
+ */
+.kittens-game-theme {
+  --kg-canvas: oklch(0.968 0.011 100);
+  --kg-chrome: oklch(0.925 0.015 135);
+  --kg-sidebar: oklch(0.944 0.011 105);
+  --kg-main: oklch(0.982 0.006 95);
+  --kg-dialog: oklch(0.988 0.005 95);
+  --kg-warm: oklch(0.955 0.016 65 / 58%);
+  --kg-strong: oklch(0.2 0.022 140);
+  --kg-body: oklch(0.29 0.02 140);
+  --kg-muted: oklch(0.4 0.018 140);
+  --kg-faint: oklch(0.48 0.015 140);
+  --kg-accent: oklch(0.48 0.115 70);
+  --kg-accent-foreground: oklch(0.18 0.018 80);
+  --kg-success: oklch(0.44 0.11 155);
+  --kg-danger: oklch(0.48 0.16 24);
+  --kg-line: oklch(0.25 0.02 140 / 14%);
+  --kg-line-subtle: oklch(0.25 0.02 140 / 8%);
+  --kg-control: oklch(0.25 0.02 140 / 24%);
+  --kg-inset: oklch(0.25 0.02 140 / 5.5%);
+  --kg-inset-strong: oklch(0.25 0.02 140 / 9%);
+  --kg-wash: oklch(0.25 0.02 140 / 3.5%);
+  --kg-wash-strong: oklch(0.25 0.02 140 / 6.5%);
+  --kg-track: oklch(0.25 0.02 140 / 8%);
+  --kg-hover-subtle: oklch(0.25 0.02 140 / 4.5%);
+  --kg-hover: oklch(0.25 0.02 140 / 7.5%);
+  --kg-hover-strong: oklch(0.25 0.02 140 / 12%);
+  --kg-grid-line: oklch(0.25 0.02 140 / 4%);
+  --kg-scroll-track: oklch(0.25 0.02 140 / 7%);
+  --kg-scroll-thumb: oklch(0.25 0.02 140 / 20%);
+  --kg-scroll-thumb-hover: oklch(0.55 0.13 75 / 45%);
+}
+
+.dark .kittens-game-theme {
+  --kg-canvas: oklch(0.182 0.008 145);
+  --kg-chrome: oklch(0.212 0.009 145);
+  --kg-sidebar: oklch(0.195 0.007 145);
+  --kg-main: oklch(0.233 0.008 145);
+  --kg-dialog: oklch(0.213 0.011 145);
+  --kg-warm: oklch(0.21 0.018 65 / 50%);
+  --kg-strong: oklch(0.975 0.003 100);
+  --kg-body: oklch(0.87 0.005 100);
+  --kg-muted: oklch(0.72 0.008 100);
+  --kg-faint: oklch(0.62 0.01 100);
+  --kg-accent: oklch(0.84 0.16 84);
+  --kg-accent-foreground: oklch(0.18 0.018 80);
+  --kg-success: oklch(0.78 0.13 160);
+  --kg-danger: oklch(0.74 0.14 20);
+  --kg-line: oklch(1 0 0 / 10%);
+  --kg-line-subtle: oklch(1 0 0 / 7%);
+  --kg-control: oklch(1 0 0 / 15%);
+  --kg-inset: oklch(0 0 0 / 10%);
+  --kg-inset-strong: oklch(0 0 0 / 20%);
+  --kg-wash: oklch(1 0 0 / 3.5%);
+  --kg-wash-strong: oklch(1 0 0 / 5.5%);
+  --kg-track: oklch(1 0 0 / 6%);
+  --kg-hover-subtle: oklch(1 0 0 / 3%);
+  --kg-hover: oklch(1 0 0 / 6%);
+  --kg-hover-strong: oklch(1 0 0 / 10%);
+  --kg-grid-line: oklch(1 0 0 / 1.2%);
+  --kg-scroll-track: oklch(0 0 0 / 12%);
+  --kg-scroll-thumb: oklch(1 0 0 / 12%);
+  --kg-scroll-thumb-hover: oklch(0.8 0.13 82 / 28%);
+}
+
 @theme inline {
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
@@ -113,6 +184,32 @@
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
+
+  --color-kg-canvas: var(--kg-canvas);
+  --color-kg-chrome: var(--kg-chrome);
+  --color-kg-sidebar: var(--kg-sidebar);
+  --color-kg-main: var(--kg-main);
+  --color-kg-dialog: var(--kg-dialog);
+  --color-kg-warm: var(--kg-warm);
+  --color-kg-strong: var(--kg-strong);
+  --color-kg-body: var(--kg-body);
+  --color-kg-muted: var(--kg-muted);
+  --color-kg-faint: var(--kg-faint);
+  --color-kg-accent: var(--kg-accent);
+  --color-kg-accent-foreground: var(--kg-accent-foreground);
+  --color-kg-success: var(--kg-success);
+  --color-kg-danger: var(--kg-danger);
+  --color-kg-line: var(--kg-line);
+  --color-kg-line-subtle: var(--kg-line-subtle);
+  --color-kg-control: var(--kg-control);
+  --color-kg-inset: var(--kg-inset);
+  --color-kg-inset-strong: var(--kg-inset-strong);
+  --color-kg-wash: var(--kg-wash);
+  --color-kg-wash-strong: var(--kg-wash-strong);
+  --color-kg-track: var(--kg-track);
+  --color-kg-hover-subtle: var(--kg-hover-subtle);
+  --color-kg-hover: var(--kg-hover);
+  --color-kg-hover-strong: var(--kg-hover-strong);
 }
 
 @layer base {
@@ -209,8 +306,8 @@
     @apply fixed inset-x-0 top-8 bottom-0 z-0 overflow-hidden;
     font-family: "Candara", "Noto Sans SC", "Microsoft YaHei UI", sans-serif;
     background-image:
-      linear-gradient(rgba(255, 255, 255, 0.012) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(255, 255, 255, 0.012) 1px, transparent 1px);
+      linear-gradient(var(--kg-grid-line) 1px, transparent 1px),
+      linear-gradient(90deg, var(--kg-grid-line) 1px, transparent 1px);
     background-size: 28px 28px;
   }
   .kittens-game-view .font-serif {
@@ -221,14 +318,14 @@
     height: 8px;
   }
   .kittens-game-view ::-webkit-scrollbar-track {
-    background: rgba(0, 0, 0, 0.12);
+    background: var(--kg-scroll-track);
   }
   .kittens-game-view ::-webkit-scrollbar-thumb {
-    background: rgba(255, 255, 255, 0.12);
+    background: var(--kg-scroll-thumb);
     border-radius: 999px;
   }
   .kittens-game-view ::-webkit-scrollbar-thumb:hover {
-    background: rgba(251, 191, 36, 0.28);
+    background: var(--kg-scroll-thumb-hover);
   }
 
   /* ===== 标题栏操作按钮 =====

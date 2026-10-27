@@ -22,37 +22,37 @@ export function ResourceChip({ resource }: { resource: ResourceSnapshot }) {
     <Tooltip>
       <TooltipTrigger asChild>
         <div
-          className="group relative min-w-28 overflow-hidden rounded-md border border-white/10 bg-white/[0.035] px-3 py-2"
+          className="group border-kg-line bg-kg-wash relative min-w-28 overflow-hidden rounded-md border px-3 py-2"
           data-resource-id={resource.id}
           data-resource-value={resource.value}
         >
           <div className="flex items-center justify-between gap-3">
-            <span className="truncate text-[11px] font-medium tracking-wide text-stone-400">
+            <span className="text-kg-muted truncate text-[11px] font-medium tracking-wide">
               {resource.label}
             </span>
             <span
               className={cn(
                 "shrink-0 font-mono text-[10px] tabular-nums",
                 resource.perTick > 0
-                  ? "text-emerald-400/80"
+                  ? "text-kg-success/80"
                   : resource.perTick < 0
-                    ? "text-rose-400/80"
-                    : "text-stone-500"
+                    ? "text-kg-danger/80"
+                    : "text-kg-muted"
               )}
             >
               {formatRate(resource.perTick)}
             </span>
           </div>
-          <div className="mt-0.5 text-right font-mono text-[15px] font-semibold text-stone-100 tabular-nums">
+          <div className="text-kg-strong mt-0.5 text-right font-mono text-[15px] font-semibold tabular-nums">
             {formatNumber(resource.value)}
             {resource.maxValue > 0 ? (
-              <span className="ml-1 text-[10px] font-normal text-stone-500">
+              <span className="text-kg-muted ml-1 text-[10px] font-normal">
                 / {formatNumber(resource.maxValue)}
               </span>
             ) : null}
           </div>
           {capacity !== null ? (
-            <div className="absolute inset-x-0 bottom-0 h-0.5 bg-white/5">
+            <div className="bg-kg-track absolute inset-x-0 bottom-0 h-0.5">
               <div
                 className={cn(
                   "h-full transition-[width] duration-300",
@@ -89,8 +89,8 @@ export function PricePills({
           className={cn(
             "inline-flex items-center gap-1 rounded-sm border px-1.5 py-0.5 text-[11px] tabular-nums",
             price.affordable
-              ? "border-emerald-500/20 bg-emerald-500/10 text-emerald-300"
-              : "border-rose-500/20 bg-rose-500/10 text-rose-300"
+              ? "text-kg-success border-emerald-500/20 bg-emerald-500/10"
+              : "text-kg-danger border-rose-500/20 bg-rose-500/10"
           )}
         >
           {price.label}
@@ -117,17 +117,17 @@ export function PanelHeading({
   actions?: ReactNode;
 }) {
   return (
-    <header className="border-b border-white/10 px-5 py-5 sm:px-6">
+    <header className="border-kg-line border-b px-5 py-5 sm:px-6">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div className="min-w-0">
-          <div className="mb-1.5 flex items-center gap-2 text-[10px] font-semibold tracking-[0.2em] text-amber-400/75 uppercase">
+          <div className="text-kg-accent/75 mb-1.5 flex items-center gap-2 text-[10px] font-semibold tracking-[0.2em] uppercase">
             <Icon className="size-3.5" />
             {eyebrow}
           </div>
-          <h1 className="font-serif text-2xl font-semibold tracking-normal text-stone-50">
+          <h1 className="text-kg-strong font-serif text-2xl font-semibold tracking-normal">
             {title}
           </h1>
-          <p className="mt-1.5 max-w-2xl text-xs leading-relaxed text-stone-500">
+          <p className="text-kg-muted mt-1.5 max-w-2xl text-xs leading-relaxed">
             {description}
           </p>
         </div>
@@ -147,12 +147,12 @@ export function SectionLabel({
   aside?: ReactNode;
 }) {
   return (
-    <div className="flex items-center justify-between gap-3 border-b border-white/[0.07] bg-black/10 px-5 py-2.5">
-      <h2 className="text-[10px] font-semibold tracking-[0.16em] text-stone-500 uppercase">
+    <div className="border-kg-line-subtle bg-kg-inset flex items-center justify-between gap-3 border-b px-5 py-2.5">
+      <h2 className="text-kg-muted text-[10px] font-semibold tracking-[0.16em] uppercase">
         {children}
       </h2>
       {aside ? (
-        <span className="font-mono text-[10px] text-stone-600">{aside}</span>
+        <span className="text-kg-faint font-mono text-[10px]">{aside}</span>
       ) : null}
     </div>
   );
@@ -170,24 +170,24 @@ export function Metric({
   tone?: "default" | "amber" | "green";
 }) {
   return (
-    <div className="min-w-0 border-r border-white/[0.07] px-4 py-3 last:border-r-0">
-      <div className="text-[10px] font-medium tracking-wide text-stone-500">
+    <div className="border-kg-line-subtle min-w-0 border-r px-4 py-3 last:border-r-0">
+      <div className="text-kg-muted text-[10px] font-medium tracking-wide">
         {label}
       </div>
       <div
         className={cn(
           "mt-1 truncate font-mono text-lg font-semibold tabular-nums",
           tone === "amber"
-            ? "text-amber-300"
+            ? "text-kg-accent"
             : tone === "green"
-              ? "text-emerald-300"
-              : "text-stone-100"
+              ? "text-kg-success"
+              : "text-kg-strong"
         )}
       >
         {value}
       </div>
       {detail ? (
-        <div className="mt-0.5 truncate text-[10px] text-stone-600">
+        <div className="text-kg-faint mt-0.5 truncate text-[10px]">
           {detail}
         </div>
       ) : null}
@@ -204,9 +204,9 @@ export function EmptyState({
 }) {
   return (
     <div className="flex min-h-52 flex-col items-center justify-center px-6 py-10 text-center">
-      <CircleAlert className="size-6 text-stone-600" />
-      <h2 className="mt-3 text-sm font-semibold text-stone-300">{title}</h2>
-      <p className="mt-1 max-w-sm text-xs leading-relaxed text-stone-600">
+      <CircleAlert className="text-kg-faint size-6" />
+      <h2 className="text-kg-body mt-3 text-sm font-semibold">{title}</h2>
+      <p className="text-kg-faint mt-1 max-w-sm text-xs leading-relaxed">
         {description}
       </p>
     </div>
@@ -224,7 +224,7 @@ export function Meter({
 }) {
   return (
     <div
-      className="h-1 overflow-hidden rounded-full bg-white/[0.06]"
+      className="bg-kg-wash-strong h-1 overflow-hidden rounded-full"
       role="progressbar"
       aria-label={label}
       aria-valuemin={0}

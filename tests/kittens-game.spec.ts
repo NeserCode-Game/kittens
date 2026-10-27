@@ -602,3 +602,289 @@ test("previews and confirms a native timeline reset", async ({
   expect(consoleErrors).toEqual([]);
   expect(pageErrors).toEqual([]);
 });
+
+test("keeps the native game readable in light and dark themes", async ({
+  page,
+}, testInfo) => {
+  const consoleErrors: string[] = [];
+  const pageErrors: string[] = [];
+
+  page.on("console", (message) => {
+    if (message.type() === "error") consoleErrors.push(message.text());
+  });
+  page.on("pageerror", (error) => {
+    pageErrors.push(error.stack ?? error.message);
+  });
+
+  await page.emulateMedia({ colorScheme: "light" });
+  await page.addInitScript(
+    ({ key, save }) => {
+      if (!localStorage.getItem(key)) localStorage.setItem(key, save);
+    },
+    { key: SAVE_KEY, save: M3_SAVE }
+  );
+  await page.goto("/", { waitUntil: "domcontentloaded" });
+  await expect(page.getByRole("heading", { name: "营火" })).toBeVisible({
+    timeout: 30_000,
+  });
+
+  const setTheme = async (theme: "light" | "dark") => {
+    await page.evaluate(
+      (value) => localStorage.setItem("theme-mode", value),
+      theme
+    );
+    await page.reload({ waitUntil: "domcontentloaded" });
+    await expect(page.getByRole("heading", { name: "营火" })).toBeVisible({
+      timeout: 30_000,
+    });
+    await page.waitForTimeout(200);
+  };
+
+  const readThemeState = () =>
+    page.evaluate(() => {
+      const parseColor = (color: string) => {
+        const canvas = document.createElement("canvas");
+        canvas.width = 1;
+        canvas.height = 1;
+        const context = canvas.getContext("2d", { willReadFrequently: true });
+        if (!context) throw new Error("Canvas context unavailable");
+        context.fillStyle = color;
+        context.fillRect(0, 0, 1, 1);
+        return [...context.getImageData(0, 0, 1, 1).data].slice(0, 3);
+      };
+      const luminance = (color: string) => {
+        const [red, green, blue] = parseColor(color).map((value) => {
+          const channel = value / 255;
+          return channel <= 0.04045
+            ? channel / 12.92
+            : ((channel + 0.055) / 1.055) ** 2.4;
+        });
+        return 0.2126 * red + 0.7152 * green + 0.0722 * blue;
+      };
+      const contrast = (foreground: string, background: string) => {
+        const foregroundLuminance = luminance(foreground);
+        const backgroundLuminance = luminance(background);
+        return Number(
+          (
+            (Math.max(foregroundLuminance, backgroundLuminance) + 0.05) /
+            (Math.min(foregroundLuminance, backgroundLuminance) + 0.05)
+          ).toFixed(2)
+        );
+      };
+      const game = document.querySelector<HTMLElement>(".kittens-game-view");
+      const main = document.querySelector<HTMLElement>("#kittens-main");
+      const header = game?.querySelector<HTMLElement>("header");
+      const title = main?.querySelector<HTMLElement>("h1");
+      const description = main?.querySelector<HTMLElement>("header p");
+      const faint = main?.querySelector<HTMLElement>(".text-kg-faint");
+      const activeNav = document.querySelector<HTMLElement>(
+        'nav [aria-current="page"]'
+      );
+      const primary = main?.querySelector<HTMLElement>(
+        '[data-research-id="agriculture"] button'
+      );
+      if (
+        !game ||
+        !main ||
+        !header ||
+        !title ||
+        !description ||
+        !faint ||
+        !activeNav ||
+        !primary
+      ) {
+        throw new Error("Theme probe targets are missing");
+      }
+      const mainBackground = getComputedStyle(main).backgroundColor;
+      const titleColor = getComputedStyle(title).color;
+      const descriptionColor = getComputedStyle(description).color;
+      const faintColor = getComputedStyle(faint).color;
+      const activeNavColor = getComputedStyle(activeNav).color;
+      const sidebar = activeNav.closest("aside");
+      const sidebarBackground = getComputedStyle(
+        sidebar ?? activeNav.parentElement ?? activeNav
+      ).backgroundColor;
+      const primaryStyle = getComputedStyle(primary);
+
+      return {
+        dark: document.documentElement.classList.contains("dark"),
+        colorScheme: getComputedStyle(document.documentElement).colorScheme,
+        gameBackground: getComputedStyle(game).backgroundColor,
+        headerBackground: getComputedStyle(header).backgroundColor,
+        mainBackground,
+        titleContrast: contrast(titleColor, mainBackground),
+        descriptionContrast: contrast(descriptionColor, mainBackground),
+        faintContrast: contrast(faintColor, mainBackground),
+        activeNavContrast: contrast(activeNavColor, sidebarBackground),
+        primaryContrast: contrast(
+          primaryStyle.color,
+          primaryStyle.backgroundColor
+        ),
+        overflow:
+          document.documentElement.scrollWidth -
+          document.documentElement.clientWidth,
+      };
+    });
+
+  const readDialogState = () =>
+    page.evaluate(() => {
+      const dialog = document.querySelector<HTMLElement>("[data-save-dialog]");
+      const title = dialog?.querySelector<HTMLElement>("h2");
+      if (!dialog || !title) throw new Error("Save dialog is missing");
+      const dialogStyle = getComputedStyle(dialog);
+      return {
+        className: dialog.className,
+        background: dialogStyle.backgroundColor,
+        titleColor: getComputedStyle(title).color,
+      };
+    });
+
+  await setTheme("light");
+  await page.getByRole("button", { name: /^科学/ }).click();
+  await expect(
+    page.getByRole("heading", { name: "科学", level: 1 })
+  ).toBeVisible();
+  await page.waitForTimeout(200);
+  const light = await readThemeState();
+  expect(light.dark).toBe(false);
+  expect(light.colorScheme).toBe("light");
+  expect(light.titleContrast).toBeGreaterThanOrEqual(4.5);
+  expect(light.descriptionContrast).toBeGreaterThanOrEqual(4.5);
+  expect(light.faintContrast).toBeGreaterThanOrEqual(4.5);
+  expect(light.activeNavContrast).toBeGreaterThanOrEqual(4.5);
+  expect(light.primaryContrast).toBeGreaterThanOrEqual(4.5);
+  expect(light.overflow).toBeLessThanOrEqual(1);
+  await page.screenshot({
+    path: ".agent/smoke/theme-light-desktop.png",
+    fullPage: false,
+    animations: "disabled",
+  });
+
+  await page.locator('[data-action="open-save-manager"]').click();
+  const saveDialog = page.locator("[data-save-dialog]");
+  await expect(saveDialog).toBeVisible();
+  await expect(saveDialog).toHaveClass(/kittens-game-theme/);
+  const lightDialog = await readDialogState();
+  expect(lightDialog.background).not.toBe(light.mainBackground);
+  await page.screenshot({
+    path: ".agent/smoke/theme-light-save-desktop.png",
+    fullPage: false,
+    animations: "disabled",
+  });
+  await page.keyboard.press("Escape");
+  await expect(saveDialog).toBeHidden();
+
+  await page.setViewportSize({ width: 1024, height: 720 });
+  await page.getByRole("button", { name: /^贸易/ }).click();
+  await expect(
+    page.getByRole("heading", { name: "贸易", level: 1 })
+  ).toBeVisible();
+  expect(
+    await page.evaluate(
+      () =>
+        document.documentElement.scrollWidth -
+        document.documentElement.clientWidth
+    )
+  ).toBeLessThanOrEqual(1);
+
+  await page.setViewportSize({ width: 800, height: 600 });
+  await page.getByRole("button", { name: "打开系统导航" }).click();
+  const mobileNavigation = page.locator('[role="dialog"]');
+  await expect(mobileNavigation).toBeVisible();
+  await expect(mobileNavigation).toHaveClass(/kittens-game-theme/);
+  await page.screenshot({
+    path: ".agent/smoke/theme-light-navigation-800x600.png",
+    fullPage: false,
+    animations: "disabled",
+  });
+  await mobileNavigation.getByRole("button", { name: /^时间/ }).click();
+  await expect(
+    page.getByRole("heading", { name: "时间", level: 1 })
+  ).toBeVisible();
+  expect(
+    await page.evaluate(
+      () =>
+        document.documentElement.scrollWidth -
+        document.documentElement.clientWidth
+    )
+  ).toBeLessThanOrEqual(1);
+
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await setTheme("dark");
+  await page.getByRole("button", { name: /^科学/ }).click();
+  await expect(
+    page.getByRole("heading", { name: "科学", level: 1 })
+  ).toBeVisible();
+  await page.waitForTimeout(200);
+  const dark = await readThemeState();
+  expect(dark.dark).toBe(true);
+  expect(dark.colorScheme).toBe("dark");
+  expect(dark.titleContrast).toBeGreaterThanOrEqual(4.5);
+  expect(dark.descriptionContrast).toBeGreaterThanOrEqual(4.5);
+  expect(dark.faintContrast).toBeGreaterThanOrEqual(4.5);
+  expect(dark.activeNavContrast).toBeGreaterThanOrEqual(4.5);
+  expect(dark.primaryContrast).toBeGreaterThanOrEqual(4.5);
+  expect(dark.overflow).toBeLessThanOrEqual(1);
+  expect(dark.gameBackground).not.toBe(light.gameBackground);
+  expect(dark.headerBackground).not.toBe(light.headerBackground);
+  expect(dark.mainBackground).not.toBe(light.mainBackground);
+  await page.screenshot({
+    path: ".agent/smoke/theme-dark-desktop.png",
+    fullPage: false,
+    animations: "disabled",
+  });
+
+  await page.locator('[data-action="open-save-manager"]').click();
+  await expect(saveDialog).toBeVisible();
+  const darkDialog = await readDialogState();
+  expect(darkDialog.background).not.toBe(dark.mainBackground);
+  expect(darkDialog.background).not.toBe(lightDialog.background);
+  await page.screenshot({
+    path: ".agent/smoke/theme-dark-save-desktop.png",
+    fullPage: false,
+    animations: "disabled",
+  });
+  await page.keyboard.press("Escape");
+  await expect(saveDialog).toBeHidden();
+
+  await page.setViewportSize({ width: 1024, height: 720 });
+  await page.getByRole("button", { name: /^贸易/ }).click();
+  await expect(
+    page.getByRole("heading", { name: "贸易", level: 1 })
+  ).toBeVisible();
+  await page.screenshot({
+    path: ".agent/smoke/theme-dark-trade-1024x720.png",
+    fullPage: false,
+    animations: "disabled",
+  });
+  expect(
+    await page.evaluate(
+      () =>
+        document.documentElement.scrollWidth -
+        document.documentElement.clientWidth
+    )
+  ).toBeLessThanOrEqual(1);
+
+  await page.setViewportSize({ width: 800, height: 600 });
+  await page.getByRole("button", { name: "打开系统导航" }).click();
+  await expect(mobileNavigation).toBeVisible();
+  await page.screenshot({
+    path: ".agent/smoke/theme-dark-navigation-800x600.png",
+    fullPage: false,
+    animations: "disabled",
+  });
+
+  await testInfo.attach("theme-diagnostics.json", {
+    body: Buffer.from(
+      JSON.stringify(
+        { light, dark, lightDialog, darkDialog, consoleErrors, pageErrors },
+        null,
+        2
+      )
+    ),
+    contentType: "application/json",
+  });
+
+  expect(consoleErrors).toEqual([]);
+  expect(pageErrors).toEqual([]);
+});
