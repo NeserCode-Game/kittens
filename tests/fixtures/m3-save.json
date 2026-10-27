@@ -1,0 +1,1493 @@
+{
+  "saveVersion": 15,
+  "server": { "bcoinPrice": 63918 },
+  "resources": [
+    { "name": "catnip", "value": 1000000, "unlocked": true, "isHidden": false },
+    {
+      "name": "wood",
+      "value": 1000000,
+      "unlocked": true,
+      "isHidden": false,
+      "isHiddenFromCrafting": false
+    },
+    {
+      "name": "minerals",
+      "value": 1000000,
+      "unlocked": true,
+      "isHidden": false
+    },
+    { "name": "coal", "value": 0, "unlocked": false, "isHidden": false },
+    { "name": "iron", "value": 0, "unlocked": false, "isHidden": false },
+    {
+      "name": "titanium",
+      "value": 250000,
+      "unlocked": true,
+      "isHidden": false
+    },
+    { "name": "gold", "value": 100000, "unlocked": true, "isHidden": false },
+    { "name": "oil", "value": 1000000, "unlocked": true, "isHidden": false },
+    { "name": "uranium", "value": 0, "unlocked": false, "isHidden": false },
+    {
+      "name": "unobtainium",
+      "value": 500,
+      "unlocked": true,
+      "isHidden": false
+    },
+    { "name": "antimatter", "value": 0, "unlocked": false, "isHidden": false },
+    {
+      "name": "manpower",
+      "value": 250000,
+      "unlocked": true,
+      "isHidden": false
+    },
+    {
+      "name": "science",
+      "value": 1000000,
+      "unlocked": true,
+      "isHidden": false
+    },
+    { "name": "culture", "value": 250000, "unlocked": true, "isHidden": false },
+    { "name": "faith", "value": 1000000, "unlocked": true, "isHidden": false },
+    { "name": "kittens", "value": 0, "unlocked": false, "isHidden": false },
+    { "name": "zebras", "value": 0, "unlocked": false, "isHidden": false },
+    {
+      "name": "starchart",
+      "value": 250000,
+      "unlocked": true,
+      "isHidden": false
+    },
+    {
+      "name": "temporalFlux",
+      "value": 500,
+      "unlocked": true,
+      "isHidden": false
+    },
+    { "name": "gflops", "value": 0, "unlocked": false, "isHidden": false },
+    { "name": "hashrates", "value": 0, "unlocked": false, "isHidden": false },
+    { "name": "furs", "value": 0, "unlocked": false, "isHidden": false },
+    { "name": "ivory", "value": 50000, "unlocked": true, "isHidden": false },
+    { "name": "spice", "value": 0, "unlocked": false, "isHidden": false },
+    { "name": "unicorns", "value": 10000, "unlocked": true, "isHidden": false },
+    { "name": "alicorn", "value": 0, "unlocked": false, "isHidden": false },
+    { "name": "necrocorn", "value": 0, "unlocked": false, "isHidden": false },
+    { "name": "tears", "value": 5000, "unlocked": true, "isHidden": false },
+    { "name": "karma", "value": 0, "unlocked": false, "isHidden": false },
+    { "name": "paragon", "value": 0, "unlocked": false, "isHidden": false },
+    {
+      "name": "burnedParagon",
+      "value": 0,
+      "unlocked": false,
+      "isHidden": false
+    },
+    {
+      "name": "timeCrystal",
+      "value": 250,
+      "unlocked": true,
+      "isHidden": false
+    },
+    { "name": "sorrow", "value": 0, "unlocked": false, "isHidden": false },
+    { "name": "relic", "value": 500, "unlocked": true, "isHidden": false },
+    { "name": "void", "value": 100, "unlocked": true, "isHidden": false },
+    { "name": "elderBox", "value": 0, "unlocked": false, "isHidden": false },
+    {
+      "name": "wrappingPaper",
+      "value": 0,
+      "unlocked": false,
+      "isHidden": false
+    },
+    { "name": "blackcoin", "value": 0, "unlocked": false, "isHidden": false },
+    { "name": "bloodstone", "value": 0, "unlocked": false, "isHidden": false },
+    { "name": "tMythril", "value": 0, "unlocked": false, "isHidden": false },
+    { "name": "beam", "value": 0, "unlocked": false, "isHidden": false },
+    { "name": "slab", "value": 0, "unlocked": false, "isHidden": false },
+    { "name": "plate", "value": 0, "unlocked": false, "isHidden": false },
+    { "name": "steel", "value": 0, "unlocked": false, "isHidden": false },
+    { "name": "concrate", "value": 0, "unlocked": false, "isHidden": false },
+    { "name": "gear", "value": 0, "unlocked": false, "isHidden": false },
+    { "name": "alloy", "value": 0, "unlocked": false, "isHidden": false },
+    { "name": "eludium", "value": 0, "unlocked": false, "isHidden": false },
+    { "name": "scaffold", "value": 0, "unlocked": false, "isHidden": false },
+    { "name": "ship", "value": 0, "unlocked": false, "isHidden": false },
+    { "name": "tanker", "value": 0, "unlocked": false, "isHidden": false },
+    {
+      "name": "kerosene",
+      "value": 100000,
+      "unlocked": true,
+      "isHidden": false
+    },
+    { "name": "plastic", "value": 0, "unlocked": false, "isHidden": false },
+    { "name": "microchip", "value": 0, "unlocked": false, "isHidden": false },
+    { "name": "parchment", "value": 0, "unlocked": false, "isHidden": false },
+    { "name": "manuscript", "value": 0, "unlocked": false, "isHidden": false },
+    { "name": "compedium", "value": 0, "unlocked": false, "isHidden": false },
+    { "name": "blueprint", "value": 0, "unlocked": false, "isHidden": false },
+    { "name": "thorium", "value": 0, "unlocked": false, "isHidden": false },
+    { "name": "megalith", "value": 0, "unlocked": false, "isHidden": false }
+  ],
+  "res": { "isLocked": false },
+  "village": {
+    "kittens": [],
+    "maxKittens": 0,
+    "jobs": [
+      { "name": "woodcutter", "unlocked": true, "value": 0 },
+      { "name": "farmer", "unlocked": false, "value": 0 },
+      { "name": "scholar", "unlocked": false, "value": 0 },
+      { "name": "hunter", "unlocked": false, "value": 0 },
+      { "name": "miner", "unlocked": false, "value": 0 },
+      { "name": "priest", "unlocked": false, "value": 0 },
+      { "name": "geologist", "unlocked": false, "value": 0 },
+      { "name": "engineer", "unlocked": false, "value": 0 },
+      { "name": "ambassador", "unlocked": false, "value": 0 }
+    ],
+    "biomes": [
+      { "name": "village", "unlocked": true },
+      { "name": "plains", "unlocked": true },
+      { "name": "hills", "unlocked": false },
+      { "name": "forest", "unlocked": true },
+      { "name": "boneForest", "unlocked": false },
+      { "name": "rainForest", "unlocked": false },
+      { "name": "mountain", "unlocked": false },
+      { "name": "volcano", "unlocked": false },
+      { "name": "desert", "unlocked": false },
+      { "name": "bloodDesert", "unlocked": false },
+      { "name": "swamp", "unlocked": false },
+      { "name": "cath", "unlocked": true },
+      { "name": "redmoon", "unlocked": false }
+    ],
+    "hadKittenHunters": false,
+    "nextKittenProgress": 0,
+    "map": { "hqLevel": 0, "energy": 70, "explorersLevel": 0 },
+    "loadouts": []
+  },
+  "calendar": {
+    "year": 0,
+    "day": 0,
+    "season": 0,
+    "festivalDays": 0,
+    "cycle": 0,
+    "cycleYear": 0,
+    "futureSeasonTemporalParadox": -1,
+    "cryptoPrice": 1000
+  },
+  "console": {
+    "filters": {
+      "astronomicalEvent": { "unlocked": false, "enabled": true },
+      "hunt": { "unlocked": false, "enabled": true },
+      "trade": { "unlocked": false, "enabled": true },
+      "craft": { "unlocked": false, "enabled": true },
+      "workshopAutomation": { "unlocked": false, "enabled": true },
+      "meteor": { "unlocked": false, "enabled": true },
+      "ivoryMeteor": { "unlocked": false, "enabled": true },
+      "unicornRift": { "unlocked": false, "enabled": true },
+      "unicornSacrifice": { "unlocked": false, "enabled": true },
+      "alicornRift": { "unlocked": false, "enabled": true },
+      "alicornSacrifice": { "unlocked": false, "enabled": true },
+      "alicornCorruption": { "unlocked": false, "enabled": true },
+      "tcShatter": { "unlocked": false, "enabled": true },
+      "tcRefine": { "unlocked": false, "enabled": true },
+      "faith": { "unlocked": false, "enabled": true },
+      "elders": { "unlocked": false, "enabled": true },
+      "blackcoin": { "unlocked": false, "enabled": true },
+      "festival": { "unlocked": false, "enabled": true },
+      "undo": { "unlocked": false, "enabled": true },
+      "explore": { "unlocked": false, "enabled": true },
+      "combat": { "unlocked": false, "enabled": true }
+    }
+  },
+  "telemetry": { "guid": "6a1c20aa-be8a-4bc7-b02b-ac520ff07cae" },
+  "challenges": {
+    "challenges": [
+      {
+        "name": "ironWill",
+        "researched": false,
+        "on": 0,
+        "unlocked": true,
+        "active": false
+      },
+      {
+        "name": "winterIsComing",
+        "researched": true,
+        "on": 2,
+        "unlocked": true,
+        "active": false
+      },
+      {
+        "name": "anarchy",
+        "researched": false,
+        "on": 0,
+        "unlocked": true,
+        "active": false
+      },
+      {
+        "name": "energy",
+        "researched": false,
+        "on": 0,
+        "unlocked": false,
+        "active": false
+      },
+      {
+        "name": "atheism",
+        "researched": false,
+        "on": 0,
+        "unlocked": false,
+        "active": false
+      },
+      {
+        "name": "1000Years",
+        "researched": false,
+        "on": 0,
+        "unlocked": false,
+        "active": false
+      },
+      {
+        "name": "blackSky",
+        "researched": false,
+        "on": 0,
+        "unlocked": false,
+        "active": false
+      },
+      {
+        "name": "pacifism",
+        "researched": false,
+        "on": 0,
+        "unlocked": false,
+        "active": false
+      },
+      {
+        "name": "unicornTears",
+        "researched": false,
+        "on": 0,
+        "unlocked": false,
+        "active": false
+      },
+      {
+        "name": "postApocalypse",
+        "researched": false,
+        "on": 0,
+        "unlocked": false,
+        "active": false
+      }
+    ],
+    "reserves": {
+      "reserveKittens": [],
+      "reserveResources": {},
+      "reserveCryochambers": 0
+    }
+  },
+  "workshop": {
+    "hideResearched": false,
+    "upgrades": [
+      { "name": "mineralHoes", "unlocked": true, "researched": false },
+      { "name": "ironHoes", "unlocked": true, "researched": false },
+      { "name": "mineralAxes", "unlocked": true, "researched": false },
+      { "name": "ironAxes", "unlocked": true, "researched": false },
+      { "name": "steelAxe", "unlocked": false, "researched": false },
+      { "name": "reinforcedSaw", "unlocked": false, "researched": false },
+      { "name": "steelSaw", "unlocked": false, "researched": false },
+      { "name": "titaniumSaw", "unlocked": false, "researched": false },
+      { "name": "alloySaw", "unlocked": false, "researched": false },
+      { "name": "titaniumAxe", "unlocked": false, "researched": false },
+      { "name": "alloyAxe", "unlocked": false, "researched": false },
+      { "name": "unobtainiumAxe", "unlocked": false, "researched": false },
+      { "name": "unobtainiumSaw", "unlocked": false, "researched": false },
+      { "name": "stoneBarns", "unlocked": true, "researched": false },
+      { "name": "reinforcedBarns", "unlocked": true, "researched": false },
+      {
+        "name": "reinforcedWarehouses",
+        "unlocked": false,
+        "researched": false
+      },
+      { "name": "titaniumBarns", "unlocked": false, "researched": false },
+      { "name": "alloyBarns", "unlocked": false, "researched": false },
+      { "name": "concreteBarns", "unlocked": false, "researched": false },
+      { "name": "titaniumWarehouses", "unlocked": false, "researched": false },
+      { "name": "alloyWarehouses", "unlocked": false, "researched": false },
+      { "name": "concreteWarehouses", "unlocked": false, "researched": false },
+      { "name": "storageBunkers", "unlocked": false, "researched": false },
+      { "name": "energyRifts", "unlocked": false, "researched": false },
+      { "name": "stasisChambers", "unlocked": false, "researched": false },
+      { "name": "voidEnergy", "unlocked": false, "researched": false },
+      { "name": "darkEnergy", "unlocked": false, "researched": false },
+      { "name": "chronoforge", "unlocked": false, "researched": true },
+      { "name": "tachyonModerator", "unlocked": false, "researched": true },
+      { "name": "tachyonAccelerators", "unlocked": false, "researched": false },
+      { "name": "fluxCondensator", "unlocked": false, "researched": false },
+      { "name": "lhc", "unlocked": false, "researched": false },
+      { "name": "photovoltaic", "unlocked": false, "researched": false },
+      { "name": "thinFilm", "unlocked": false, "researched": false },
+      { "name": "qdot", "unlocked": false, "researched": false },
+      { "name": "solarSatellites", "unlocked": false, "researched": false },
+      { "name": "cargoShips", "unlocked": false, "researched": false },
+      { "name": "barges", "unlocked": false, "researched": false },
+      { "name": "reactorVessel", "unlocked": false, "researched": false },
+      { "name": "ironwood", "unlocked": false, "researched": false },
+      { "name": "concreteHuts", "unlocked": false, "researched": false },
+      { "name": "unobtainiumHuts", "unlocked": false, "researched": false },
+      { "name": "eludiumHuts", "unlocked": false, "researched": false },
+      { "name": "silos", "unlocked": false, "researched": false },
+      { "name": "refrigeration", "unlocked": false, "researched": false },
+      { "name": "compositeBow", "unlocked": false, "researched": false },
+      { "name": "crossbow", "unlocked": false, "researched": false },
+      { "name": "railgun", "unlocked": false, "researched": false },
+      { "name": "bolas", "unlocked": false, "researched": false },
+      { "name": "huntingArmor", "unlocked": false, "researched": false },
+      { "name": "steelArmor", "unlocked": false, "researched": false },
+      { "name": "alloyArmor", "unlocked": false, "researched": false },
+      { "name": "nanosuits", "unlocked": false, "researched": false },
+      { "name": "caravanserai", "unlocked": false, "researched": false },
+      { "name": "freightfulExchange", "unlocked": false, "researched": false },
+      {
+        "name": "transportSuperposition",
+        "unlocked": false,
+        "researched": false
+      },
+      { "name": "advancedRefinement", "unlocked": false, "researched": false },
+      { "name": "prospecting", "unlocked": false, "researched": false },
+      { "name": "goldOre", "unlocked": false, "researched": false },
+      { "name": "geodesy", "unlocked": false, "researched": false },
+      { "name": "register", "unlocked": false, "researched": false },
+      { "name": "strenghtenBuild", "unlocked": false, "researched": false },
+      { "name": "miningDrill", "unlocked": false, "researched": false },
+      { "name": "unobtainiumDrill", "unlocked": false, "researched": false },
+      { "name": "coalFurnace", "unlocked": false, "researched": false },
+      { "name": "deepMining", "unlocked": false, "researched": false },
+      { "name": "pyrolysis", "unlocked": false, "researched": false },
+      {
+        "name": "electrolyticSmelting",
+        "unlocked": false,
+        "researched": false
+      },
+      { "name": "oxidation", "unlocked": false, "researched": false },
+      { "name": "steelPlants", "unlocked": false, "researched": false },
+      { "name": "automatedPlants", "unlocked": false, "researched": false },
+      { "name": "nuclearPlants", "unlocked": false, "researched": false },
+      { "name": "rotaryKiln", "unlocked": false, "researched": false },
+      { "name": "fluidizedReactors", "unlocked": false, "researched": false },
+      { "name": "nuclearSmelters", "unlocked": false, "researched": false },
+      { "name": "orbitalGeodesy", "unlocked": false, "researched": false },
+      { "name": "printingPress", "unlocked": false, "researched": false },
+      { "name": "offsetPress", "unlocked": false, "researched": false },
+      { "name": "photolithography", "unlocked": false, "researched": false },
+      { "name": "uplink", "unlocked": false, "researched": false },
+      { "name": "starlink", "unlocked": false, "researched": false },
+      { "name": "cryocomputing", "unlocked": false, "researched": false },
+      { "name": "machineLearning", "unlocked": false, "researched": false },
+      { "name": "factoryAutomation", "unlocked": false, "researched": false },
+      { "name": "advancedAutomation", "unlocked": false, "researched": false },
+      { "name": "pneumaticPress", "unlocked": false, "researched": false },
+      { "name": "combustionEngine", "unlocked": false, "researched": false },
+      { "name": "fuelInjectors", "unlocked": false, "researched": false },
+      { "name": "factoryLogistics", "unlocked": false, "researched": false },
+      { "name": "carbonSequestration", "unlocked": false, "researched": false },
+      { "name": "factoryOptimization", "unlocked": false, "researched": false },
+      { "name": "factoryRobotics", "unlocked": false, "researched": false },
+      { "name": "spaceEngineers", "unlocked": false, "researched": false },
+      { "name": "aiEngineers", "unlocked": false, "researched": false },
+      { "name": "chronoEngineers", "unlocked": false, "researched": false },
+      { "name": "spaceManufacturing", "unlocked": false, "researched": false },
+      { "name": "celestialMechanics", "unlocked": false, "researched": false },
+      { "name": "astrolabe", "unlocked": false, "researched": false },
+      { "name": "titaniumMirrors", "unlocked": false, "researched": false },
+      {
+        "name": "unobtainiumReflectors",
+        "unlocked": false,
+        "researched": false
+      },
+      { "name": "eludiumReflectors", "unlocked": false, "researched": false },
+      { "name": "hydroPlantTurbines", "unlocked": false, "researched": false },
+      { "name": "amBases", "unlocked": false, "researched": false },
+      { "name": "aiBases", "unlocked": false, "researched": false },
+      { "name": "amFission", "unlocked": false, "researched": false },
+      { "name": "amReactors", "unlocked": false, "researched": false },
+      { "name": "amReactorsMK2", "unlocked": false, "researched": false },
+      { "name": "voidReactors", "unlocked": false, "researched": false },
+      { "name": "relicStation", "unlocked": false, "researched": false },
+      { "name": "amDrive", "unlocked": false, "researched": false },
+      { "name": "pumpjack", "unlocked": false, "researched": false },
+      { "name": "petri", "unlocked": false, "researched": false },
+      { "name": "biofuel", "unlocked": false, "researched": false },
+      { "name": "unicornSelection", "unlocked": false, "researched": false },
+      { "name": "alicornStable", "unlocked": false, "researched": false },
+      { "name": "gmo", "unlocked": false, "researched": false },
+      { "name": "cadSystems", "unlocked": false, "researched": false },
+      { "name": "seti", "unlocked": false, "researched": false },
+      { "name": "logistics", "unlocked": false, "researched": false },
+      { "name": "augumentation", "unlocked": false, "researched": false },
+      { "name": "internet", "unlocked": false, "researched": false },
+      { "name": "neuralNetworks", "unlocked": false, "researched": false },
+      { "name": "assistance", "unlocked": false, "researched": false },
+      { "name": "enrichedUranium", "unlocked": false, "researched": false },
+      { "name": "coldFusion", "unlocked": false, "researched": false },
+      { "name": "thoriumReactors", "unlocked": false, "researched": false },
+      { "name": "enrichedThorium", "unlocked": false, "researched": false },
+      { "name": "hubbleTelescope", "unlocked": false, "researched": false },
+      { "name": "satnav", "unlocked": false, "researched": false },
+      { "name": "satelliteRadio", "unlocked": false, "researched": false },
+      { "name": "astrophysicists", "unlocked": false, "researched": false },
+      { "name": "mWReactor", "unlocked": false, "researched": false },
+      { "name": "eludiumCracker", "unlocked": false, "researched": false },
+      { "name": "thoriumEngine", "unlocked": false, "researched": false },
+      { "name": "spiceNavigation", "unlocked": false, "researched": false },
+      { "name": "longRangeSpaceships", "unlocked": false, "researched": false },
+      { "name": "oilRefinery", "unlocked": false, "researched": false },
+      { "name": "oilDistillation", "unlocked": false, "researched": false },
+      { "name": "factoryProcessing", "unlocked": false, "researched": false },
+      { "name": "voidAspiration", "unlocked": false, "researched": false },
+      { "name": "distorsion", "unlocked": false, "researched": false },
+      { "name": "turnSmoothly", "unlocked": false, "researched": false },
+      { "name": "invisibleBlackHand", "unlocked": false, "researched": false }
+    ],
+    "crafts": [
+      { "name": "wood", "unlocked": true, "value": 0, "progress": 0 },
+      { "name": "beam", "unlocked": true, "value": 0, "progress": 0 },
+      { "name": "slab", "unlocked": true, "value": 0, "progress": 0 },
+      { "name": "plate", "unlocked": true, "value": 0, "progress": 0 },
+      { "name": "steel", "unlocked": false, "value": 0, "progress": 0 },
+      { "name": "concrate", "unlocked": false, "value": 0, "progress": 0 },
+      { "name": "gear", "unlocked": true, "value": 0, "progress": 0 },
+      { "name": "alloy", "unlocked": false, "value": 0, "progress": 0 },
+      { "name": "eludium", "unlocked": false, "value": 0, "progress": 0 },
+      { "name": "scaffold", "unlocked": true, "value": 0, "progress": 0 },
+      { "name": "ship", "unlocked": false, "value": 0, "progress": 0 },
+      { "name": "tanker", "unlocked": false, "value": 0, "progress": 0 },
+      { "name": "kerosene", "unlocked": false, "value": 0, "progress": 0 },
+      { "name": "plastic", "unlocked": false, "value": 0, "progress": 0 },
+      { "name": "microchip", "unlocked": false, "value": 0, "progress": 0 },
+      { "name": "parchment", "unlocked": false, "value": 0, "progress": 0 },
+      { "name": "manuscript", "unlocked": true, "value": 0, "progress": 0 },
+      { "name": "compedium", "unlocked": false, "value": 0, "progress": 0 },
+      { "name": "blueprint", "unlocked": false, "value": 0, "progress": 0 },
+      { "name": "thorium", "unlocked": false, "value": 0, "progress": 0 },
+      { "name": "megalith", "unlocked": true, "value": 0, "progress": 0 },
+      { "name": "bloodstone", "unlocked": false, "value": 0, "progress": 0 },
+      { "name": "tMythril", "unlocked": false, "value": 0, "progress": 0 }
+    ],
+    "zebraUpgrades": [
+      { "name": "darkRevolution", "unlocked": false, "researched": false },
+      { "name": "darkBrew", "unlocked": false, "researched": false },
+      { "name": "zebraTrappers", "unlocked": false, "researched": false },
+      { "name": "reforgedOutposts", "unlocked": false, "researched": false },
+      { "name": "whispers", "unlocked": false, "researched": false },
+      {
+        "name": "minerologyDepartment",
+        "unlocked": false,
+        "researched": false
+      },
+      { "name": "bloodstoneInstitute", "unlocked": false, "researched": false },
+      { "name": "rangefinders", "unlocked": false, "researched": false }
+    ]
+  },
+  "diplomacy": {
+    "races": [
+      {
+        "name": "lizards",
+        "embassyLevel": 1,
+        "unlocked": true,
+        "collapsed": false,
+        "energy": 0,
+        "duration": 0,
+        "pinned": false
+      },
+      {
+        "name": "sharks",
+        "embassyLevel": 0,
+        "unlocked": true,
+        "collapsed": false,
+        "energy": 0,
+        "duration": 0,
+        "pinned": false
+      },
+      {
+        "name": "griffins",
+        "embassyLevel": 0,
+        "unlocked": false,
+        "collapsed": false,
+        "energy": 0,
+        "duration": 0,
+        "pinned": false
+      },
+      {
+        "name": "nagas",
+        "embassyLevel": 0,
+        "unlocked": false,
+        "collapsed": false,
+        "energy": 0,
+        "duration": 0,
+        "pinned": false
+      },
+      {
+        "name": "zebras",
+        "embassyLevel": 0,
+        "unlocked": false,
+        "collapsed": false,
+        "energy": 0,
+        "duration": 0,
+        "pinned": false
+      },
+      {
+        "name": "spiders",
+        "embassyLevel": 0,
+        "unlocked": false,
+        "collapsed": false,
+        "energy": 0,
+        "duration": 0,
+        "pinned": false
+      },
+      {
+        "name": "dragons",
+        "embassyLevel": 0,
+        "unlocked": false,
+        "collapsed": false,
+        "energy": 0,
+        "duration": 0,
+        "pinned": false
+      },
+      {
+        "name": "leviathans",
+        "embassyLevel": 0,
+        "unlocked": false,
+        "collapsed": false,
+        "energy": 0,
+        "duration": 0,
+        "pinned": false
+      }
+    ]
+  },
+  "buildings": [
+    { "name": "field" },
+    { "name": "pasture", "stage": 0 },
+    { "name": "aqueduct", "stage": 0 },
+    { "name": "hut" },
+    { "name": "logHouse" },
+    { "name": "mansion" },
+    { "name": "library", "stage": 0 },
+    { "name": "academy" },
+    { "name": "observatory" },
+    { "name": "biolab" },
+    { "name": "barn" },
+    { "name": "warehouse", "stage": 0 },
+    { "name": "harbor" },
+    { "name": "mine" },
+    { "name": "quarry" },
+    { "name": "smelter" },
+    { "name": "calciner" },
+    { "name": "steamworks" },
+    { "name": "magneto" },
+    { "name": "lumberMill" },
+    { "name": "oilWell" },
+    { "name": "workshop" },
+    { "name": "factory" },
+    { "name": "reactor" },
+    { "name": "accelerator" },
+    { "name": "tradepost" },
+    { "name": "mint" },
+    { "name": "brewery" },
+    { "name": "amphitheatre", "stage": 0 },
+    { "name": "chapel" },
+    { "name": "temple" },
+    { "name": "unicornPasture" },
+    { "name": "ziggurat", "unlocked": true, "val": 1, "on": 1 },
+    { "name": "chronosphere" },
+    { "name": "aiCore" },
+    { "name": "zebraOutpost" },
+    { "name": "zebraWorkshop" },
+    { "name": "zebraForge" },
+    { "name": "stasisPod" },
+    { "name": "ivoryTemple" }
+  ],
+  "bldData": { "groupBuildings": false, "twoRows": false },
+  "cathPollution": 0,
+  "science": {
+    "hideResearched": false,
+    "policyToggleResearched": false,
+    "policyToggleBlocked": false,
+    "techs": [
+      { "name": "calendar", "unlocked": true, "researched": true },
+      { "name": "agriculture", "unlocked": false, "researched": false },
+      { "name": "archery", "unlocked": false, "researched": false },
+      { "name": "mining", "unlocked": false, "researched": false },
+      { "name": "metal", "unlocked": false, "researched": false },
+      { "name": "animal", "unlocked": false, "researched": false },
+      { "name": "brewery", "unlocked": false, "researched": false },
+      { "name": "civil", "unlocked": false, "researched": false },
+      { "name": "math", "unlocked": false, "researched": false },
+      { "name": "construction", "unlocked": false, "researched": false },
+      { "name": "engineering", "unlocked": false, "researched": false },
+      { "name": "currency", "unlocked": false, "researched": false },
+      { "name": "writing", "unlocked": false, "researched": true },
+      { "name": "philosophy", "unlocked": false, "researched": false },
+      { "name": "machinery", "unlocked": false, "researched": false },
+      { "name": "steel", "unlocked": false, "researched": false },
+      { "name": "theology", "unlocked": false, "researched": false },
+      { "name": "astronomy", "unlocked": false, "researched": false },
+      { "name": "navigation", "unlocked": false, "researched": false },
+      { "name": "architecture", "unlocked": false, "researched": false },
+      { "name": "physics", "unlocked": false, "researched": false },
+      { "name": "metaphysics", "unlocked": false, "researched": false },
+      { "name": "chemistry", "unlocked": false, "researched": false },
+      { "name": "acoustics", "unlocked": false, "researched": false },
+      { "name": "drama", "unlocked": false, "researched": false },
+      { "name": "archeology", "unlocked": false, "researched": false },
+      { "name": "electricity", "unlocked": false, "researched": false },
+      { "name": "biology", "unlocked": false, "researched": false },
+      { "name": "biochemistry", "unlocked": false, "researched": false },
+      { "name": "genetics", "unlocked": false, "researched": false },
+      { "name": "industrialization", "unlocked": false, "researched": false },
+      { "name": "mechanization", "unlocked": false, "researched": false },
+      { "name": "metalurgy", "unlocked": false, "researched": false },
+      { "name": "combustion", "unlocked": false, "researched": false },
+      { "name": "ecology", "unlocked": false, "researched": false },
+      { "name": "electronics", "unlocked": false, "researched": false },
+      { "name": "robotics", "unlocked": false, "researched": false },
+      { "name": "ai", "unlocked": false, "researched": false },
+      { "name": "quantumCryptography", "unlocked": false, "researched": false },
+      { "name": "blackchain", "unlocked": false, "researched": false },
+      { "name": "nuclearFission", "unlocked": false, "researched": false },
+      { "name": "rocketry", "unlocked": false, "researched": true },
+      { "name": "oilProcessing", "unlocked": false, "researched": false },
+      { "name": "sattelites", "unlocked": false, "researched": false },
+      { "name": "orbitalEngineering", "unlocked": false, "researched": true },
+      { "name": "thorium", "unlocked": false, "researched": false },
+      { "name": "exogeology", "unlocked": false, "researched": false },
+      { "name": "advExogeology", "unlocked": false, "researched": false },
+      { "name": "nanotechnology", "unlocked": false, "researched": true },
+      { "name": "superconductors", "unlocked": false, "researched": false },
+      { "name": "antimatter", "unlocked": false, "researched": false },
+      { "name": "terraformation", "unlocked": false, "researched": false },
+      { "name": "hydroponics", "unlocked": false, "researched": false },
+      { "name": "exogeophysics", "unlocked": false, "researched": false },
+      { "name": "particlePhysics", "unlocked": false, "researched": false },
+      { "name": "dimensionalPhysics", "unlocked": false, "researched": false },
+      { "name": "artificialGravity", "unlocked": false, "researched": false },
+      { "name": "chronophysics", "unlocked": false, "researched": false },
+      { "name": "tachyonTheory", "unlocked": false, "researched": false },
+      { "name": "cryptotheology", "unlocked": false, "researched": false },
+      { "name": "voidSpace", "unlocked": false, "researched": false },
+      { "name": "paradoxalKnowledge", "unlocked": false, "researched": false }
+    ],
+    "policies": [
+      {
+        "name": "liberty",
+        "unlocked": false,
+        "blocked": false,
+        "researched": false
+      },
+      {
+        "name": "tradition",
+        "unlocked": false,
+        "blocked": false,
+        "researched": false
+      },
+      {
+        "name": "monarchy",
+        "unlocked": false,
+        "blocked": false,
+        "researched": false
+      },
+      {
+        "name": "authocracy",
+        "unlocked": false,
+        "blocked": false,
+        "researched": false
+      },
+      {
+        "name": "republic",
+        "unlocked": false,
+        "blocked": false,
+        "researched": false
+      },
+      {
+        "name": "socialism",
+        "unlocked": false,
+        "blocked": false,
+        "researched": false
+      },
+      {
+        "name": "scientificCommunism",
+        "unlocked": false,
+        "blocked": false,
+        "researched": false
+      },
+      {
+        "name": "liberalism",
+        "unlocked": false,
+        "blocked": false,
+        "researched": false
+      },
+      {
+        "name": "communism",
+        "unlocked": false,
+        "blocked": false,
+        "researched": false
+      },
+      {
+        "name": "fascism",
+        "unlocked": false,
+        "blocked": false,
+        "researched": false
+      },
+      {
+        "name": "technocracy",
+        "unlocked": false,
+        "blocked": false,
+        "researched": false
+      },
+      {
+        "name": "theocracy",
+        "unlocked": false,
+        "blocked": false,
+        "researched": false
+      },
+      {
+        "name": "expansionism",
+        "unlocked": false,
+        "blocked": false,
+        "researched": false
+      },
+      {
+        "name": "transkittenism",
+        "unlocked": false,
+        "blocked": false,
+        "researched": false
+      },
+      {
+        "name": "necrocracy",
+        "unlocked": false,
+        "blocked": false,
+        "researched": false
+      },
+      {
+        "name": "radicalXenophobia",
+        "unlocked": false,
+        "blocked": false,
+        "researched": false
+      },
+      {
+        "name": "diplomacy",
+        "unlocked": false,
+        "blocked": false,
+        "researched": false
+      },
+      {
+        "name": "isolationism",
+        "unlocked": false,
+        "blocked": false,
+        "researched": false
+      },
+      {
+        "name": "zebraRelationsAppeasement",
+        "unlocked": false,
+        "blocked": false,
+        "researched": false
+      },
+      {
+        "name": "zebraRelationsBellicosity",
+        "unlocked": false,
+        "blocked": false,
+        "researched": false
+      },
+      {
+        "name": "knowledgeSharing",
+        "unlocked": false,
+        "blocked": false,
+        "researched": false
+      },
+      {
+        "name": "culturalExchange",
+        "unlocked": false,
+        "blocked": false,
+        "researched": false
+      },
+      {
+        "name": "bigStickPolicy",
+        "unlocked": false,
+        "blocked": false,
+        "researched": false
+      },
+      {
+        "name": "cityOnAHill",
+        "unlocked": false,
+        "blocked": false,
+        "researched": false
+      },
+      {
+        "name": "outerSpaceTreaty",
+        "unlocked": false,
+        "blocked": false,
+        "researched": false
+      },
+      {
+        "name": "militarizeSpace",
+        "unlocked": false,
+        "blocked": false,
+        "researched": false
+      },
+      {
+        "name": "lizardRelationsEcologists",
+        "unlocked": false,
+        "blocked": false,
+        "researched": false
+      },
+      {
+        "name": "lizardRelationsPriests",
+        "unlocked": false,
+        "blocked": false,
+        "researched": false
+      },
+      {
+        "name": "lizardRelationsDiplomats",
+        "unlocked": false,
+        "blocked": false,
+        "researched": false
+      },
+      {
+        "name": "sharkRelationsScribes",
+        "unlocked": false,
+        "blocked": false,
+        "researched": false
+      },
+      {
+        "name": "sharkRelationsMerchants",
+        "unlocked": false,
+        "blocked": false,
+        "researched": false
+      },
+      {
+        "name": "sharkRelationsBotanists",
+        "unlocked": false,
+        "blocked": false,
+        "researched": false
+      },
+      {
+        "name": "griffinRelationsMetallurgists",
+        "unlocked": false,
+        "blocked": false,
+        "researched": false
+      },
+      {
+        "name": "griffinRelationsScouts",
+        "unlocked": false,
+        "blocked": false,
+        "researched": false
+      },
+      {
+        "name": "griffinRelationsMachinists",
+        "unlocked": false,
+        "blocked": false,
+        "researched": false
+      },
+      {
+        "name": "nagaRelationsMasons",
+        "unlocked": false,
+        "blocked": false,
+        "researched": false
+      },
+      {
+        "name": "nagaRelationsCultists",
+        "unlocked": false,
+        "blocked": false,
+        "researched": false
+      },
+      {
+        "name": "nagaRelationsArchitects",
+        "unlocked": false,
+        "blocked": false,
+        "researched": false
+      },
+      {
+        "name": "spiderRelationsGeologists",
+        "unlocked": false,
+        "blocked": false,
+        "researched": false
+      },
+      {
+        "name": "spiderRelationsChemists",
+        "unlocked": false,
+        "blocked": false,
+        "researched": false
+      },
+      {
+        "name": "spiderRelationsPaleontologists",
+        "unlocked": false,
+        "blocked": false,
+        "researched": false
+      },
+      {
+        "name": "dragonRelationsPhysicists",
+        "unlocked": false,
+        "blocked": false,
+        "researched": false
+      },
+      {
+        "name": "dragonRelationsAstrologers",
+        "unlocked": false,
+        "blocked": false,
+        "researched": false
+      },
+      {
+        "name": "dragonRelationsDynamicists",
+        "unlocked": false,
+        "blocked": false,
+        "researched": false
+      },
+      {
+        "name": "stoicism",
+        "unlocked": false,
+        "blocked": false,
+        "researched": false
+      },
+      {
+        "name": "epicurianism",
+        "unlocked": false,
+        "blocked": false,
+        "researched": false
+      },
+      {
+        "name": "carnivale",
+        "unlocked": false,
+        "blocked": false,
+        "researched": false
+      },
+      {
+        "name": "extravagance",
+        "unlocked": false,
+        "blocked": false,
+        "researched": false
+      },
+      {
+        "name": "rationing",
+        "unlocked": false,
+        "blocked": false,
+        "researched": false
+      },
+      {
+        "name": "frugality",
+        "unlocked": false,
+        "blocked": false,
+        "researched": false
+      },
+      {
+        "name": "rationality",
+        "unlocked": false,
+        "blocked": false,
+        "researched": false
+      },
+      {
+        "name": "mysticism",
+        "unlocked": false,
+        "blocked": false,
+        "researched": false
+      },
+      {
+        "name": "stripMining",
+        "unlocked": false,
+        "blocked": false,
+        "researched": false
+      },
+      {
+        "name": "clearCutting",
+        "unlocked": false,
+        "blocked": false,
+        "researched": false
+      },
+      {
+        "name": "environmentalism",
+        "unlocked": false,
+        "blocked": false,
+        "researched": false
+      },
+      {
+        "name": "sustainability",
+        "unlocked": false,
+        "blocked": false,
+        "researched": false
+      },
+      {
+        "name": "fullIndustrialization",
+        "unlocked": false,
+        "blocked": false,
+        "researched": false
+      },
+      {
+        "name": "conservation",
+        "unlocked": false,
+        "blocked": false,
+        "researched": false
+      },
+      {
+        "name": "openWoodlands",
+        "unlocked": false,
+        "blocked": false,
+        "researched": false
+      },
+      {
+        "name": "cryochamberExtraction",
+        "unlocked": false,
+        "blocked": false,
+        "researched": false
+      },
+      {
+        "name": "terraformingInsight",
+        "unlocked": false,
+        "blocked": false,
+        "researched": false
+      },
+      {
+        "name": "siphoning",
+        "unlocked": false,
+        "blocked": false,
+        "researched": false
+      },
+      {
+        "name": "feedingFrenzy",
+        "unlocked": false,
+        "blocked": false,
+        "researched": false
+      },
+      {
+        "name": "upfrontPayment",
+        "unlocked": false,
+        "blocked": false,
+        "researched": false
+      }
+    ]
+  },
+  "achievements": [
+    { "name": "theElderLegacy", "unlocked": false, "starUnlocked": false },
+    { "name": "unicornConspiracy", "unlocked": true, "starUnlocked": false },
+    { "name": "uniception", "unlocked": false, "starUnlocked": false },
+    { "name": "sinsOfEmpire", "unlocked": false, "starUnlocked": false },
+    { "name": "anachronox", "unlocked": false, "starUnlocked": false },
+    { "name": "deadSpace", "unlocked": false, "starUnlocked": false },
+    { "name": "sadnessAbyss", "unlocked": false, "starUnlocked": false },
+    { "name": "ironWill", "unlocked": false, "starUnlocked": false },
+    { "name": "uberkatzhen", "unlocked": false, "starUnlocked": false },
+    {
+      "name": "hundredYearsSolitude",
+      "unlocked": false,
+      "starUnlocked": false
+    },
+    { "name": "soilUptuned", "unlocked": false, "starUnlocked": false },
+    { "name": "atlasUnmeowed", "unlocked": false, "starUnlocked": false },
+    { "name": "meowMeowRevolution", "unlocked": false, "starUnlocked": false },
+    { "name": "spaceOddity", "unlocked": false, "starUnlocked": false },
+    { "name": "jupiterAscending", "unlocked": true, "starUnlocked": false },
+    { "name": "veryLargeArray", "unlocked": false, "starUnlocked": false },
+    { "name": "shadowOfTheColossus", "unlocked": false, "starUnlocked": false },
+    { "name": "sunGod", "unlocked": false, "starUnlocked": false },
+    { "name": "heartOfDarkness", "unlocked": false, "starUnlocked": false },
+    { "name": "winterIsComing", "unlocked": false, "starUnlocked": false },
+    { "name": "youMonster", "unlocked": false, "starUnlocked": false },
+    {
+      "name": "superUnethicalClimax",
+      "unlocked": false,
+      "starUnlocked": false
+    },
+    { "name": "systemShock", "unlocked": false, "starUnlocked": false },
+    { "name": "lotusMachine", "unlocked": false, "starUnlocked": false },
+    { "name": "serenity", "unlocked": false, "starUnlocked": false },
+    { "name": "utopiaProject", "unlocked": false, "starUnlocked": false },
+    { "name": "deathStranding", "unlocked": false, "starUnlocked": false },
+    { "name": "cathammer", "unlocked": false, "starUnlocked": false },
+    { "name": "eternalBacchanalia", "unlocked": false, "starUnlocked": false },
+    { "name": "challenger", "unlocked": false, "starUnlocked": false },
+    { "name": "betterSafeThanSorry", "unlocked": false, "starUnlocked": false }
+  ],
+  "ach": {
+    "badgesUnlocked": true,
+    "badges": [
+      { "name": "lotus", "unlocked": false },
+      { "name": "ivoryTower", "unlocked": false },
+      { "name": "useless", "unlocked": false },
+      { "name": "beta", "unlocked": false },
+      { "name": "silentHill", "unlocked": false },
+      { "name": "evergreen", "unlocked": false },
+      { "name": "deadSpace", "unlocked": false },
+      { "name": "reginaNoctis", "unlocked": false },
+      { "name": "ghostInTheMachine", "unlocked": true },
+      { "name": "abOwo", "unlocked": false },
+      { "name": "cleanPaws", "unlocked": false },
+      { "name": "sequenceBreak", "unlocked": false },
+      { "name": "fantasticFurColor", "unlocked": false },
+      { "name": "whatYearIsIt", "unlocked": false },
+      { "name": "tardis", "unlocked": false },
+      { "name": "wheredThisComeFrom", "unlocked": false },
+      { "name": "lostDates", "unlocked": false },
+      { "name": "buffet", "unlocked": false },
+      { "name": "newHome", "unlocked": false },
+      { "name": "betterSafeThanSorry", "unlocked": false },
+      { "name": "soLongAndThanksForAllTheHay", "unlocked": false }
+    ]
+  },
+  "religion": {
+    "faith": 250000,
+    "corruption": 0,
+    "faithRatio": 100000,
+    "transcendenceTier": 1,
+    "activeHolyGenocide": 0,
+    "necrocornDeficit": 0,
+    "tcratio": 0.017285937191760546,
+    "zu": [
+      { "name": "unicornTomb", "val": 0, "on": 0, "unlocked": true },
+      { "name": "ivoryTower", "val": 0, "on": 0, "unlocked": false },
+      { "name": "ivoryCitadel", "val": 0, "on": 0, "unlocked": false },
+      { "name": "skyPalace", "val": 0, "on": 0, "unlocked": false },
+      { "name": "unicornUtopia", "val": 0, "on": 0, "unlocked": false },
+      { "name": "sunspire", "val": 0, "on": 0, "unlocked": false },
+      { "name": "marker", "val": 0, "on": 0, "unlocked": false },
+      { "name": "unicornGraveyard", "val": 0, "on": 0, "unlocked": false },
+      { "name": "unicornNecropolis", "val": 0, "on": 0, "unlocked": false },
+      { "name": "blackPyramid", "val": 0, "on": 0, "unlocked": false }
+    ],
+    "ru": [
+      { "name": "solarchant", "val": 0, "on": 0 },
+      { "name": "scholasticism", "val": 0, "on": 0 },
+      { "name": "goldenSpire", "val": 0, "on": 0 },
+      { "name": "sunAltar", "val": 0, "on": 0 },
+      { "name": "stainedGlass", "val": 0, "on": 0 },
+      { "name": "solarRevolution", "val": 1, "on": 1 },
+      { "name": "basilica", "val": 0, "on": 0 },
+      { "name": "templars", "val": 0, "on": 0 },
+      { "name": "apocripha", "val": 1, "on": 1 },
+      { "name": "transcendence", "val": 1, "on": 1 },
+      { "name": "frescoes", "val": 0, "on": 0 }
+    ],
+    "tu": [
+      { "name": "blackObelisk", "val": 0, "on": 0, "unlocked": false },
+      { "name": "blackNexus", "val": 0, "on": 0, "unlocked": false },
+      { "name": "blackCore", "val": 0, "on": 0, "unlocked": false },
+      { "name": "singularity", "val": 0, "on": 0, "unlocked": false },
+      { "name": "blackLibrary", "val": 0, "on": 0, "unlocked": false },
+      { "name": "blackRadiance", "val": 0, "on": 0, "unlocked": false },
+      { "name": "blazar", "val": 0, "on": 0, "unlocked": false },
+      { "name": "darkNova", "val": 0, "on": 0, "unlocked": false },
+      { "name": "mausoleum", "val": 0, "on": 0, "unlocked": false },
+      { "name": "holyGenocide", "val": 0, "on": 0, "unlocked": false },
+      { "name": "darkParacosm", "val": 0, "on": 0, "unlocked": false }
+    ],
+    "pact": [
+      { "name": "pactOfCleansing", "val": 0, "on": 0, "unlocked": false },
+      { "name": "pactOfDestruction", "val": 0, "on": 0, "unlocked": false },
+      { "name": "pactOfExtermination", "val": 0, "on": 0, "unlocked": false },
+      { "name": "pactOfPurity", "val": 0, "on": 0, "unlocked": false },
+      { "name": "pactOfArcane", "val": 0, "on": 0, "unlocked": false },
+      { "name": "pactOfChronicler", "val": 0, "on": 0, "unlocked": false },
+      { "name": "payDebt", "val": 0, "on": 0, "unlocked": false },
+      { "name": "fractured", "val": 0, "on": 0, "unlocked": false }
+    ]
+  },
+  "space": {
+    "hideResearched": false,
+    "programs": [
+      { "name": "orbitalLaunch", "val": 0, "on": 0, "unlocked": true },
+      { "name": "moonMission", "val": 0, "on": 0, "unlocked": true },
+      { "name": "duneMission", "val": 0, "on": 0, "unlocked": false },
+      { "name": "piscineMission", "val": 0, "on": 0, "unlocked": false },
+      { "name": "heliosMission", "val": 0, "on": 0, "unlocked": false },
+      { "name": "terminusMission", "val": 0, "on": 0, "unlocked": false },
+      { "name": "kairoMission", "val": 0, "on": 0, "unlocked": false },
+      { "name": "rorschachMission", "val": 0, "on": 0, "unlocked": false },
+      { "name": "yarnMission", "val": 0, "on": 0, "unlocked": false },
+      { "name": "umbraMission", "val": 0, "on": 0, "unlocked": false },
+      { "name": "charonMission", "val": 0, "on": 0, "unlocked": false },
+      {
+        "name": "centaurusSystemMission",
+        "val": 0,
+        "on": 0,
+        "unlocked": false
+      },
+      { "name": "furthestRingMission", "val": 0, "on": 0, "unlocked": false }
+    ],
+    "planets": [
+      {
+        "name": "cath",
+        "buildings": [
+          { "name": "spaceElevator", "val": 0, "on": 0, "unlocked": true },
+          { "name": "sattelite", "val": 0, "on": 0, "unlocked": false },
+          { "name": "spaceStation", "val": 0, "on": 0, "unlocked": true }
+        ],
+        "reached": true,
+        "unlocked": true,
+        "routeDays": 0
+      },
+      {
+        "name": "moon",
+        "buildings": [
+          { "name": "moonOutpost", "val": 0, "on": 0, "unlocked": true },
+          { "name": "moonBase", "val": 0, "on": 0, "unlocked": false }
+        ],
+        "reached": true,
+        "unlocked": true,
+        "routeDays": 0
+      },
+      {
+        "name": "dune",
+        "buildings": [
+          { "name": "planetCracker", "val": 0, "on": 0, "unlocked": false },
+          { "name": "hydrofracturer", "val": 0, "on": 0, "unlocked": false },
+          { "name": "spiceRefinery", "val": 0, "on": 0, "unlocked": false }
+        ],
+        "reached": false,
+        "unlocked": false,
+        "routeDays": 356
+      },
+      {
+        "name": "piscine",
+        "buildings": [
+          { "name": "researchVessel", "val": 0, "on": 0, "unlocked": false },
+          { "name": "orbitalArray", "val": 0, "on": 0, "unlocked": false }
+        ],
+        "reached": false,
+        "unlocked": false,
+        "routeDays": 256
+      },
+      {
+        "name": "helios",
+        "buildings": [
+          { "name": "sunlifter", "val": 0, "on": 0, "unlocked": false },
+          {
+            "name": "containmentChamber",
+            "val": 0,
+            "on": 0,
+            "unlocked": false
+          },
+          { "name": "heatsink", "val": 0, "on": 0, "unlocked": false },
+          { "name": "sunforge", "val": 0, "on": 0, "unlocked": false }
+        ],
+        "reached": false,
+        "unlocked": false,
+        "routeDays": 1200
+      },
+      {
+        "name": "terminus",
+        "buildings": [
+          { "name": "cryostation", "val": 0, "on": 0, "unlocked": false }
+        ],
+        "reached": false,
+        "unlocked": false,
+        "routeDays": 2500
+      },
+      {
+        "name": "kairo",
+        "buildings": [
+          { "name": "spaceBeacon", "val": 0, "on": 0, "unlocked": false }
+        ],
+        "reached": false,
+        "unlocked": false,
+        "routeDays": 5000
+      },
+      {
+        "name": "yarn",
+        "buildings": [
+          {
+            "name": "terraformingStation",
+            "val": 0,
+            "on": 0,
+            "unlocked": false
+          },
+          { "name": "hydroponics", "val": 0, "on": 0, "unlocked": false }
+        ],
+        "reached": false,
+        "unlocked": false,
+        "routeDays": 3800
+      },
+      {
+        "name": "umbra",
+        "buildings": [
+          { "name": "hrHarvester", "val": 0, "on": 0, "unlocked": false },
+          { "name": "navigationRelay", "val": 0, "on": 0, "unlocked": false },
+          { "name": "spaceShuttle", "val": 0, "on": 0, "unlocked": false }
+        ],
+        "reached": false,
+        "unlocked": false,
+        "routeDays": 7500
+      },
+      {
+        "name": "charon",
+        "buildings": [
+          { "name": "entangler", "val": 0, "on": 0, "unlocked": false }
+        ],
+        "reached": false,
+        "unlocked": false,
+        "routeDays": 25000
+      },
+      {
+        "name": "centaurusSystem",
+        "buildings": [
+          { "name": "tectonic", "val": 0, "on": 0, "unlocked": false },
+          { "name": "moltenCore", "val": 0, "on": 0, "unlocked": false }
+        ],
+        "reached": false,
+        "unlocked": false,
+        "routeDays": 120000
+      },
+      {
+        "name": "furthestRing",
+        "buildings": [],
+        "reached": false,
+        "unlocked": false,
+        "routeDays": 725000000
+      }
+    ]
+  },
+  "time": {
+    "timestamp": 1793064228056,
+    "flux": 0,
+    "heat": 30,
+    "testShatter": 0,
+    "isAccelerated": false,
+    "cfu": [
+      { "name": "temporalBattery", "val": 0, "on": 0, "unlocked": true },
+      {
+        "name": "blastFurnace",
+        "val": 0,
+        "on": 0,
+        "heat": 250,
+        "unlocked": true,
+        "isAutomationEnabled": false
+      },
+      { "name": "timeBoiler", "val": 0, "on": 0, "unlocked": false },
+      {
+        "name": "controlledDelay",
+        "val": 0,
+        "on": 0,
+        "delayTicks": 0,
+        "unlocked": false
+      },
+      { "name": "temporalAccelerator", "val": 0, "on": 0, "unlocked": true },
+      { "name": "temporalImpedance", "val": 0, "on": 0, "unlocked": false },
+      { "name": "ressourceRetrieval", "val": 0, "on": 0, "unlocked": false },
+      { "name": "temporalPress", "val": 0, "on": 0, "unlocked": false }
+    ],
+    "vsu": [
+      { "name": "cryochambers", "val": 0, "on": 0 },
+      { "name": "usedCryochambers", "val": 0, "on": 0 },
+      { "name": "voidHoover", "val": 0, "on": 0 },
+      { "name": "voidRift", "val": 0, "on": 0 },
+      { "name": "chronocontrol", "val": 0, "on": 0 },
+      { "name": "voidResonator", "val": 0, "on": 0 }
+    ],
+    "queueItems": [],
+    "queueSources": {
+      "buildings": true,
+      "tech": false,
+      "upgrades": false,
+      "policies": false,
+      "embassies": false,
+      "religion": false,
+      "zebraUpgrades": false,
+      "spaceMission": false,
+      "spaceBuilding": false,
+      "zigguratUpgrades": false,
+      "transcendenceUpgrades": false,
+      "chronoforge": false,
+      "voidSpace": false
+    }
+  },
+  "prestige": {
+    "perks": [
+      { "name": "engeneering", "unlocked": true, "researched": false },
+      { "name": "codexVox", "unlocked": false, "researched": false },
+      { "name": "codexLogos", "unlocked": false, "researched": false },
+      { "name": "codexAgrum", "unlocked": false, "researched": false },
+      { "name": "megalomania", "unlocked": false, "researched": false },
+      { "name": "blackCodex", "unlocked": false, "researched": false },
+      { "name": "codexLeviathanianus", "unlocked": false, "researched": false },
+      { "name": "goldenRatio", "unlocked": false, "researched": false },
+      { "name": "divineProportion", "unlocked": false, "researched": false },
+      { "name": "vitruvianFeline", "unlocked": false, "researched": false },
+      { "name": "renaissance", "unlocked": false, "researched": false },
+      { "name": "diplomacy", "unlocked": true, "researched": false },
+      { "name": "zebraDiplomacy", "unlocked": false, "researched": false },
+      { "name": "zebraCovenant", "unlocked": false, "researched": false },
+      { "name": "navigationDiplomacy", "unlocked": false, "researched": false },
+      { "name": "ambassadors", "unlocked": false, "researched": false },
+      { "name": "treaties", "unlocked": false, "researched": false },
+      { "name": "chronomancy", "unlocked": true, "researched": false },
+      { "name": "astromancy", "unlocked": false, "researched": false },
+      { "name": "unicornmancy", "unlocked": false, "researched": false },
+      { "name": "alicornmancy", "unlocked": false, "researched": false },
+      { "name": "anachronomancy", "unlocked": false, "researched": false },
+      { "name": "carnivals", "unlocked": true, "researched": false },
+      { "name": "willenfluff", "unlocked": false, "researched": false },
+      { "name": "pawgan", "unlocked": false, "researched": false },
+      { "name": "numerology", "unlocked": false, "researched": false },
+      { "name": "numeromancy", "unlocked": false, "researched": false },
+      { "name": "malkuth", "unlocked": false, "researched": false },
+      { "name": "yesod", "unlocked": false, "researched": false },
+      { "name": "hod", "unlocked": false, "researched": false },
+      { "name": "netzach", "unlocked": false, "researched": false },
+      { "name": "tiferet", "unlocked": false, "researched": false },
+      { "name": "gevurah", "unlocked": false, "researched": false },
+      { "name": "chesed", "unlocked": false, "researched": false },
+      { "name": "binah", "unlocked": false, "researched": false },
+      { "name": "chokhmah", "unlocked": false, "researched": false },
+      { "name": "keter", "unlocked": false, "researched": false },
+      { "name": "voidOrder", "unlocked": false, "researched": false },
+      { "name": "adjustmentBureau", "unlocked": true, "researched": false },
+      { "name": "ascoh", "unlocked": false, "researched": false }
+    ],
+    "hideResearched": false
+  },
+  "stats": [
+    { "name": "totalKittens", "val": 240 },
+    { "name": "kittensDead", "val": 0 },
+    { "name": "totalYears", "val": 1800 },
+    { "name": "totalResets", "val": 0 },
+    { "name": "totalParagon", "val": 0 },
+    { "name": "eventsObserved", "val": 0 },
+    { "name": "unicornsSacrificed", "val": 0 },
+    { "name": "buildingsConstructed", "val": 88 },
+    { "name": "totalClicks", "val": 0 },
+    { "name": "totalTrades", "val": 125 },
+    { "name": "totalCrafts", "val": 460 },
+    { "name": "averageKittens", "val": 0 },
+    { "name": "transcendenceTier", "val": 0 },
+    { "name": "totalChallengesCompleted", "val": 0 }
+  ],
+  "statsCurrent": [
+    { "name": "totalTrades", "val": 18 },
+    { "name": "totalCrafts", "val": 0 },
+    { "name": "averageKittens", "val": 0 },
+    { "name": "timePlayed", "val": 0 }
+  ],
+  "void": { "vu": [{ "name": "spaceCathedral" }] },
+  "game": {
+    "isCMBREnabled": false,
+    "colorScheme": "",
+    "karmaKittens": 0,
+    "karmaZebras": 0,
+    "ironWill": true,
+    "deadKittens": 0,
+    "cheatMode": false,
+    "startedWithoutChronospheres": true,
+    "opts": {
+      "notation": "si",
+      "batchSize": 10,
+      "useWorkers": true,
+      "forceHighPrecision": false,
+      "usePerSecondValues": true,
+      "usePercentageResourceValues": false,
+      "showNonApplicableButtons": false,
+      "usePercentageConsumptionValues": false,
+      "highlightUnavailable": true,
+      "hideSell": false,
+      "hideDowngrade": false,
+      "hideBGImage": false,
+      "tooltipsInRightColumn": false,
+      "noConfirm": false,
+      "IWSmelter": true,
+      "disableTelemetry": false,
+      "enableRedshift": false,
+      "disablePollution": false,
+      "enableRedshiftGflops": false,
+      "useLegacyTwoInRowLayout": false,
+      "useSwipeNavigation": false,
+      "ksEnabled": false,
+      "forceLZ": false,
+      "compressSaveFile": false,
+      "hodl": true,
+      "disableCMBR": false
+    }
+  }
+}

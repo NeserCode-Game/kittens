@@ -1,16 +1,35 @@
 import { getEngineContext } from "./engine-loader";
 import type {
+  AchievementSnapshot,
   ActionResult,
+  BadgeSnapshot,
   BuildingSnapshot,
+  ChallengeSnapshot,
+  ChallengesSnapshot,
   CraftSnapshot,
   EffectSnapshot,
   GameSnapshot,
   GameSettingSnapshot,
   JobSnapshot,
   PriceSnapshot,
+  ProgressSnapshot,
+  ReligionSnapshot,
+  ReligionUpgradeKind,
+  ReligionUpgradeSnapshot,
   ResearchItemSnapshot,
   ResourceSnapshot,
   ScienceSnapshot,
+  SpaceBuildingSnapshot,
+  SpaceProgramSnapshot,
+  SpaceSnapshot,
+  StatGroupSnapshot,
+  StatSnapshot,
+  TimeSnapshot,
+  TimeUpgradeKind,
+  TimeUpgradeSnapshot,
+  TradeOfferSnapshot,
+  TradeRaceSnapshot,
+  TradeSnapshot,
   UpgradeSnapshot,
   VillageSnapshot,
   WorkshopSnapshot,
@@ -105,14 +124,161 @@ interface LegacySetting {
   showOnlyIfKSDetected?: boolean;
 }
 
+interface LegacyTradePrice {
+  name: string;
+  val: number;
+}
+
+interface LegacyTradeOffer {
+  name: string;
+  value?: number;
+  chance: number;
+  minLevel?: number;
+}
+
+interface LegacyRace {
+  name: string;
+  title: string;
+  standing: number;
+  buys: LegacyTradePrice[];
+  sells: LegacyTradeOffer[];
+  embassyPrices: LegacyPrice[];
+  embassyLevel: number;
+  unlocked: boolean;
+}
+
+interface LegacyReligionUpgrade {
+  name: string;
+  label: string;
+  description: string;
+  prices: LegacyPrice[];
+  val: number;
+  on: number;
+  unlocked?: boolean;
+  noStackable?: boolean;
+}
+
+interface LegacySpaceProgram {
+  name: string;
+  label: string;
+  description: string;
+  prices: LegacyPrice[];
+  val: number;
+  on: number;
+  unlocked: boolean;
+}
+
+interface LegacySpaceBuilding extends LegacySpaceProgram {
+  priceRatio?: number;
+}
+
+interface LegacyPlanet {
+  name: string;
+  label: string;
+  unlocked: boolean;
+  reached: boolean;
+  routeDays: number;
+  buildings: LegacySpaceBuilding[];
+}
+
+interface LegacyTimeUpgrade {
+  name: string;
+  label: string;
+  description: string;
+  prices: LegacyPrice[];
+  val: number;
+  on: number;
+  unlocked?: boolean;
+  heat?: number;
+}
+
+interface LegacyChallenge {
+  name: string;
+  label: string;
+  description: string;
+  effectDesc?: string;
+  unlocked: boolean;
+  active: boolean;
+  pending: boolean;
+  on: number;
+  researched: boolean;
+}
+
+interface LegacyAchievement {
+  name: string;
+  title: string;
+  description: string;
+  hidden?: boolean;
+  unethical?: boolean;
+  unlocked: boolean;
+  starUnlocked?: boolean;
+  starCondition?: unknown;
+}
+
+interface LegacyBadge {
+  name: string;
+  title: string;
+  description: string;
+  unlocked: boolean;
+}
+
+interface LegacyStat {
+  name: string;
+  title: string;
+  val: number | string;
+  unlocked: boolean;
+  defaultUnlocked?: boolean;
+  calculate?: (game: LegacyGame) => number | string;
+}
+
+interface LegacyStatGroup {
+  group: LegacyStat[];
+  title: string;
+}
+
+interface ControllerOptions {
+  key: string;
+  id: string;
+  race?: LegacyRace;
+  prices?: LegacyPrice[];
+  name?: string;
+  description?: string;
+}
+
 interface ControllerModel {
   enabled: boolean;
   visible: boolean;
   prices: LegacyPrice[];
+  options?: ControllerOptions;
 }
 
 interface JobButtonModel extends ControllerModel {
   job: LegacyJob;
+}
+
+interface PurchaseController {
+  fetchModel: (options: ControllerOptions) => ControllerModel;
+  buyItem: (model: ControllerModel) => PurchaseOutcome;
+}
+
+interface StackableController extends PurchaseController {
+  build: (model: ControllerModel, amount: number) => number;
+}
+
+interface ShatterController extends PurchaseController {
+  getPricesMultiple: (
+    model: ControllerModel,
+    amount: number
+  ) => Record<string, number>;
+  doShatterAmt: (model: ControllerModel, amount: number) => void;
+}
+
+interface HeatController extends PurchaseController {
+  getPricesMultiple: (
+    model: ControllerModel,
+    amount: number
+  ) => Record<string, number>;
+  doShatterAmt: (model: ControllerModel, amount: number) => void;
 }
 
 interface PurchaseOutcome {
@@ -181,6 +347,75 @@ interface LegacyGame {
     getCraftAllCount: (id: string) => number;
     getCraftPrice: (craft: LegacyCraft) => LegacyPrice[];
   };
+  diplomacy: {
+    races: LegacyRace[];
+    get: (id: string) => LegacyRace | null;
+    getTradeRatio: () => number;
+    getTradeVolume: () => number;
+    getGoldCost: () => number;
+    getManpowerCost: () => number;
+    getMaxTradeAmt: (race: LegacyRace) => number;
+    hasMultipleResources: (race: LegacyRace, amount: number) => boolean;
+    tradeMultiple: (race: LegacyRace, amount: number) => void;
+    getFinalStanding: (race: LegacyRace) => number;
+    getResourceTradeChance: (
+      offer: LegacyTradeOffer,
+      race: LegacyRace
+    ) => number;
+    isValidTrade: (offer: LegacyTradeOffer, race: LegacyRace) => boolean;
+    getBlueprintTradeChance: (race: LegacyRace) => number;
+    getSpiceTradeChance: (race: LegacyRace) => number;
+  };
+  religion: {
+    faith: number;
+    faithRatio: number;
+    transcendenceTier: number;
+    corruption: number;
+    zigguratUpgrades: LegacyReligionUpgrade[];
+    religionUpgrades: LegacyReligionUpgrade[];
+    transcendenceUpgrades: LegacyReligionUpgrade[];
+    getZU: (id: string) => LegacyReligionUpgrade;
+    getRU: (id: string) => LegacyReligionUpgrade;
+    getTU: (id: string) => LegacyReligionUpgrade;
+    getApocryphaBonus: () => number;
+    getAvailableUnicornSacrifices: () => number;
+    praise: () => void;
+    resetFaith: (bonusRatio: number, withConfirmation: boolean) => void;
+    transcend: () => void;
+    sacrificeAllUnicorns: () => void;
+    _getTranscendNextPrice: () => number;
+  };
+  space: {
+    programs: LegacySpaceProgram[];
+    planets: LegacyPlanet[];
+    getProgram: (id: string) => LegacySpaceProgram | undefined;
+    getPlanet: (id: string) => LegacyPlanet | undefined;
+    getBuilding: (id: string) => LegacySpaceBuilding | undefined;
+  };
+  time: {
+    heat: number;
+    isAccelerated: boolean;
+    chronoforgeUpgrades: LegacyTimeUpgrade[];
+    voidspaceUpgrades: LegacyTimeUpgrade[];
+    getCFU: (id: string) => LegacyTimeUpgrade;
+    getVSU: (id: string) => LegacyTimeUpgrade;
+  };
+  challenges: {
+    challenges: LegacyChallenge[];
+    getChallenge: (id: string) => LegacyChallenge;
+    getCountPending: () => number;
+    getCountCompletions: () => number;
+    applyPending: (isIronWillPending?: boolean) => void;
+  };
+  achievements: {
+    achievements: LegacyAchievement[];
+    badges: LegacyBadge[];
+  };
+  stats: {
+    stats: LegacyStat[];
+    statsCurrent: LegacyStat[];
+    statGroups: LegacyStatGroup[];
+  };
   settings: {
     settingsArr: LegacySetting[];
     get: (setting: LegacySetting | string) => boolean;
@@ -212,6 +447,7 @@ interface LegacyGame {
   updateCaches: () => void;
   updateWinterCatnip: () => void;
   getResourcePerTick: (id: string) => number;
+  getEffect: (id: string) => number;
   getResCraftRatio: (id: string) => number;
   getCraftRatio: () => number;
   getDisplayValueExt: (value: number) => string;
@@ -231,11 +467,30 @@ interface LegacyGame {
 }
 
 interface KernelClasses {
+  diplomacy: {
+    ui: {
+      EmbassyButtonController: new (game: LegacyGame) => StackableController;
+    };
+  };
   ui: {
     UISystem: new () => object;
     PolicyBtnController: new (game: LegacyGame) => {
       fetchModel: (options: { key: string; id: string }) => ControllerModel;
       buyItem: (model: ControllerModel) => PurchaseOutcome;
+    };
+    TranscendenceBtnController: new (game: LegacyGame) => StackableController;
+    ChallengeBtnController: new (game: LegacyGame) => StackableController;
+    space: {
+      PlanetBuildingBtnController: new (
+        game: LegacyGame
+      ) => StackableController;
+    };
+    time: {
+      AccelerateTimeBtnController: new (game: LegacyGame) => PurchaseController;
+      ShatterTCBtnController: new (game: LegacyGame) => ShatterController;
+      UseHeatBtnController: new (game: LegacyGame) => HeatController;
+      ChronoforgeBtnController: new (game: LegacyGame) => StackableController;
+      VoidSpaceBtnController: new (game: LegacyGame) => StackableController;
     };
     btn: {
       BuildingBtnModernController: new (game: LegacyGame) => {
@@ -273,6 +528,9 @@ interface KernelControllers {
     assignJobs: (model: JobButtonModel, amount: number) => void;
     unassignJobs: (model: JobButtonModel, amount: number) => void;
   };
+  ZigguratBtnController: new (game: LegacyGame) => StackableController;
+  ReligionBtnController: new (game: LegacyGame) => StackableController;
+  SpaceProgramBtnController: new (game: LegacyGame) => StackableController;
 }
 
 interface PendingConfirmation {
@@ -620,6 +878,402 @@ export class GameKernel {
     return { ok: true, reason: "ok", changed: true };
   }
 
+  trade(id: string, requestedAmount: number | "all" = 1): ActionResult {
+    const race = this.game.diplomacy.get(id);
+    if (!race) {
+      this.lastMessage = "未找到贸易种族";
+      this.refreshSnapshot();
+      return { ok: false, reason: "unknown" };
+    }
+    if (!race.unlocked) {
+      this.lastMessage = `${race.title} 尚未建立贸易关系`;
+      this.refreshSnapshot();
+      return { ok: false, reason: "locked" };
+    }
+
+    const maxAmount = Math.max(
+      0,
+      Math.floor(this.game.diplomacy.getMaxTradeAmt(race) || 0)
+    );
+    const amount =
+      requestedAmount === "all"
+        ? maxAmount
+        : Math.floor(Number(requestedAmount));
+    if (!Number.isFinite(amount) || amount <= 0) {
+      this.lastMessage = "当前资源不足，无法派出商队";
+      this.refreshSnapshot();
+      return { ok: false, reason: "cannot-afford" };
+    }
+    if (!this.game.diplomacy.hasMultipleResources(race, amount)) {
+      this.lastMessage = "当前资源不足，无法完成贸易";
+      this.refreshSnapshot();
+      return { ok: false, reason: "cannot-afford" };
+    }
+
+    this.game.diplomacy.tradeMultiple(race, amount);
+    this.lastMessage = `与${race.title}完成 ${amount} 次贸易`;
+    this.refreshGameState();
+    return { ok: true, reason: "ok", changed: true };
+  }
+
+  buyEmbassy(id: string): ActionResult {
+    const race = this.game.diplomacy.get(id);
+    if (!race) {
+      this.lastMessage = "未找到贸易种族";
+      this.refreshSnapshot();
+      return { ok: false, reason: "unknown" };
+    }
+    if (!race.unlocked) {
+      this.lastMessage = "需要先与该种族建立贸易关系";
+      this.refreshSnapshot();
+      return { ok: false, reason: "locked" };
+    }
+
+    return this.purchaseWithController(
+      new this.classes.diplomacy.ui.EmbassyButtonController(this.game),
+      {
+        key: id,
+        id,
+        race,
+        prices: race.embassyPrices,
+      },
+      "大使馆",
+      `建造${race.title}大使馆`
+    );
+  }
+
+  praise(): ActionResult {
+    const faith = this.game.resPool.get("faith");
+    if (!faith || faith.value <= 0) {
+      this.lastMessage = "没有可赞美的信仰";
+      this.refreshSnapshot();
+      return { ok: false, reason: "cannot-afford" };
+    }
+
+    this.game.religion.praise();
+    this.lastMessage = "信仰已转化为崇拜";
+    this.refreshGameState();
+    return { ok: true, reason: "ok", changed: true };
+  }
+
+  resetFaith(): ActionResult {
+    if (!this.game.religion.getRU("apocripha").on) {
+      this.lastMessage = "尚未掌握信仰重置";
+      this.refreshSnapshot();
+      return { ok: false, reason: "locked" };
+    }
+
+    this.game.religion.resetFaith(1.01, true);
+    this.lastMessage = this.pendingConfirmation
+      ? "等待确认信仰重置"
+      : "信仰已重置";
+    this.refreshGameState();
+    return {
+      ok: !this.pendingConfirmation,
+      reason: this.pendingConfirmation ? "requires-confirmation" : "ok",
+      changed: !this.pendingConfirmation,
+    };
+  }
+
+  transcend(): ActionResult {
+    if (!this.game.religion.getRU("transcendence").on) {
+      this.lastMessage = "尚未解锁超越";
+      this.refreshSnapshot();
+      return { ok: false, reason: "locked" };
+    }
+
+    const nextCost = this.game.religion._getTranscendNextPrice();
+    if (
+      !Number.isFinite(nextCost) ||
+      this.game.religion.faithRatio <= nextCost
+    ) {
+      this.lastMessage = "顿悟不足，无法超越";
+      this.refreshSnapshot();
+      return { ok: false, reason: "cannot-afford" };
+    }
+
+    this.game.religion.transcend();
+    this.lastMessage = this.pendingConfirmation
+      ? "等待确认超越"
+      : "超越状态未改变";
+    this.refreshGameState();
+    return {
+      ok: !this.pendingConfirmation,
+      reason: this.pendingConfirmation ? "requires-confirmation" : "ok",
+      changed: !this.pendingConfirmation,
+    };
+  }
+
+  sacrificeUnicorns(): ActionResult {
+    const available = this.game.religion.getAvailableUnicornSacrifices();
+    if (available <= 0) {
+      this.lastMessage = "没有足够的独角兽可供献祭";
+      this.refreshSnapshot();
+      return { ok: false, reason: "cannot-afford" };
+    }
+
+    this.game.religion.sacrificeAllUnicorns();
+    this.lastMessage = `献祭了 ${available} 批独角兽`;
+    this.refreshGameState();
+    return { ok: true, reason: "ok", changed: true };
+  }
+
+  buyReligionUpgrade(id: string, kind: ReligionUpgradeKind): ActionResult {
+    const metadata = this.getReligionUpgrade(id, kind);
+    if (!metadata) {
+      this.lastMessage = "未找到宗教升级";
+      this.refreshSnapshot();
+      return { ok: false, reason: "unknown" };
+    }
+
+    const controller =
+      kind === "ziggurat"
+        ? new this.controllers.ZigguratBtnController(this.game)
+        : kind === "transcendence"
+          ? new this.classes.ui.TranscendenceBtnController(this.game)
+          : new this.controllers.ReligionBtnController(this.game);
+    return this.purchaseWithController(
+      controller,
+      { key: id, id },
+      metadata.label,
+      `购买${metadata.label}`
+    );
+  }
+
+  launchSpaceProgram(id: string): ActionResult {
+    const metadata = this.game.space.getProgram(id);
+    if (!metadata) {
+      this.lastMessage = "未找到太空项目";
+      this.refreshSnapshot();
+      return { ok: false, reason: "unknown" };
+    }
+    if (metadata.val > 0) {
+      this.lastMessage = `${metadata.label} 已经完成或正在执行`;
+      this.refreshSnapshot();
+      return { ok: false, reason: "already-owned" };
+    }
+
+    return this.purchaseWithController(
+      new this.controllers.SpaceProgramBtnController(this.game),
+      { key: id, id },
+      metadata.label,
+      `启动${metadata.label}`
+    );
+  }
+
+  buySpaceBuilding(id: string): ActionResult {
+    const metadata = this.game.space.getBuilding(id);
+    if (!metadata) {
+      this.lastMessage = "未找到太空建筑";
+      this.refreshSnapshot();
+      return { ok: false, reason: "unknown" };
+    }
+
+    return this.purchaseWithController(
+      new this.classes.ui.space.PlanetBuildingBtnController(this.game),
+      { key: id, id },
+      metadata.label,
+      `建造${metadata.label}`
+    );
+  }
+
+  toggleTimeAcceleration(): ActionResult {
+    const controller = new this.classes.ui.time.AccelerateTimeBtnController(
+      this.game
+    );
+    const model = controller.fetchModel({
+      key: "accelerateTime",
+      id: "accelerateTime",
+      name: "时间加速",
+      description: "加速或恢复正常时间流速",
+    });
+    const outcome = controller.buyItem(model);
+    if (!outcome.itemBought) {
+      this.lastMessage = "无法切换时间加速";
+      this.refreshSnapshot();
+      return {
+        ok: false,
+        reason: this.mapPurchaseReason(outcome.reason),
+      };
+    }
+
+    this.lastMessage = this.game.time.isAccelerated
+      ? "时间加速已开启"
+      : "时间加速已关闭";
+    this.refreshGameState();
+    return { ok: true, reason: "ok", changed: true };
+  }
+
+  shatterTime(amount = 1): ActionResult {
+    if (!Number.isFinite(amount) || amount <= 0) {
+      return { ok: false, reason: "blocked" };
+    }
+
+    const shatterAmount = Math.floor(amount);
+    const controller = new this.classes.ui.time.ShatterTCBtnController(
+      this.game
+    );
+    const model = controller.fetchModel({
+      key: "shatterTimeCrystal",
+      id: "shatterTimeCrystal",
+      name: "碎裂时间水晶",
+      description: "跳跃一个年份并积累时间热量",
+      prices: [{ name: "timeCrystal", val: 1 }],
+    });
+    const prices = controller.getPricesMultiple(model, shatterAmount);
+    if (
+      !model.visible ||
+      (prices.timeCrystal ?? 0) > this.game.resPool.get("timeCrystal").value ||
+      (prices.void ?? 0) > this.game.resPool.get("void").value
+    ) {
+      this.lastMessage = model.visible
+        ? "没有足够的时间水晶或虚空"
+        : "碎裂时间水晶尚未解锁";
+      this.refreshSnapshot();
+      return {
+        ok: false,
+        reason: model.visible ? "cannot-afford" : "locked",
+      };
+    }
+
+    const timeCrystalBefore = this.game.resPool.get("timeCrystal").value;
+    const heatBefore = this.game.time.heat;
+    const furnaceHeatBefore = this.game.time.getCFU("blastFurnace").heat ?? 0;
+    const calendarBefore = this.game.calendar.day;
+    controller.doShatterAmt(model, shatterAmount);
+    const changed =
+      this.game.resPool.get("timeCrystal").value < timeCrystalBefore &&
+      (this.game.time.heat > heatBefore ||
+        (this.game.time.getCFU("blastFurnace").heat ?? 0) > furnaceHeatBefore ||
+        this.game.calendar.day !== calendarBefore);
+    if (!changed) {
+      this.lastMessage = "时间水晶未能碎裂";
+      this.refreshSnapshot();
+      return { ok: false, reason: "blocked" };
+    }
+
+    this.lastMessage = `碎裂了 ${shatterAmount} 个时间水晶`;
+    this.refreshGameState();
+    return { ok: true, reason: "ok", changed: true };
+  }
+
+  useChronoforgeHeat(amount = 1): ActionResult {
+    if (!Number.isFinite(amount) || amount <= 0) {
+      return { ok: false, reason: "blocked" };
+    }
+
+    const shatterAmount = Math.floor(amount);
+    const controller = new this.classes.ui.time.UseHeatBtnController(this.game);
+    const model = controller.fetchModel({
+      key: "useHeat",
+      id: "useHeat",
+      name: "使用时间热量",
+      description: "消耗热机热量进行时间跳跃",
+    });
+    const furnace = this.game.time.getCFU("blastFurnace");
+    if (!model.visible || (furnace.heat ?? 0) < shatterAmount * 100) {
+      this.lastMessage = model.visible
+        ? "热机中没有足够的时间热量"
+        : "尚未解锁热机控制";
+      this.refreshSnapshot();
+      return {
+        ok: false,
+        reason: model.visible ? "cannot-afford" : "locked",
+      };
+    }
+
+    const furnaceHeatBefore = furnace.heat ?? 0;
+    const calendarBefore = this.game.calendar.day;
+    controller.doShatterAmt(model, shatterAmount);
+    const changed =
+      (furnace.heat ?? 0) < furnaceHeatBefore ||
+      this.game.calendar.day !== calendarBefore;
+    if (!changed) {
+      this.lastMessage = "热机未能完成时间跳跃";
+      this.refreshSnapshot();
+      return { ok: false, reason: "blocked" };
+    }
+
+    this.lastMessage = `使用热机跳跃了 ${shatterAmount} 次`;
+    this.refreshGameState();
+    return { ok: true, reason: "ok", changed: true };
+  }
+
+  buyTimeUpgrade(id: string, kind: TimeUpgradeKind): ActionResult {
+    const metadata =
+      kind === "chronoforge"
+        ? this.game.time.getCFU(id)
+        : this.game.time.getVSU(id);
+    if (!metadata) {
+      this.lastMessage = "未找到时间升级";
+      this.refreshSnapshot();
+      return { ok: false, reason: "unknown" };
+    }
+
+    const controller =
+      kind === "chronoforge"
+        ? new this.classes.ui.time.ChronoforgeBtnController(this.game)
+        : new this.classes.ui.time.VoidSpaceBtnController(this.game);
+    return this.purchaseWithController(
+      controller,
+      { key: id, id },
+      metadata.label,
+      `购买${metadata.label}`
+    );
+  }
+
+  toggleChallenge(id: string): ActionResult {
+    const metadata = this.game.challenges.getChallenge(id);
+    if (!metadata) {
+      this.lastMessage = "未找到挑战";
+      this.refreshSnapshot();
+      return { ok: false, reason: "unknown" };
+    }
+    if (!metadata.unlocked) {
+      this.lastMessage = "该挑战尚未解锁";
+      this.refreshSnapshot();
+      return { ok: false, reason: "locked" };
+    }
+
+    const controller = new this.classes.ui.ChallengeBtnController(this.game);
+    const model = controller.fetchModel({ key: id, id });
+    const outcome = controller.buyItem(model);
+    if (!outcome.itemBought) {
+      this.lastMessage = "无法切换挑战";
+      this.refreshSnapshot();
+      return {
+        ok: false,
+        reason: this.mapPurchaseReason(outcome.reason),
+      };
+    }
+
+    this.lastMessage = metadata.pending
+      ? `${metadata.label} 已加入待开始列表`
+      : `${metadata.label} 已从待开始列表移除`;
+    this.refreshGameState();
+    return { ok: true, reason: "ok", changed: true };
+  }
+
+  applyPendingChallenges(): ActionResult {
+    const pendingCount = this.game.challenges.getCountPending();
+    if (pendingCount <= 0) {
+      this.lastMessage = "没有待开始的挑战";
+      this.refreshSnapshot();
+      return { ok: false, reason: "blocked" };
+    }
+
+    this.game.challenges.applyPending();
+    this.lastMessage = this.pendingConfirmation
+      ? `等待确认开始 ${pendingCount} 个挑战`
+      : "挑战已开始";
+    this.refreshGameState();
+    return {
+      ok: !this.pendingConfirmation,
+      reason: this.pendingConfirmation ? "requires-confirmation" : "ok",
+      changed: !this.pendingConfirmation,
+    };
+  }
+
   setSetting(id: string, value: boolean): ActionResult {
     const setting = this.game.settings.settingsArr.find(
       (entry) => entry.name === id && SETTING_IDS.has(entry.name)
@@ -753,17 +1407,66 @@ export class GameKernel {
     return { ok: true, reason: "ok", changed: true };
   }
 
+  private purchaseWithController(
+    controller: PurchaseController,
+    options: ControllerOptions,
+    label: string,
+    successMessage: string
+  ): ActionResult {
+    const model = controller.fetchModel(options);
+    if (!model.visible) {
+      this.lastMessage = `${label} 尚未解锁`;
+      this.refreshSnapshot();
+      return { ok: false, reason: "locked" };
+    }
+    if (!model.enabled) {
+      this.lastMessage = "资源不足或条件尚未满足";
+      this.refreshSnapshot();
+      return { ok: false, reason: "not-enabled" };
+    }
+
+    const outcome = controller.buyItem(model);
+    if (!outcome.itemBought) {
+      const reason = this.mapPurchaseReason(outcome.reason);
+      this.lastMessage =
+        reason === "requires-confirmation"
+          ? `等待确认：${label}`
+          : `${label} 当前无法完成`;
+      this.refreshSnapshot();
+      return { ok: false, reason };
+    }
+
+    this.lastMessage = successMessage;
+    this.refreshGameState();
+    return { ok: true, reason: "ok", changed: true };
+  }
+
+  private getReligionUpgrade(
+    id: string,
+    kind: ReligionUpgradeKind
+  ): LegacyReligionUpgrade | undefined {
+    if (kind === "ziggurat") return this.game.religion.getZU(id);
+    if (kind === "transcendence") return this.game.religion.getTU(id);
+    return this.game.religion.getRU(id);
+  }
+
   private mapPurchaseReason(reason: string): ActionResult["reason"] {
     switch (reason) {
       case "paid-for":
       case "ok":
+      case "item-is-free":
         return "ok";
       case "cannot-afford":
         return "cannot-afford";
       case "require-confirmation":
+      case "requires-confirmation":
         return "requires-confirmation";
       case "already-bought":
         return "already-owned";
+      case "not-unlocked":
+        return "locked";
+      case "not-enabled":
+        return "not-enabled";
       case "blocked":
       case "player-denied":
       case "read-only":
@@ -800,6 +1503,12 @@ export class GameKernel {
       village: this.mapVillage(),
       science: this.mapScience(),
       workshop: this.mapWorkshop(),
+      trade: this.mapTrade(),
+      religion: this.mapReligion(),
+      space: this.mapSpace(),
+      time: this.mapTime(),
+      challenges: this.mapChallenges(),
+      progress: this.mapProgress(),
       settings: this.mapSettings(),
       calendar: {
         day: this.game.calendar.day,
@@ -1026,6 +1735,413 @@ export class GameKernel {
       craftRatio: this.game.getCraftRatio(),
       crafts,
       upgrades,
+    };
+  }
+
+  private mapTrade(): TradeSnapshot {
+    const diplomacy = this.game.diplomacy;
+    const tradeVolume = diplomacy.getTradeVolume();
+    const embassyController =
+      new this.classes.diplomacy.ui.EmbassyButtonController(this.game);
+    const races = diplomacy.races
+      .filter((race) => race.unlocked)
+      .map((race): TradeRaceSnapshot => {
+        const embassyModel = embassyController.fetchModel({
+          key: race.name,
+          id: race.name,
+          race,
+          prices: race.embassyPrices,
+        });
+        const mapOffer = (
+          offer: LegacyTradePrice | LegacyTradeOffer,
+          kind: "buy" | "sell"
+        ): TradeOfferSnapshot => {
+          const resource = this.game.resPool.get(offer.name);
+          const chance =
+            kind === "buy"
+              ? 1
+              : this.game.diplomacy.getResourceTradeChance(
+                  offer as LegacyTradeOffer,
+                  race
+                );
+          const baseAmount =
+            "val" in offer
+              ? offer.val
+              : ((offer as LegacyTradeOffer).value ?? 0);
+          return {
+            id: offer.name,
+            label: resource?.title ?? offer.name,
+            amount: baseAmount * tradeVolume,
+            chance,
+            minEmbassyLevel: (offer as LegacyTradeOffer).minLevel ?? 0,
+            available:
+              kind === "buy" ||
+              diplomacy.isValidTrade(offer as LegacyTradeOffer, race),
+          };
+        };
+
+        return {
+          id: race.name,
+          label: race.title,
+          standing: diplomacy.getFinalStanding(race),
+          unlocked: race.unlocked,
+          buys: race.buys.map((offer) => mapOffer(offer, "buy")),
+          sells: race.sells.map((offer) => mapOffer(offer, "sell")),
+          maxTradeAmount: Math.max(
+            0,
+            Math.floor(diplomacy.getMaxTradeAmt(race) || 0)
+          ),
+          canTrade: diplomacy.getMaxTradeAmt(race) > 0,
+          blueprintChance: diplomacy.getBlueprintTradeChance(race),
+          spiceChance: diplomacy.getSpiceTradeChance(race),
+          embassy: {
+            level: race.embassyLevel,
+            canBuy: embassyModel.visible && embassyModel.enabled,
+            prices: this.mapPrices(embassyModel.prices),
+          },
+        };
+      });
+
+    return {
+      unlocked: races.length > 0,
+      tradeVolume,
+      goldCost: diplomacy.getGoldCost(),
+      manpowerCost: diplomacy.getManpowerCost(),
+      races,
+    };
+  }
+
+  private mapReligion(): ReligionSnapshot {
+    const religion = this.game.religion;
+    const faith = this.game.resPool.get("faith");
+    const controllers = {
+      ziggurat: new this.controllers.ZigguratBtnController(this.game),
+      religion: new this.controllers.ReligionBtnController(this.game),
+      transcendence: new this.classes.ui.TranscendenceBtnController(this.game),
+    };
+    const mapUpgrades = (
+      items: LegacyReligionUpgrade[],
+      kind: ReligionUpgradeKind
+    ): ReligionUpgradeSnapshot[] => {
+      const controller = controllers[kind];
+      return items.flatMap((item) => {
+        const model = controller.fetchModel({ key: item.name, id: item.name });
+        if (!model.visible) return [];
+        return [
+          {
+            id: item.name,
+            kind,
+            label: item.label,
+            description: plainText(item.description ?? ""),
+            value: item.val,
+            enabled: item.on,
+            unlocked: item.unlocked ?? true,
+            canBuy: model.enabled,
+            prices: this.mapPrices(model.prices),
+          },
+        ];
+      });
+    };
+    const upgrades = [
+      ...mapUpgrades(religion.zigguratUpgrades, "ziggurat"),
+      ...mapUpgrades(religion.religionUpgrades, "religion"),
+      ...mapUpgrades(religion.transcendenceUpgrades, "transcendence"),
+    ];
+    const nextTranscendenceCost = religion._getTranscendNextPrice();
+    const unicornSacrifices = religion.getAvailableUnicornSacrifices();
+
+    return {
+      unlocked:
+        Boolean(faith?.unlocked) ||
+        religion.faith > 0 ||
+        religion.faithRatio > 0 ||
+        upgrades.length > 0,
+      faith: faith?.value ?? 0,
+      worship: religion.faith,
+      faithRatio: religion.faithRatio,
+      apocryphaBonus: religion.getApocryphaBonus(),
+      transcendenceTier: religion.transcendenceTier,
+      nextTranscendenceCost,
+      corruption: religion.corruption,
+      unicornSacrifices,
+      canPraise: (faith?.value ?? 0) > 0,
+      canResetFaith: religion.getRU("apocripha").on > 0,
+      canTranscend:
+        religion.getRU("transcendence").on > 0 &&
+        Number.isFinite(nextTranscendenceCost) &&
+        religion.faithRatio > nextTranscendenceCost,
+      canSacrifice: unicornSacrifices > 0,
+      upgrades,
+    };
+  }
+
+  private mapSpace(): SpaceSnapshot {
+    const space = this.game.space;
+    const programController = new this.controllers.SpaceProgramBtnController(
+      this.game
+    );
+    const buildingController =
+      new this.classes.ui.space.PlanetBuildingBtnController(this.game);
+    const programs = space.programs.flatMap(
+      (program): SpaceProgramSnapshot[] => {
+        const model = programController.fetchModel({
+          key: program.name,
+          id: program.name,
+        });
+        if (!model.visible) return [];
+        return [
+          {
+            id: program.name,
+            label: program.label,
+            description: plainText(program.description ?? ""),
+            value: program.val,
+            enabled: program.on,
+            unlocked: program.unlocked,
+            canLaunch: model.visible && model.enabled && program.val === 0,
+            prices: this.mapPrices(model.prices),
+          },
+        ];
+      }
+    );
+    const planets = space.planets
+      .filter((planet) => planet.unlocked || planet.reached)
+      .map((planet) => {
+        const buildings = (planet.buildings ?? []).flatMap(
+          (building): SpaceBuildingSnapshot[] => {
+            const model = buildingController.fetchModel({
+              key: building.name,
+              id: building.name,
+            });
+            if (!model.visible) return [];
+            return [
+              {
+                id: building.name,
+                label: building.label,
+                description: plainText(building.description ?? ""),
+                value: building.val,
+                enabled: building.on,
+                unlocked: building.unlocked,
+                canBuy: model.enabled,
+                prices: this.mapPrices(model.prices),
+              },
+            ];
+          }
+        );
+        return {
+          id: planet.name,
+          label: planet.label,
+          unlocked: planet.unlocked,
+          reached: planet.reached,
+          routeDays: planet.routeDays,
+          buildings,
+        };
+      });
+
+    return {
+      unlocked: programs.length > 0 || planets.length > 0,
+      programs,
+      planets,
+    };
+  }
+
+  private mapTime(): TimeSnapshot {
+    const time = this.game.time;
+    const timeCrystal = this.game.resPool.get("timeCrystal");
+    const temporalFlux = this.game.resPool.get("temporalFlux");
+    const shatterController = new this.classes.ui.time.ShatterTCBtnController(
+      this.game
+    );
+    const shatterModel = shatterController.fetchModel({
+      key: "shatterTimeCrystal",
+      id: "shatterTimeCrystal",
+      name: "碎裂时间水晶",
+      description: "跳跃一个年份并积累时间热量",
+      prices: [{ name: "timeCrystal", val: 1 }],
+    });
+    const shatterCost = shatterController.getPricesMultiple(shatterModel, 1);
+    const heatController = new this.classes.ui.time.UseHeatBtnController(
+      this.game
+    );
+    const heatModel = heatController.fetchModel({
+      key: "useHeat",
+      id: "useHeat",
+      name: "使用时间热量",
+      description: "消耗热机热量进行时间跳跃",
+      prices: [],
+    });
+    const furnace = time.getCFU("blastFurnace");
+    const mapUpgrades = (
+      items: LegacyTimeUpgrade[],
+      kind: TimeUpgradeKind
+    ): TimeUpgradeSnapshot[] => {
+      const controller =
+        kind === "chronoforge"
+          ? new this.classes.ui.time.ChronoforgeBtnController(this.game)
+          : new this.classes.ui.time.VoidSpaceBtnController(this.game);
+      return items.flatMap((item) => {
+        const model = controller.fetchModel({ key: item.name, id: item.name });
+        if (!model.visible) return [];
+        return [
+          {
+            id: item.name,
+            kind,
+            label: item.label,
+            description: plainText(item.description ?? ""),
+            value: item.val,
+            enabled: item.on,
+            unlocked: item.unlocked ?? true,
+            canBuy: model.enabled,
+            prices: this.mapPrices(model.prices),
+          },
+        ];
+      });
+    };
+    const upgrades = [
+      ...mapUpgrades(time.chronoforgeUpgrades, "chronoforge"),
+      ...mapUpgrades(time.voidspaceUpgrades, "voidspace"),
+    ];
+    const canShatter =
+      shatterModel.visible &&
+      shatterModel.enabled &&
+      (shatterCost.timeCrystal ?? 0) <= timeCrystal.value &&
+      (shatterCost.void ?? 0) <= this.game.resPool.get("void").value;
+
+    return {
+      unlocked:
+        Boolean(timeCrystal.unlocked) ||
+        Boolean(temporalFlux.unlocked) ||
+        time.isAccelerated ||
+        upgrades.length > 0,
+      temporalFlux: temporalFlux.value,
+      temporalFluxMax: temporalFlux.maxValue,
+      heat: time.heat,
+      heatMax: this.game.getEffect("heatMax"),
+      furnaceHeat: furnace.heat ?? 0,
+      isAccelerated: time.isAccelerated,
+      canAccelerate: temporalFlux.value > 0 || time.isAccelerated,
+      canShatter,
+      canUseHeat:
+        heatModel.visible && heatModel.enabled && (furnace.heat ?? 0) >= 100,
+      shatterPrices: Object.entries(shatterCost)
+        .filter(([, value]) => value > 0)
+        .map(([id, value]) => {
+          const resource = this.game.resPool.get(id);
+          return {
+            id,
+            label: resource?.title ?? id,
+            value,
+            affordable: Boolean(resource && resource.value >= value),
+          };
+        }),
+      upgrades,
+    };
+  }
+
+  private mapChallenges(): ChallengesSnapshot {
+    const manager = this.game.challenges;
+    const controller = new this.classes.ui.ChallengeBtnController(this.game);
+    const challenges = manager.challenges
+      .filter((challenge) => challenge.unlocked)
+      .map((challenge): ChallengeSnapshot => {
+        const model = controller.fetchModel({
+          key: challenge.name,
+          id: challenge.name,
+        });
+        return {
+          id: challenge.name,
+          label: challenge.label,
+          description: plainText(challenge.description ?? ""),
+          effectDescription: plainText(challenge.effectDesc ?? ""),
+          unlocked: challenge.unlocked,
+          active: challenge.active,
+          pending: challenge.pending,
+          completions: challenge.on,
+          canToggle: model.visible,
+        };
+      });
+
+    return {
+      unlocked: challenges.length > 0,
+      activeCount: challenges.filter((challenge) => challenge.active).length,
+      pendingCount: manager.getCountPending(),
+      completionCount: manager.getCountCompletions(),
+      canApplyPending: manager.getCountPending() > 0,
+      challenges,
+    };
+  }
+
+  private mapProgress(): ProgressSnapshot {
+    const achievements = this.game.achievements.achievements.map(
+      (achievement): AchievementSnapshot => {
+        const hidden = Boolean(achievement.hidden && !achievement.unlocked);
+        return {
+          id: achievement.name,
+          label: hidden ? "隐藏成就" : achievement.title,
+          description: hidden
+            ? "解锁后揭示这个成就的条件。"
+            : plainText(achievement.description ?? ""),
+          hidden,
+          unethical: Boolean(achievement.unethical),
+          unlocked: achievement.unlocked,
+          starUnlocked: Boolean(achievement.starUnlocked),
+          hasStar: Boolean(achievement.starCondition),
+        };
+      }
+    );
+    const visibleAchievements = achievements.filter(
+      (achievement) => !achievement.hidden
+    );
+    const ethicalAchievements = visibleAchievements.filter(
+      (achievement) => !achievement.unethical
+    );
+    const badges = this.game.achievements.badges.map(
+      (badge): BadgeSnapshot => ({
+        id: badge.name,
+        label: badge.title,
+        description: plainText(badge.description ?? ""),
+        unlocked: badge.unlocked,
+      })
+    );
+    const statGroups = this.game.stats.statGroups.map(
+      (group, groupIndex): StatGroupSnapshot => ({
+        id: `group-${groupIndex}`,
+        label: group.title,
+        stats: group.group.map((stat): StatSnapshot => {
+          const calculated =
+            typeof stat.calculate === "function"
+              ? stat.calculate(this.game)
+              : stat.val;
+          const value =
+            stat.name === "totalResets" && typeof calculated === "number"
+              ? calculated + 1
+              : calculated;
+          return {
+            id: stat.name,
+            label: stat.title,
+            value,
+            unlocked:
+              Boolean(stat.unlocked) ||
+              Boolean(stat.defaultUnlocked) ||
+              value !== 0,
+          };
+        }),
+      })
+    );
+
+    return {
+      achievements,
+      badges,
+      unlockedAchievements: ethicalAchievements.filter(
+        (achievement) => achievement.unlocked
+      ).length,
+      totalAchievements: ethicalAchievements.length,
+      unlockedStars: ethicalAchievements.filter(
+        (achievement) => achievement.starUnlocked
+      ).length,
+      totalStars: ethicalAchievements.filter(
+        (achievement) => achievement.hasStar
+      ).length,
+      statGroups,
     };
   }
 

@@ -1,17 +1,23 @@
 import type { LucideIcon } from "lucide-react";
 import {
+  Activity,
   CalendarDays,
   Cat,
   ChevronRight,
+  Church,
   CircleAlert,
+  Clock3,
   ExternalLink,
+  Handshake,
   Leaf,
   LoaderCircle,
   Menu,
   RefreshCw,
+  Rocket,
   Save,
   Settings2,
   Sprout,
+  Trophy,
   Wrench,
 } from "lucide-react";
 import { useMemo, useState } from "react";
@@ -45,13 +51,32 @@ import {
   VillagePanel,
   WorkshopPanel,
 } from "@/features/kittens/game-panels";
+import {
+  ChallengesPanel,
+  ProgressPanel,
+  ReligionPanel,
+  SpacePanel,
+  TimePanel,
+  TradePanel,
+} from "@/features/kittens/game-midgame-panels";
 import { ResourceChip } from "@/features/kittens/game-shared";
 import { useKittensGame } from "@/features/kittens/use-kittens-game";
 import type { ActionResult, GameSnapshot } from "@/game/kernel/types";
 import { cn } from "@/lib/utils";
 
 const NAV_ITEMS: Array<{
-  id: "bonfire" | "village" | "science" | "workshop" | "settings";
+  id:
+    | "bonfire"
+    | "village"
+    | "science"
+    | "workshop"
+    | "trade"
+    | "religion"
+    | "space"
+    | "time"
+    | "challenges"
+    | "progress"
+    | "settings";
   label: string;
   caption: string;
   icon: LucideIcon;
@@ -81,6 +106,42 @@ const NAV_ITEMS: Array<{
     icon: Wrench,
   },
   {
+    id: "trade",
+    label: "贸易",
+    caption: "商队与外交",
+    icon: Handshake,
+  },
+  {
+    id: "religion",
+    label: "宗教",
+    caption: "信仰与超越",
+    icon: Church,
+  },
+  {
+    id: "space",
+    label: "太空",
+    caption: "任务与行星",
+    icon: Rocket,
+  },
+  {
+    id: "time",
+    label: "时间",
+    caption: "通量与热机",
+    icon: Clock3,
+  },
+  {
+    id: "challenges",
+    label: "挑战",
+    caption: "规则与奖励",
+    icon: Trophy,
+  },
+  {
+    id: "progress",
+    label: "进度",
+    caption: "成就与统计",
+    icon: Activity,
+  },
+  {
     id: "settings",
     label: "游戏设置",
     caption: "显示与存档",
@@ -100,7 +161,10 @@ function Navigation({
   compact?: boolean;
 }) {
   return (
-    <nav aria-label="游戏系统" className="flex min-h-0 flex-1 flex-col gap-1">
+    <nav
+      aria-label="游戏系统"
+      className="flex min-h-0 flex-1 flex-col gap-1 overflow-y-auto pr-1"
+    >
       {NAV_ITEMS.map((item) => {
         const Icon = item.icon;
         const active = activeNav === item.id;
@@ -262,6 +326,138 @@ export default function KittensGame() {
   const activeLabel =
     NAV_ITEMS.find((item) => item.id === activeNav)?.label ?? "营火";
 
+  const renderPanel = () => {
+    switch (activeNav) {
+      case "bonfire":
+        return (
+          <BonfirePanel
+            snapshot={snapshot}
+            onGather={() => runAction("采集了猫薄荷", () => kernel.gather())}
+            onCraft={() => runAction("精炼了木材", () => kernel.craftWood())}
+            onBuy={(id) => runAction("完成建造", () => kernel.buyBuilding(id))}
+          />
+        );
+      case "village":
+        return (
+          <VillagePanel
+            snapshot={snapshot}
+            onAssign={(id, amount) =>
+              runAction("已调整职业", () => kernel.assignJob(id, amount))
+            }
+            onUnassign={(id, amount) =>
+              runAction("已调整职业", () => kernel.unassignJob(id, amount))
+            }
+          />
+        );
+      case "science":
+        return (
+          <SciencePanel
+            snapshot={snapshot}
+            onResearch={(id, kind) =>
+              runAction("研究完成", () => kernel.research(id, kind))
+            }
+          />
+        );
+      case "workshop":
+        return (
+          <WorkshopPanel
+            snapshot={snapshot}
+            onCraft={(id, amount) =>
+              runAction("制作完成", () => kernel.craft(id, amount))
+            }
+            onCraftAll={(id) =>
+              runAction("批量制作完成", () => kernel.craftAll(id))
+            }
+            onBuy={(id) => runAction("购买升级", () => kernel.buyUpgrade(id))}
+          />
+        );
+      case "trade":
+        return (
+          <TradePanel
+            snapshot={snapshot}
+            onTrade={(id, amount) =>
+              runAction("贸易完成", () => kernel.trade(id, amount))
+            }
+            onEmbassy={(id) =>
+              runAction("大使馆已建造", () => kernel.buyEmbassy(id))
+            }
+          />
+        );
+      case "religion":
+        return (
+          <ReligionPanel
+            snapshot={snapshot}
+            onPraise={() => runAction("赞美完成", () => kernel.praise())}
+            onResetFaith={() =>
+              runAction("信仰已重置", () => kernel.resetFaith())
+            }
+            onTranscend={() => runAction("超越完成", () => kernel.transcend())}
+            onSacrifice={() =>
+              runAction("独角兽献祭完成", () => kernel.sacrificeUnicorns())
+            }
+            onBuyUpgrade={(id, kind) =>
+              runAction("宗教升级已购买", () =>
+                kernel.buyReligionUpgrade(id, kind)
+              )
+            }
+          />
+        );
+      case "space":
+        return (
+          <SpacePanel
+            snapshot={snapshot}
+            onLaunch={(id) =>
+              runAction("太空任务已启动", () => kernel.launchSpaceProgram(id))
+            }
+            onBuy={(id) =>
+              runAction("太空建筑已建造", () => kernel.buySpaceBuilding(id))
+            }
+          />
+        );
+      case "time":
+        return (
+          <TimePanel
+            snapshot={snapshot}
+            onAccelerate={() =>
+              runAction("时间流速已切换", () => kernel.toggleTimeAcceleration())
+            }
+            onShatter={() =>
+              runAction("时间跳跃完成", () => kernel.shatterTime(1))
+            }
+            onUseHeat={() =>
+              runAction("热机跳跃完成", () => kernel.useChronoforgeHeat(1))
+            }
+            onBuyUpgrade={(id, kind) =>
+              runAction("时间装置已购买", () => kernel.buyTimeUpgrade(id, kind))
+            }
+          />
+        );
+      case "challenges":
+        return (
+          <ChallengesPanel
+            snapshot={snapshot}
+            onToggle={(id) =>
+              runAction("挑战准备状态已更新", () => kernel.toggleChallenge(id))
+            }
+            onApply={() =>
+              runAction("挑战已开始", () => kernel.applyPendingChallenges())
+            }
+          />
+        );
+      case "progress":
+        return <ProgressPanel snapshot={snapshot} />;
+      case "settings":
+        return (
+          <GameSettingsPanel
+            snapshot={snapshot}
+            onSet={(id, value) =>
+              runAction("设置已更新", () => kernel.setSetting(id, value))
+            }
+          />
+        );
+    }
+  };
+
   return (
     <section
       className="kittens-game-view grid h-full min-h-0 w-full grid-rows-[auto_minmax(0,1fr)] overflow-hidden bg-[#101410] text-stone-100"
@@ -351,56 +547,12 @@ export default function KittensGame() {
           </div>
           <Navigation activeNav={activeNav} onNavigate={navigate} />
           <div className="mt-4 border-t border-white/[0.07] px-2 pt-3 text-[10px] leading-relaxed text-stone-600">
-            M2 原生系统
+            M3 原生系统
           </div>
         </aside>
 
         <main className="min-h-0 min-w-0 overflow-y-auto bg-[#181d18]">
-          {activeNav === "bonfire" ? (
-            <BonfirePanel
-              snapshot={snapshot}
-              onGather={() => runAction("采集了猫薄荷", () => kernel.gather())}
-              onCraft={() => runAction("精炼了木材", () => kernel.craftWood())}
-              onBuy={(id) =>
-                runAction("完成建造", () => kernel.buyBuilding(id))
-              }
-            />
-          ) : activeNav === "village" ? (
-            <VillagePanel
-              snapshot={snapshot}
-              onAssign={(id, amount) =>
-                runAction("已调整职业", () => kernel.assignJob(id, amount))
-              }
-              onUnassign={(id, amount) =>
-                runAction("已调整职业", () => kernel.unassignJob(id, amount))
-              }
-            />
-          ) : activeNav === "science" ? (
-            <SciencePanel
-              snapshot={snapshot}
-              onResearch={(id, kind) =>
-                runAction("研究完成", () => kernel.research(id, kind))
-              }
-            />
-          ) : activeNav === "workshop" ? (
-            <WorkshopPanel
-              snapshot={snapshot}
-              onCraft={(id, amount) =>
-                runAction("制作完成", () => kernel.craft(id, amount))
-              }
-              onCraftAll={(id) =>
-                runAction("批量制作完成", () => kernel.craftAll(id))
-              }
-              onBuy={(id) => runAction("购买升级", () => kernel.buyUpgrade(id))}
-            />
-          ) : (
-            <GameSettingsPanel
-              snapshot={snapshot}
-              onSet={(id, value) =>
-                runAction("设置已更新", () => kernel.setSetting(id, value))
-              }
-            />
-          )}
+          {renderPanel()}
         </main>
 
         <aside className="hidden min-h-0 flex-col border-l border-white/10 bg-[#121612] xl:flex">

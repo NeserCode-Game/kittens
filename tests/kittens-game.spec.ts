@@ -6,6 +6,10 @@ const M2_SAVE = readFileSync(
   new URL("./fixtures/m2-save.json", import.meta.url),
   "utf8"
 );
+const M3_SAVE = readFileSync(
+  new URL("./fixtures/m3-save.json", import.meta.url),
+  "utf8"
+);
 
 async function clickMany(locator: Locator, count: number) {
   await locator.evaluate((element, total) => {
@@ -264,6 +268,204 @@ test("drives village, research, workshop, upgrades and settings", async ({
   await testInfo.attach("m2-diagnostics.json", {
     body: Buffer.from(
       JSON.stringify({ woodBefore, consoleErrors, pageErrors }, null, 2)
+    ),
+    contentType: "application/json",
+  });
+
+  expect(consoleErrors).toEqual([]);
+  expect(pageErrors).toEqual([]);
+});
+
+test("drives trade, religion, space, time, challenges and progress", async ({
+  page,
+}, testInfo) => {
+  const consoleErrors: string[] = [];
+  const pageErrors: string[] = [];
+
+  page.on("console", (message) => {
+    if (message.type() === "error") consoleErrors.push(message.text());
+  });
+  page.on("pageerror", (error) => {
+    pageErrors.push(error.stack ?? error.message);
+  });
+
+  await page.addInitScript(
+    ({ key, save }) => {
+      if (!localStorage.getItem(key)) localStorage.setItem(key, save);
+    },
+    { key: SAVE_KEY, save: M3_SAVE }
+  );
+  await page.goto("/", { waitUntil: "domcontentloaded" });
+
+  await expect(page.locator("iframe")).toHaveCount(0);
+  await expect(page.getByRole("heading", { name: "营火" })).toBeVisible({
+    timeout: 30_000,
+  });
+
+  await page.getByRole("button", { name: /^贸易/ }).click();
+  await expect(
+    page.getByRole("heading", { name: "贸易", level: 1 })
+  ).toBeVisible();
+  const lizardRace = page.locator('[data-trade-race-id="lizards"]');
+  await expect(lizardRace).toBeVisible();
+  expect(
+    Number(await lizardRace.getAttribute("data-trade-max"))
+  ).toBeGreaterThan(0);
+  const mineralsBefore = Number(
+    await page
+      .locator('[data-resource-id="minerals"]')
+      .getAttribute("data-resource-value")
+  );
+  await page.locator('[data-trade-action="lizards"]').click();
+  await expect
+    .poll(async () =>
+      Number(
+        await page
+          .locator('[data-resource-id="minerals"]')
+          .getAttribute("data-resource-value")
+      )
+    )
+    .toBeLessThan(mineralsBefore);
+  await expect(lizardRace).toHaveAttribute("data-trade-embassy-level", "1");
+  await page.locator('[data-embassy-build="lizards"]').click();
+  await expect(lizardRace).toHaveAttribute("data-trade-embassy-level", "2");
+
+  await page.getByRole("button", { name: /^宗教/ }).click();
+  await expect(
+    page.getByRole("heading", { name: "宗教", level: 1 })
+  ).toBeVisible();
+  const religionPanel = page.locator("[data-religion-worship]");
+  const worshipBefore = Number(
+    await religionPanel.getAttribute("data-religion-worship")
+  );
+  await page.getByRole("button", { name: "赞美" }).click();
+  await expect
+    .poll(async () =>
+      Number(await religionPanel.getAttribute("data-religion-worship"))
+    )
+    .toBeGreaterThan(worshipBefore);
+
+  const unicornTomb = page.locator('[data-religion-upgrade-id="unicornTomb"]');
+  await expect(unicornTomb).toHaveAttribute("data-religion-upgrade-value", "0");
+  await page.locator('[data-religion-buy="unicornTomb"]').click();
+  await expect(unicornTomb).toHaveAttribute("data-religion-upgrade-value", "1");
+
+  await page.locator('[data-action="reset-faith"]').click();
+  const confirmation = page.locator('[role="dialog"]');
+  await expect(confirmation).toBeVisible();
+  await confirmation.getByRole("button", { name: "取消" }).click();
+  await expect(confirmation).toBeHidden();
+
+  await page.getByRole("button", { name: /^太空/ }).click();
+  await expect(
+    page.getByRole("heading", { name: "太空", level: 1 })
+  ).toBeVisible();
+  await page.locator('[data-space-launch="orbitalLaunch"]').click();
+  await expect(
+    page.locator('[data-space-program-id="orbitalLaunch"]')
+  ).toHaveAttribute("data-space-program-value", "1");
+
+  await page.getByRole("tab", { name: /^行星/ }).click();
+  const spaceElevator = page.locator(
+    '[data-space-building-id="spaceElevator"]'
+  );
+  await expect(spaceElevator).toHaveAttribute("data-space-building-value", "0");
+  await page.locator('[data-space-build="spaceElevator"]').click();
+  await expect(spaceElevator).toHaveAttribute("data-space-building-value", "1");
+
+  await page.getByRole("button", { name: /^时间/ }).click();
+  await expect(
+    page.getByRole("heading", { name: "时间", level: 1 })
+  ).toBeVisible();
+  const timePanel = page.locator("[data-time-heat]");
+  const heatBefore = Number(await timePanel.getAttribute("data-time-heat"));
+  await page.locator('[data-action="shatter-time"]').click();
+  await expect
+    .poll(async () => Number(await timePanel.getAttribute("data-time-heat")))
+    .toBeGreaterThan(heatBefore);
+  await page.locator('[data-action="toggle-time-acceleration"]').click();
+  await expect(timePanel).toHaveAttribute("data-time-accelerated", "true");
+
+  await page.getByRole("button", { name: /^挑战/ }).click();
+  await expect(
+    page.getByRole("heading", { name: "挑战", level: 1 })
+  ).toBeVisible();
+  const winterChallenge = page.locator('[data-challenge-id="winterIsComing"]');
+  await page.locator('[data-challenge-toggle="winterIsComing"]').click();
+  await expect(winterChallenge).toHaveAttribute(
+    "data-challenge-pending",
+    "true"
+  );
+  await page.locator('[data-action="apply-challenges"]').click();
+  await expect(confirmation).toBeVisible();
+  await confirmation.getByRole("button", { name: "取消" }).click();
+  await expect(confirmation).toBeHidden();
+  await page.locator('[data-challenge-toggle="winterIsComing"]').click();
+  await expect(winterChallenge).toHaveAttribute(
+    "data-challenge-pending",
+    "false"
+  );
+
+  await page.getByRole("button", { name: /^进度/ }).click();
+  await expect(
+    page.getByRole("heading", { name: "进度", level: 1 })
+  ).toBeVisible();
+  await expect(
+    page.locator('[data-achievement-id="unicornConspiracy"]')
+  ).toHaveAttribute("data-achievement-unlocked", "true");
+  await expect(
+    page.locator('[data-achievement-id="winterIsComing"]')
+  ).toHaveAttribute("data-achievement-unethical", "true");
+  await expect(
+    page.locator('[data-badge-id="ghostInTheMachine"]')
+  ).toBeVisible();
+  await page.getByRole("tab", { name: "统计" }).click();
+  await expect(
+    page.locator('[data-stat-group="group-0"][data-stat-id="totalTrades"]')
+  ).toHaveAttribute("data-stat-unlocked", "true");
+
+  await page.screenshot({
+    path: ".agent/smoke/m3-progress-desktop.png",
+    fullPage: false,
+    animations: "disabled",
+  });
+
+  await page.setViewportSize({ width: 800, height: 600 });
+  await page.getByRole("button", { name: "打开系统导航" }).click();
+  const mobileNavigation = page.locator('[role="dialog"]');
+  await expect(mobileNavigation).toBeVisible();
+  await page.screenshot({
+    path: ".agent/smoke/m3-800x600-navigation.png",
+    fullPage: false,
+    animations: "disabled",
+  });
+  await mobileNavigation.getByRole("button", { name: /^贸易/ }).click();
+  await expect(
+    page.getByRole("heading", { name: "贸易", level: 1 })
+  ).toBeVisible();
+  await page.screenshot({
+    path: ".agent/smoke/m3-trade-800x600.png",
+    fullPage: false,
+    animations: "disabled",
+  });
+  const horizontalOverflow = await page.evaluate(
+    () => document.documentElement.scrollWidth - window.innerWidth
+  );
+  expect(horizontalOverflow).toBeLessThanOrEqual(1);
+
+  await testInfo.attach("m3-diagnostics.json", {
+    body: Buffer.from(
+      JSON.stringify(
+        {
+          mineralsBefore,
+          worshipBefore,
+          heatBefore,
+          consoleErrors,
+          pageErrors,
+        },
+        null,
+        2
+      )
     ),
     contentType: "application/json",
   });
