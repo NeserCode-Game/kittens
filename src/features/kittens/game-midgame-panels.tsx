@@ -224,7 +224,7 @@ export function TradePanel({
   return (
     <div className="animate-in fade-in-0 duration-200">
       <PanelHeading
-        eyebrow="Diplomacy"
+        eyebrow="外交"
         title="贸易"
         description="派遣商队交换资源，提高种族关系并建立大使馆。商队容量、资源抽取与特殊收获由原版内核结算。"
         icon={Handshake}
@@ -373,7 +373,7 @@ export function ReligionPanel({
       data-religion-sacrifices={religion.unicornSacrifices}
     >
       <PanelHeading
-        eyebrow="Religion"
+        eyebrow="宗教"
         title="宗教"
         description="赞美积累崇拜，重置信仰换取顿悟，并逐步开启超越。所有换算与独角兽献祭均沿用原版规则。"
         icon={Church}
@@ -621,7 +621,7 @@ export function SpacePanel({
   return (
     <div className="animate-in fade-in-0 duration-200">
       <PanelHeading
-        eyebrow="Space"
+        eyebrow="太空"
         title="太空"
         description="研发并启动太空任务，抵达行星后建造轨道设施。航程、价格倍率与解锁条件由原版太空管理器计算。"
         icon={Rocket}
@@ -836,7 +836,7 @@ export function TimePanel({
       data-time-furnace-heat={time.furnaceHeat}
     >
       <PanelHeading
-        eyebrow="Time"
+        eyebrow="时间"
         title="时间"
         description="操控时间通量、热量与时间水晶。加速、碎裂与热机转换均调用原版时间管理器。"
         icon={Clock3}
@@ -1032,7 +1032,7 @@ export function ChallengesPanel({
   return (
     <div className="animate-in fade-in-0 duration-200">
       <PanelHeading
-        eyebrow="Challenges"
+        eyebrow="挑战"
         title="挑战"
         description="选择挑战规则并在下一次重置时生效。完成次数会永久叠加相应效果，开始挑战前的确认与原版一致。"
         icon={Trophy}
@@ -1172,7 +1172,7 @@ export function ProgressPanel({ snapshot }: { snapshot: GameSnapshot }) {
       data-progress-stars={`${progress.unlockedStars}/${progress.totalStars}`}
     >
       <PanelHeading
-        eyebrow="Legacy"
+        eyebrow="传承"
         title="进度"
         description="回顾成就、徽章与跨存档统计。隐藏成就只在解锁后揭示条件，历史数据直接来自原版管理器。"
         icon={Trophy}

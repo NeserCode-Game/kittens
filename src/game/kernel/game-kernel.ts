@@ -18,6 +18,10 @@ import type {
   ReligionUpgradeSnapshot,
   ResearchItemSnapshot,
   ResourceSnapshot,
+  SaveExportResult,
+  SaveHealth,
+  SaveImportResult,
+  SaveStatusSnapshot,
   ScienceSnapshot,
   SpaceBuildingSnapshot,
   SpaceProgramSnapshot,
@@ -36,8 +40,66 @@ import type {
 } from "./types";
 
 const SAVE_KEY = "com.nuclearunicorn.kittengame.savedata";
+const SAVE_BACKUP_KEY = "com.nuclearunicorn.kittengame.savedata.backup";
+const SAVE_META_KEY = "com.nuclearunicorn.kittengame.native-save-meta";
 const TICK_MS = 200;
 const SNAPSHOT_INTERVAL_MS = 250;
+
+interface StorageRead {
+  ok: boolean;
+  value: string | null;
+}
+
+interface SaveMetadata {
+  lastSavedAt: number | null;
+  backupAt: number | null;
+}
+
+interface PreparedSave {
+  data: string;
+  sourceVersion: number | null;
+}
+
+function readStorage(key: string): StorageRead {
+  try {
+    return { ok: true, value: window.localStorage.getItem(key) };
+  } catch {
+    return { ok: false, value: null };
+  }
+}
+
+function writeStorage(key: string, value: string): boolean {
+  try {
+    window.localStorage.setItem(key, value);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+function removeStorage(key: string): boolean {
+  try {
+    window.localStorage.removeItem(key);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+function parseSaveMetadata(value: string | null): SaveMetadata {
+  if (!value) return { lastSavedAt: null, backupAt: null };
+  try {
+    const metadata = JSON.parse(value) as Record<string, unknown>;
+    return {
+      lastSavedAt:
+        typeof metadata.lastSavedAt === "number" ? metadata.lastSavedAt : null,
+      backupAt:
+        typeof metadata.backupAt === "number" ? metadata.backupAt : null,
+    };
+  } catch {
+    return { lastSavedAt: null, backupAt: null };
+  }
+}
 
 interface LegacyResource {
   name: string;
@@ -289,6 +351,8 @@ interface PurchaseOutcome {
 interface LegacyGame {
   ticks: number;
   isPaused: boolean;
+  saveVersion: number;
+  currentSaveIsBroken: boolean;
   opts: Record<string, unknown>;
   resPool: {
     resources: LegacyResource[];
@@ -441,6 +505,9 @@ interface LegacyGame {
   resetState: () => void;
   load: () => boolean;
   save: () => Record<string, unknown>;
+  compressLZData: (json: string, useUTF16?: boolean) => string;
+  _parseLSSaveData: (data?: string) => Record<string, unknown>;
+  _saveDataToString: (data: Record<string, unknown>) => string;
   update: () => void;
   tick: () => void;
   updateResources: () => void;
@@ -619,9 +686,15 @@ export class GameKernel {
   private snapshot: GameSnapshot;
   private timer: number | null = null;
   private snapshotTimer: number | null = null;
+  private stopSaveTimer: number | null = null;
   private lastMessage: string | null = null;
   private pendingConfirmation: PendingConfirmation | null = null;
   private nextConfirmationId = 1;
+  private saveHealth: SaveHealth = "new";
+  private sourceSaveVersion: number | null = null;
+  private saveMigrated = false;
+  private runtimeError: string | null = null;
+  private lastPersistFailed = false;
 
   constructor(locale = "zh") {
     const engine = getEngineContext(locale);
@@ -641,6 +714,23 @@ export class GameKernel {
     this.game = new engine.gameClass() as unknown as LegacyGame;
     this.game.opts.useWorkers = false;
     this.game.opts.hideSell = false;
+    const saveGame = this.game.save.bind(this.game);
+    this.game.save = () => {
+      this.lastPersistFailed = false;
+      const data = saveGame();
+      const raw = this.game._saveDataToString(data);
+      if (!writeStorage(SAVE_KEY, raw)) {
+        this.lastPersistFailed = true;
+        this.saveHealth = "unavailable";
+        this.lastMessage = "保存失败，浏览器存储不可用；请立即手动导出当前进度";
+        return data;
+      }
+      this.saveHealth = "healthy";
+      this.sourceSaveVersion = this.game.saveVersion;
+      this.saveMigrated = false;
+      this.updateSaveMetadata({ lastSavedAt: Date.now() });
+      return data;
+    };
     this.game.setUI(new this.classes.ui.UISystem());
     this.game.ui.confirm = (
       title: string,
@@ -670,9 +760,7 @@ export class GameKernel {
     this.game.server.pushSave = () => {};
 
     this.game.resetState();
-    if (window.localStorage.getItem(SAVE_KEY)) {
-      this.game.load();
-    }
+    this.loadInitialSave();
     this.game.updateCaches();
     this.game.updateWinterCatnip();
     this.snapshot = this.buildSnapshot();
@@ -686,13 +774,17 @@ export class GameKernel {
   };
 
   start(): void {
+    if (this.stopSaveTimer !== null) {
+      window.clearTimeout(this.stopSaveTimer);
+      this.stopSaveTimer = null;
+    }
     if (this.timer !== null) return;
-    this.timer = window.setInterval(() => {
-      this.game.tick();
-    }, TICK_MS);
+    this.timer = window.setInterval(() => this.runTick(), TICK_MS);
     this.snapshotTimer = window.setInterval(() => {
       this.refreshSnapshot();
     }, SNAPSHOT_INTERVAL_MS);
+    document.addEventListener("visibilitychange", this.handleVisibilityChange);
+    window.addEventListener("pagehide", this.handlePageHide);
   }
 
   stop(): void {
@@ -700,8 +792,350 @@ export class GameKernel {
     if (this.snapshotTimer !== null) {
       window.clearInterval(this.snapshotTimer);
     }
+    document.removeEventListener(
+      "visibilitychange",
+      this.handleVisibilityChange
+    );
+    window.removeEventListener("pagehide", this.handlePageHide);
     this.timer = null;
     this.snapshotTimer = null;
+    if (this.stopSaveTimer !== null) window.clearTimeout(this.stopSaveTimer);
+    this.stopSaveTimer = window.setTimeout(() => {
+      this.stopSaveTimer = null;
+      this.saveOnLifecycle();
+    }, 500);
+  }
+
+  private readonly handleVisibilityChange = (): void => {
+    if (document.visibilityState === "hidden") {
+      this.saveOnLifecycle();
+      return;
+    }
+    this.refreshSnapshot();
+  };
+
+  private readonly handlePageHide = (): void => {
+    this.saveOnLifecycle();
+  };
+
+  private runTick(): void {
+    try {
+      this.game.tick();
+    } catch (cause) {
+      const message = cause instanceof Error ? cause.message : String(cause);
+      this.runtimeError = message;
+      this.game.isPaused = true;
+      this.lastMessage = "游戏模拟发生错误，已暂停以防止存档继续变化";
+      console.error("Kittens Game tick failed", cause);
+      if (this.timer !== null) window.clearInterval(this.timer);
+      this.timer = null;
+      this.refreshSnapshot();
+    }
+  }
+
+  private loadInitialSave(): void {
+    const stored = readStorage(SAVE_KEY);
+    if (!stored.ok) {
+      this.saveHealth = "unavailable";
+      this.lastMessage = "浏览器存储不可用，本局进度只能手动导出";
+      return;
+    }
+    if (!stored.value) {
+      this.saveHealth = "new";
+      return;
+    }
+
+    let prepared: PreparedSave;
+    try {
+      prepared = this.prepareSaveText(stored.value);
+    } catch {
+      this.saveHealth = "corrupt";
+      this.game.isPaused = true;
+      this.lastMessage = "本地存档无法解析，已暂停自动保存";
+      return;
+    }
+
+    this.sourceSaveVersion = prepared.sourceVersion;
+    const loaded = this.game.load();
+    if (!loaded || this.game.currentSaveIsBroken) {
+      this.saveHealth = "corrupt";
+      this.game.isPaused = true;
+      this.lastMessage = "本地存档加载失败，已暂停自动保存";
+      return;
+    }
+
+    this.saveHealth = "healthy";
+    this.saveMigrated =
+      prepared.sourceVersion !== null &&
+      prepared.sourceVersion !== this.game.saveVersion;
+    this.lastMessage = this.saveMigrated
+      ? `存档已从版本 ${prepared.sourceVersion} 迁移到 ${this.game.saveVersion}`
+      : null;
+  }
+
+  private prepareSaveText(raw: string): PreparedSave {
+    const trimmed = raw.trim();
+    if (!trimmed) throw new Error("empty save");
+
+    const data = trimmed[0] === "{" ? trimmed : trimmed.replace(/\s+/g, "");
+    const parsed = this.game._parseLSSaveData(data);
+    if (
+      !parsed ||
+      typeof parsed !== "object" ||
+      Array.isArray(parsed) ||
+      !Array.isArray(parsed.resources) ||
+      !Array.isArray(parsed.buildings)
+    ) {
+      throw new Error("invalid save object");
+    }
+    const sourceVersion = this.parseSaveVersion(parsed.saveVersion);
+    if (sourceVersion !== null && sourceVersion > this.game.saveVersion) {
+      throw new Error("unsupported future save version");
+    }
+    return { data, sourceVersion };
+  }
+
+  private parseSaveVersion(value: unknown): number | null {
+    if (typeof value === "number" && Number.isInteger(value)) return value;
+    if (
+      typeof value === "string" &&
+      /^\d+$/.test(value) &&
+      Number.isSafeInteger(Number(value))
+    ) {
+      return Number(value);
+    }
+    return null;
+  }
+
+  private readSaveMetadata(): SaveMetadata {
+    const stored = readStorage(SAVE_META_KEY);
+    return parseSaveMetadata(stored.ok ? stored.value : null);
+  }
+
+  private updateSaveMetadata(update: Partial<SaveMetadata>): void {
+    const current = this.readSaveMetadata();
+    writeStorage(
+      SAVE_META_KEY,
+      JSON.stringify({
+        lastSavedAt: update.lastSavedAt ?? current.lastSavedAt,
+        backupAt: update.backupAt ?? current.backupAt,
+      })
+    );
+  }
+
+  private saveOnLifecycle(): void {
+    if (
+      this.saveHealth === "corrupt" ||
+      this.saveHealth === "unavailable" ||
+      this.runtimeError
+    ) {
+      return;
+    }
+
+    try {
+      this.game.save();
+      if (this.lastPersistFailed) {
+        this.saveHealth = "unavailable";
+      }
+    } catch (cause) {
+      console.error("Unable to save Kittens Game on lifecycle change", cause);
+      this.saveHealth = "unavailable";
+    }
+  }
+
+  private backupRawSave(raw: string): boolean {
+    if (!writeStorage(SAVE_BACKUP_KEY, raw)) return false;
+    this.updateSaveMetadata({ backupAt: Date.now() });
+    return true;
+  }
+
+  private confirmImport(
+    prepared: PreparedSave,
+    title: string
+  ): SaveImportResult {
+    const versionText =
+      prepared.sourceVersion === null
+        ? "未标记版本"
+        : `版本 ${prepared.sourceVersion}`;
+    this.game.ui.confirm(
+      title,
+      `将导入${versionText}的存档。当前可读取进度会先建立恢复点，确认继续？`,
+      () => this.applyImportedSave(prepared)
+    );
+    this.lastMessage = `等待确认${title}`;
+    this.refreshSnapshot();
+    return {
+      ok: false,
+      reason: "requires-confirmation",
+      sourceVersion: prepared.sourceVersion,
+    };
+  }
+
+  private applyImportedSave(prepared: PreparedSave): SaveImportResult {
+    const previousHealth = this.saveHealth;
+    const previousRuntimeError = this.runtimeError;
+    let previous = readStorage(SAVE_KEY);
+    const previousBackup = readStorage(SAVE_BACKUP_KEY);
+
+    if (previousHealth === "unavailable") {
+      this.lastMessage = "浏览器存储不可用，无法导入存档";
+      this.refreshSnapshot();
+      return { ok: false, reason: "storage-unavailable" };
+    }
+
+    if (previousHealth !== "corrupt" && !previousRuntimeError) {
+      try {
+        this.game.save();
+      } catch (cause) {
+        console.error("Unable to refresh current save before import", cause);
+      }
+      previous = readStorage(SAVE_KEY);
+      if (
+        this.lastPersistFailed ||
+        !previous.ok ||
+        !previous.value ||
+        !this.backupRawSave(previous.value)
+      ) {
+        this.saveHealth = previous.ok ? this.saveHealth : "unavailable";
+        this.lastMessage = "无法建立导入前的恢复点，已取消导入";
+        this.refreshSnapshot();
+        return { ok: false, reason: "storage-unavailable" };
+      }
+    } else if (
+      previousHealth !== "corrupt" &&
+      previous.ok &&
+      previous.value &&
+      !this.backupRawSave(previous.value)
+    ) {
+      this.lastMessage = "无法建立导入前的恢复点，已取消导入";
+      this.refreshSnapshot();
+      return { ok: false, reason: "storage-unavailable" };
+    }
+
+    if (!writeStorage(SAVE_KEY, prepared.data)) {
+      this.saveHealth = "unavailable";
+      this.lastMessage = "无法写入导入存档，浏览器存储不可用";
+      this.refreshSnapshot();
+      return { ok: false, reason: "storage-unavailable" };
+    }
+
+    const loaded = this.game.load();
+    if (loaded && !this.game.currentSaveIsBroken) {
+      const migrated =
+        prepared.sourceVersion !== null &&
+        prepared.sourceVersion !== this.game.saveVersion;
+      this.saveHealth = "healthy";
+      this.sourceSaveVersion = prepared.sourceVersion;
+      this.saveMigrated = migrated;
+      this.runtimeError = null;
+      this.game.isPaused = false;
+      if (migrated) {
+        this.game.save();
+        this.sourceSaveVersion = prepared.sourceVersion;
+        this.saveMigrated = true;
+      }
+      this.lastMessage = migrated
+        ? this.lastPersistFailed
+          ? `存档已从版本 ${prepared.sourceVersion} 载入，但迁移结果写入失败`
+          : `存档已从版本 ${prepared.sourceVersion} 迁移到 ${this.game.saveVersion}`
+        : "存档已导入";
+      this.refreshGameState();
+      return {
+        ok: true,
+        reason: "ok",
+        changed: true,
+        sourceVersion: prepared.sourceVersion,
+        migrated,
+      };
+    }
+
+    if (previous.ok && previous.value) {
+      writeStorage(SAVE_KEY, previous.value);
+    } else {
+      removeStorage(SAVE_KEY);
+    }
+    if (previousBackup.ok && previousBackup.value) {
+      writeStorage(SAVE_BACKUP_KEY, previousBackup.value);
+    } else {
+      removeStorage(SAVE_BACKUP_KEY);
+    }
+
+    if (previousHealth === "healthy" && previous.value) {
+      const restored = this.game.load();
+      this.saveHealth =
+        restored && !this.game.currentSaveIsBroken ? "healthy" : "corrupt";
+    } else if (previousHealth === "new") {
+      this.game.resetState();
+      this.saveHealth = "new";
+    } else {
+      this.saveHealth = previousHealth;
+    }
+    this.game.isPaused = this.saveHealth === "corrupt";
+    this.lastMessage = "导入失败，已恢复导入前的游戏状态";
+    this.refreshGameState();
+    return { ok: false, reason: "invalid-save" };
+  }
+
+  private applyReset(): ActionResult {
+    if (this.saveHealth === "unavailable") {
+      this.lastMessage = "浏览器存储不可用，无法重置存档";
+      this.refreshSnapshot();
+      return { ok: false, reason: "storage-unavailable" };
+    }
+
+    if (this.saveHealth !== "corrupt" && !this.runtimeError) {
+      try {
+        this.game.save();
+      } catch (cause) {
+        console.error("Unable to save before resetting Kittens Game", cause);
+      }
+      const current = readStorage(SAVE_KEY);
+      if (
+        this.lastPersistFailed ||
+        !current.ok ||
+        !current.value ||
+        !this.backupRawSave(current.value)
+      ) {
+        this.lastMessage = "无法建立恢复点，已取消重置";
+        this.refreshSnapshot();
+        return { ok: false, reason: "storage-unavailable" };
+      }
+    } else {
+      const current = readStorage(SAVE_KEY);
+      if (
+        this.saveHealth !== "corrupt" &&
+        current.ok &&
+        current.value &&
+        !this.backupRawSave(current.value)
+      ) {
+        this.lastMessage = "无法建立恢复点，已取消重置";
+        this.refreshSnapshot();
+        return { ok: false, reason: "storage-unavailable" };
+      }
+    }
+
+    try {
+      if (!removeStorage(SAVE_KEY)) {
+        throw new Error("storage unavailable");
+      }
+      this.game.resetState();
+      this.game.updateCaches();
+      this.game.updateWinterCatnip();
+      this.game.isPaused = false;
+      this.saveHealth = "new";
+      this.sourceSaveVersion = null;
+      this.saveMigrated = false;
+      this.runtimeError = null;
+      this.lastMessage = "游戏已重置，导入前恢复点仍保留";
+      this.refreshSnapshot();
+      return { ok: true, reason: "ok", changed: true };
+    } catch (cause) {
+      console.error("Unable to reset Kittens Game save", cause);
+      this.saveHealth = "unavailable";
+      this.lastMessage = "无法重置存档，浏览器存储不可用";
+      this.refreshSnapshot();
+      return { ok: false, reason: "storage-unavailable" };
+    }
   }
 
   gather(): ActionResult {
@@ -1350,14 +1784,194 @@ export class GameKernel {
   }
 
   save(): ActionResult {
-    this.game.save();
+    if (
+      this.saveHealth === "corrupt" ||
+      this.saveHealth === "unavailable" ||
+      this.runtimeError
+    ) {
+      this.lastMessage =
+        this.saveHealth === "corrupt"
+          ? "当前存档损坏，保存已阻止"
+          : this.runtimeError
+            ? "模拟运行异常，保存已阻止"
+            : "浏览器存储不可用，无法保存";
+      this.refreshSnapshot();
+      return {
+        ok: false,
+        reason:
+          this.saveHealth === "corrupt"
+            ? "invalid-save"
+            : this.runtimeError
+              ? "blocked"
+              : "storage-unavailable",
+      };
+    }
+
+    try {
+      this.game.save();
+    } catch (cause) {
+      console.error("Unable to save Kittens Game", cause);
+      this.saveHealth = "unavailable";
+      this.lastMessage = "保存失败，浏览器存储不可用";
+      this.refreshSnapshot();
+      return { ok: false, reason: "storage-unavailable" };
+    }
+
+    const stored = readStorage(SAVE_KEY);
+    if (this.lastPersistFailed || !stored.ok || !stored.value) {
+      this.saveHealth = "unavailable";
+      this.lastMessage = "保存失败，浏览器存储不可用";
+      this.refreshSnapshot();
+      return { ok: false, reason: "storage-unavailable" };
+    }
+
+    this.saveHealth = "healthy";
+    this.sourceSaveVersion = this.game.saveVersion;
+    this.saveMigrated = false;
     this.lastMessage = "游戏已保存";
     this.refreshSnapshot();
-    return { ok: true, reason: "ok" };
+    return { ok: true, reason: "ok", changed: true };
+  }
+
+  exportSave(): SaveExportResult {
+    if (this.saveHealth === "corrupt" || this.runtimeError) {
+      const stored = readStorage(SAVE_KEY);
+      if (!stored.ok || !stored.value) {
+        this.lastMessage = "无法读取损坏的本地存档";
+        this.refreshSnapshot();
+        return { ok: false, reason: "storage-unavailable" };
+      }
+      this.lastMessage = this.runtimeError
+        ? "已导出上次成功保存的原始存档"
+        : "已导出损坏的原始存档，请联系开发者或重新导入备份";
+      this.refreshSnapshot();
+      return {
+        ok: true,
+        reason: "ok",
+        data: stored.value,
+        sourceVersion: this.sourceSaveVersion,
+      };
+    }
+
+    try {
+      const data = this.game.save();
+      const encoded = this.game.compressLZData(JSON.stringify(data), false);
+      this.lastMessage = this.lastPersistFailed
+        ? "存档文本已生成，但本地保存失败"
+        : "存档文本已生成";
+      this.refreshSnapshot();
+      return {
+        ok: true,
+        reason: "ok",
+        data: encoded,
+        sourceVersion: this.game.saveVersion,
+      };
+    } catch (cause) {
+      console.error("Unable to export Kittens Game save", cause);
+      this.lastMessage = "无法生成存档导出文本";
+      this.refreshSnapshot();
+      return { ok: false, reason: "invalid-save" };
+    }
+  }
+
+  importSave(raw: string): SaveImportResult {
+    if (this.saveHealth === "unavailable") {
+      this.lastMessage = "浏览器存储不可用，无法导入存档";
+      this.refreshSnapshot();
+      return { ok: false, reason: "storage-unavailable" };
+    }
+    let prepared: PreparedSave;
+    try {
+      prepared = this.prepareSaveText(raw);
+    } catch {
+      this.lastMessage = "存档文本无效或无法解压";
+      this.refreshSnapshot();
+      return { ok: false, reason: "invalid-save" };
+    }
+    return this.confirmImport(prepared, "导入存档");
+  }
+
+  createBackup(): ActionResult {
+    if (this.saveHealth === "corrupt" || this.runtimeError) {
+      this.lastMessage = this.runtimeError
+        ? "模拟运行异常，不能覆盖现有恢复点"
+        : "损坏存档不能覆盖现有恢复点";
+      this.refreshSnapshot();
+      return { ok: false, reason: "invalid-save" };
+    }
+
+    try {
+      this.game.save();
+    } catch (cause) {
+      console.error("Unable to save before creating backup", cause);
+      this.lastMessage = "建立恢复点前无法保存游戏";
+      this.refreshSnapshot();
+      return { ok: false, reason: "storage-unavailable" };
+    }
+
+    const current = readStorage(SAVE_KEY);
+    if (
+      this.lastPersistFailed ||
+      !current.ok ||
+      !current.value ||
+      !this.backupRawSave(current.value)
+    ) {
+      this.saveHealth = current.ok ? this.saveHealth : "unavailable";
+      this.lastMessage = "无法建立恢复点";
+      this.refreshSnapshot();
+      return { ok: false, reason: "storage-unavailable" };
+    }
+
+    this.saveHealth = "healthy";
+    this.sourceSaveVersion = this.game.saveVersion;
+    this.saveMigrated = false;
+    this.updateSaveMetadata({ lastSavedAt: Date.now() });
+    this.lastMessage = "恢复点已建立";
+    this.refreshSnapshot();
+    return { ok: true, reason: "ok", changed: true };
+  }
+
+  restoreBackup(): SaveImportResult {
+    const backup = readStorage(SAVE_BACKUP_KEY);
+    if (!backup.ok || !backup.value) {
+      this.lastMessage = "还没有可恢复的备份";
+      this.refreshSnapshot();
+      return {
+        ok: false,
+        reason: backup.ok ? "blocked" : "storage-unavailable",
+      };
+    }
+
+    let prepared: PreparedSave;
+    try {
+      prepared = this.prepareSaveText(backup.value);
+    } catch {
+      this.lastMessage = "备份存档无法解析";
+      this.refreshSnapshot();
+      return { ok: false, reason: "invalid-save" };
+    }
+    return this.confirmImport(prepared, "恢复备份");
+  }
+
+  resetGame(): ActionResult {
+    if (this.saveHealth === "unavailable") {
+      this.lastMessage = "浏览器存储不可用，无法重置存档";
+      this.refreshSnapshot();
+      return { ok: false, reason: "storage-unavailable" };
+    }
+    this.game.ui.confirm(
+      "重置存档",
+      "这会清除当前游戏。可读取的当前进度会先建立恢复点，重置后可继续导入或恢复备份。确认重置？",
+      () => this.applyReset()
+    );
+    this.lastMessage = "等待确认重置存档";
+    this.refreshSnapshot();
+    return { ok: false, reason: "requires-confirmation" };
   }
 
   setPaused(paused: boolean): void {
-    this.game.isPaused = paused;
+    this.game.isPaused =
+      this.saveHealth === "corrupt" || this.runtimeError ? true : paused;
     this.refreshSnapshot();
   }
 
@@ -1516,6 +2130,8 @@ export class GameKernel {
         season: season.name,
         seasonLabel: SEASON_LABELS[season.name] ?? season.name,
       },
+      saveStatus: this.mapSaveStatus(),
+      runtimeError: this.runtimeError,
       pendingConfirmation: this.pendingConfirmation
         ? {
             id: this.pendingConfirmation.id,
@@ -2159,6 +2775,23 @@ export class GameKernel {
         value: Boolean(this.game.settings.get(setting)),
         advanced: Boolean(setting.isExtra),
       }));
+  }
+
+  private mapSaveStatus(): SaveStatusSnapshot {
+    const stored = readStorage(SAVE_KEY);
+    const backup = readStorage(SAVE_BACKUP_KEY);
+    const metadata = this.readSaveMetadata();
+    const storageAvailable = stored.ok && backup.ok;
+    return {
+      health: storageAvailable ? this.saveHealth : "unavailable",
+      hasLocalSave: Boolean(stored.value),
+      hasBackup: Boolean(backup.value),
+      lastSavedAt: metadata.lastSavedAt,
+      backupAt: metadata.backupAt,
+      currentVersion: this.game.saveVersion,
+      sourceVersion: this.sourceSaveVersion,
+      migrated: this.saveMigrated,
+    };
   }
 
   private mapPrices(prices: LegacyPrice[] | null): PriceSnapshot[] {

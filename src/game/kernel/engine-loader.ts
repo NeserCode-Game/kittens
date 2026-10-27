@@ -25,6 +25,7 @@ import workshopSource from "../upstream/js/workshop.js?raw";
 import en from "../upstream/res/i18n/crowdin/en.json";
 import zh from "../upstream/res/i18n/crowdin/zh.json";
 import versionJson from "../upstream/version.json?raw";
+import { zhOverrides } from "./zh-overrides";
 
 const LOGIC_SOURCES = [
   resourcesSource,
@@ -361,7 +362,7 @@ export function getEngineContext(locale = "zh"): EngineContext {
     document,
     storage: window.localStorage,
     versionJson,
-    dictionaries: { en, zh },
+    dictionaries: { en, zh: { ...zh, ...zhOverrides } },
     locale,
   });
 

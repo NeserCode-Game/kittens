@@ -44,6 +44,10 @@ export function actionReasonLabel(reason: ActionReason): string {
       return "条件未满足";
     case "requires-confirmation":
       return "等待确认";
+    case "invalid-save":
+      return "存档无效";
+    case "storage-unavailable":
+      return "存储不可用";
     case "unknown":
       return "操作无法完成";
     default:

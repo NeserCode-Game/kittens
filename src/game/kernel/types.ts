@@ -327,6 +327,19 @@ export interface CalendarSnapshot {
   seasonLabel: string;
 }
 
+export type SaveHealth = "new" | "healthy" | "corrupt" | "unavailable";
+
+export interface SaveStatusSnapshot {
+  health: SaveHealth;
+  hasLocalSave: boolean;
+  hasBackup: boolean;
+  lastSavedAt: number | null;
+  backupAt: number | null;
+  currentVersion: number;
+  sourceVersion: number | null;
+  migrated: boolean;
+}
+
 export interface GameSnapshot {
   version: string;
   ticks: number;
@@ -344,6 +357,8 @@ export interface GameSnapshot {
   progress: ProgressSnapshot;
   settings: GameSettingSnapshot[];
   calendar: CalendarSnapshot;
+  saveStatus: SaveStatusSnapshot;
+  runtimeError: string | null;
   pendingConfirmation: PendingConfirmationSnapshot | null;
   lastMessage: string | null;
 }
@@ -356,10 +371,22 @@ export type ActionReason =
   | "already-owned"
   | "blocked"
   | "requires-confirmation"
+  | "invalid-save"
+  | "storage-unavailable"
   | "unknown";
 
 export interface ActionResult {
   ok: boolean;
   reason: ActionReason;
   changed?: boolean;
+}
+
+export interface SaveExportResult extends ActionResult {
+  data?: string;
+  sourceVersion?: number | null;
+}
+
+export interface SaveImportResult extends ActionResult {
+  sourceVersion?: number | null;
+  migrated?: boolean;
 }

@@ -8,6 +8,7 @@ import {
   CircleAlert,
   Clock3,
   ExternalLink,
+  FolderOpen,
   Handshake,
   Leaf,
   LoaderCircle,
@@ -20,7 +21,7 @@ import {
   Trophy,
   Wrench,
 } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -59,6 +60,7 @@ import {
   TimePanel,
   TradePanel,
 } from "@/features/kittens/game-midgame-panels";
+import { SaveManagementDialog } from "@/features/kittens/game-save-dialog";
 import { ResourceChip } from "@/features/kittens/game-shared";
 import { useKittensGame } from "@/features/kittens/use-kittens-game";
 import type { ActionResult, GameSnapshot } from "@/game/kernel/types";
@@ -229,6 +231,7 @@ function GameConfirmation({
       <DialogContent
         className="border-white/10 bg-[#171c16] text-stone-100 shadow-2xl sm:max-w-md"
         showCloseButton={false}
+        data-confirmation-dialog
       >
         <DialogHeader>
           <DialogTitle className="font-serif text-lg text-stone-50">
@@ -265,6 +268,8 @@ export default function KittensGame() {
   const [lastAction, setLastAction] = useState<string | null>(null);
   const [activeNav, setActiveNav] = useState<NavId>("bonfire");
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
+  const [saveDialogOpen, setSaveDialogOpen] = useState(false);
+  const mainRef = useRef<HTMLElement>(null);
 
   const resources = useMemo(() => {
     if (!snapshot) return [];
@@ -276,6 +281,30 @@ export default function KittensGame() {
       return resource?.visible ? [resource] : [];
     });
   }, [snapshot]);
+
+  useEffect(() => {
+    const handleShortcut = (event: KeyboardEvent) => {
+      if (!(event.ctrlKey || event.metaKey) || event.altKey) return;
+      if (event.key.toLocaleLowerCase() !== "s") return;
+      const target = event.target;
+      const editing =
+        target instanceof HTMLInputElement ||
+        target instanceof HTMLTextAreaElement;
+      if (editing && !event.shiftKey) return;
+      event.preventDefault();
+      if (event.shiftKey) {
+        setSaveDialogOpen(true);
+        return;
+      }
+      if (!kernel) return;
+      const result = kernel.save();
+      setLastAction(
+        result.ok ? "游戏已保存" : `未完成：${actionReasonLabel(result.reason)}`
+      );
+    };
+    window.addEventListener("keydown", handleShortcut);
+    return () => window.removeEventListener("keydown", handleShortcut);
+  }, [kernel]);
 
   if (error) {
     return (
@@ -321,6 +350,7 @@ export default function KittensGame() {
   const navigate = (id: NavId) => {
     setActiveNav(id);
     setMobileNavOpen(false);
+    window.requestAnimationFrame(() => mainRef.current?.focus());
   };
 
   const activeLabel =
@@ -462,7 +492,14 @@ export default function KittensGame() {
     <section
       className="kittens-game-view grid h-full min-h-0 w-full grid-rows-[auto_minmax(0,1fr)] overflow-hidden bg-[#101410] text-stone-100"
       aria-label="猫国建设者"
+      data-game-paused={snapshot.paused}
     >
+      <a
+        href="#kittens-main"
+        className="sr-only fixed top-3 left-3 z-50 rounded-md bg-amber-300 px-3 py-2 text-xs font-semibold text-stone-950 focus:not-sr-only"
+      >
+        跳到主要内容
+      </a>
       <header className="flex min-w-0 items-center gap-2 border-b border-white/10 bg-[#151a15] px-3 py-2 sm:gap-3 sm:px-4">
         <Sheet open={mobileNavOpen} onOpenChange={setMobileNavOpen}>
           <SheetTrigger asChild>
@@ -533,8 +570,22 @@ export default function KittensGame() {
           variant="ghost"
           size="icon"
           className="size-8 shrink-0 text-stone-400 hover:bg-white/10 hover:text-amber-200"
+          onClick={() => setSaveDialogOpen(true)}
+          aria-label="存档管理"
+          aria-keyshortcuts="Control+Shift+S Meta+Shift+S"
+          data-action="open-save-manager"
+        >
+          <FolderOpen className="size-4" />
+        </Button>
+
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon"
+          className="size-8 shrink-0 text-stone-400 hover:bg-white/10 hover:text-amber-200"
           onClick={() => runAction("游戏已保存", () => kernel.save())}
           aria-label="快速保存"
+          aria-keyshortcuts="Control+S Meta+S"
         >
           <Save className="size-4" />
         </Button>
@@ -547,11 +598,48 @@ export default function KittensGame() {
           </div>
           <Navigation activeNav={activeNav} onNavigate={navigate} />
           <div className="mt-4 border-t border-white/[0.07] px-2 pt-3 text-[10px] leading-relaxed text-stone-600">
-            M3 原生系统
+            M4 原生系统
           </div>
         </aside>
 
-        <main className="min-h-0 min-w-0 overflow-y-auto bg-[#181d18]">
+        <main
+          ref={mainRef}
+          id="kittens-main"
+          tabIndex={-1}
+          className="min-h-0 min-w-0 overflow-y-auto bg-[#181d18] focus:outline-none focus:ring-inset focus-visible:ring-2 focus-visible:ring-amber-300/60"
+        >
+          {snapshot.saveStatus.health === "corrupt" || snapshot.runtimeError ? (
+            <div
+              className="flex flex-col gap-3 border-b border-rose-400/20 bg-rose-400/[0.06] px-5 py-3 text-xs text-rose-100 sm:flex-row sm:items-center sm:justify-between"
+              role="alert"
+              data-recovery-banner
+            >
+              <div className="flex min-w-0 items-start gap-2">
+                <CircleAlert className="mt-0.5 size-4 shrink-0 text-rose-300" />
+                <div className="min-w-0">
+                  <div className="font-semibold">
+                    {snapshot.saveStatus.health === "corrupt"
+                      ? "本地存档无法读取"
+                      : "游戏模拟已暂停"}
+                  </div>
+                  <div className="mt-0.5 text-rose-200/65">
+                    {snapshot.runtimeError ??
+                      "自动保存已停止，请导入有效存档或恢复备份。"}
+                  </div>
+                </div>
+              </div>
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                className="shrink-0 border-rose-300/20 bg-rose-300/[0.05] text-rose-100 hover:bg-rose-300/10"
+                onClick={() => setSaveDialogOpen(true)}
+                data-action="open-save-recovery"
+              >
+                打开存档恢复
+              </Button>
+            </div>
+          ) : null}
           {renderPanel()}
         </main>
 
@@ -574,6 +662,18 @@ export default function KittensGame() {
             >
               <Save className="size-4" />
               保存游戏
+            </Button>
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              className="mt-1 w-full text-stone-400 hover:bg-white/[0.06] hover:text-amber-200"
+              onClick={() => setSaveDialogOpen(true)}
+              aria-keyshortcuts="Control+Shift+S Meta+Shift+S"
+              data-action="open-save-manager-sidebar"
+            >
+              <FolderOpen className="size-4" />
+              存档管理
             </Button>
           </div>
 
@@ -605,6 +705,7 @@ export default function KittensGame() {
             <div
               className="mt-3 min-h-16 border-l-2 border-amber-400/35 bg-black/10 px-3 py-2 text-xs leading-relaxed text-stone-400"
               aria-live="polite"
+              data-action-feedback
             >
               {lastAction ?? snapshot.lastMessage ?? "还没有行动记录。"}
             </div>
@@ -681,6 +782,20 @@ export default function KittensGame() {
           </footer>
         </aside>
       </div>
+
+      <SaveManagementDialog
+        open={saveDialogOpen}
+        onOpenChange={setSaveDialogOpen}
+        snapshot={snapshot}
+        actions={{
+          save: () => kernel.save(),
+          exportSave: () => kernel.exportSave(),
+          importSave: (raw) => kernel.importSave(raw),
+          createBackup: () => kernel.createBackup(),
+          restoreBackup: () => kernel.restoreBackup(),
+          resetGame: () => kernel.resetGame(),
+        }}
+      />
 
       <GameConfirmation
         snapshot={snapshot}

@@ -12,8 +12,9 @@
     "lint": "eslint .",
     "format": "prettier --write .",
     "kittensgame:manifest": "node scripts/verify-kittensgame.mjs --write",
-    "kittensgame:verify": "node scripts/verify-kittensgame.mjs",
-    "kittensgame:smoke": "playwright test tests/kittens-game.spec.ts"
+    "kittensgame:verify": "node scripts/verify-kittensgame.mjs && node scripts/verify-kittens-i18n.mjs",
+    "kittensgame:i18n": "node scripts/verify-kittens-i18n.mjs",
+    "kittensgame:smoke": "playwright test tests/kittens-game.spec.ts tests/kittens-save.spec.ts"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.1.1",

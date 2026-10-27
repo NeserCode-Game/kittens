@@ -130,7 +130,7 @@ export function BonfirePanel({
   return (
     <div className="animate-in fade-in-0 duration-200">
       <PanelHeading
-        eyebrow="Bonfire"
+        eyebrow="营火"
         title="营火"
         description="收集猫薄荷与木材，建立村庄的第一批居所。所有增长与价格由原版内核实时计算。"
         icon={Sprout}
@@ -323,7 +323,7 @@ export function VillagePanel({
   return (
     <div className="animate-in fade-in-0 duration-200">
       <PanelHeading
-        eyebrow="Village"
+        eyebrow="村庄"
         title="村庄"
         description="安排猫猫从事食物、木材、科学与探索工作。分配结果会直接进入原版生产结算。"
         icon={Cat}
@@ -486,7 +486,7 @@ export function SciencePanel({
   return (
     <div className="animate-in fade-in-0 duration-200">
       <PanelHeading
-        eyebrow="Science"
+        eyebrow="科学"
         title="科学"
         description="投入科学资源研究技术，或以政策确立长期方向。价格增长、解锁与排他关系均来自原版规则。"
         icon={Leaf}
@@ -743,7 +743,7 @@ export function WorkshopPanel({
   return (
     <div className="animate-in fade-in-0 duration-200">
       <PanelHeading
-        eyebrow="Workshop"
+        eyebrow="工坊"
         title="工坊"
         description="把基础资源加工为高级材料，购买永久升级。制作倍率、工程师进度与特殊配方均由原版内核提供。"
         icon={Wrench}
@@ -855,7 +855,7 @@ export function GameSettingsPanel({
   return (
     <div className="animate-in fade-in-0 duration-200">
       <PanelHeading
-        eyebrow="Options"
+        eyebrow="选项"
         title="游戏设置"
         description="调整显示精度、确认流程与存档行为。设置直接写入原版选项，并随存档保留。"
         icon={Settings2}
