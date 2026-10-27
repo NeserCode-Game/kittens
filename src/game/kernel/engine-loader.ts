@@ -343,10 +343,12 @@ interface EngineContext {
   translate: (key: string, args?: Array<string | number>) => string;
 }
 
-let engineContext: EngineContext | null = null;
+const engineContexts = new Map<string, EngineContext>();
 
 export function getEngineContext(locale = "zh"): EngineContext {
-  if (engineContext) return engineContext;
+  const normalizedLocale = locale === "en" ? "en" : "zh";
+  const existing = engineContexts.get(normalizedLocale);
+  if (existing) return existing;
 
   const createEngine = new Function("sandbox", ENGINE_CODE) as (sandbox: {
     window: Window;
@@ -357,14 +359,15 @@ export function getEngineContext(locale = "zh"): EngineContext {
     locale: string;
   }) => EngineContext;
 
-  engineContext = createEngine({
+  const engineContext = createEngine({
     window,
     document,
     storage: window.localStorage,
     versionJson,
     dictionaries: { en, zh: { ...zh, ...zhOverrides } },
-    locale,
+    locale: normalizedLocale,
   });
 
+  engineContexts.set(normalizedLocale, engineContext);
   return engineContext;
 }

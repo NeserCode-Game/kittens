@@ -40,6 +40,7 @@ import {
   PricePills,
   SectionLabel,
 } from "./game-shared";
+import { useGameI18n } from "./use-game-i18n";
 
 const primaryActionClass =
   "border-amber-400/25 bg-amber-400/90 text-kg-accent-foreground hover:bg-amber-300";
@@ -47,10 +48,10 @@ const quietActionClass =
   "border-kg-control bg-transparent text-kg-body hover:bg-kg-hover-strong hover:text-kg-strong";
 
 function matchesSearch(query: string, values: Array<string | undefined>) {
-  const needle = query.trim().toLocaleLowerCase("zh-CN");
+  const needle = query.trim().toLocaleLowerCase();
   return (
     !needle ||
-    values.some((value) => value?.toLocaleLowerCase("zh-CN").includes(needle))
+    values.some((value) => value?.toLocaleLowerCase().includes(needle))
   );
 }
 
@@ -61,6 +62,8 @@ function BuildingRow({
   building: BuildingSnapshot;
   onBuy: (id: string) => void;
 }) {
+  const { t } = useGameI18n();
+
   return (
     <article
       className={cn(
@@ -82,7 +85,7 @@ function BuildingRow({
           ) : null}
         </div>
         <p className="text-kg-muted mt-1 line-clamp-2 text-xs leading-relaxed">
-          {building.description || "建筑设施"}
+          {building.description || t("建筑设施")}
         </p>
         <PricePills prices={building.prices} className="mt-2.5" />
       </div>
@@ -93,10 +96,10 @@ function BuildingRow({
         className={cn("self-center", primaryActionClass)}
         disabled={!building.canBuy}
         onClick={() => onBuy(building.id)}
-        aria-label={`建造${building.label}`}
+        aria-label={t("建造{label}", { label: building.label })}
       >
         <Hammer className="size-3.5" />
-        建造
+        {t("建造")}
       </Button>
     </article>
   );
@@ -113,6 +116,7 @@ export function BonfirePanel({
   onCraft: () => void;
   onBuy: (id: string) => void;
 }) {
+  const { formatLocale, t } = useGameI18n();
   const buildingGroups = useMemo(() => {
     const groups = new Map<string, BuildingSnapshot[]>();
     for (const building of snapshot.buildings) {
@@ -129,9 +133,11 @@ export function BonfirePanel({
   return (
     <div className="animate-in fade-in-0 duration-200">
       <PanelHeading
-        eyebrow="营火"
-        title="营火"
-        description="收集猫薄荷与木材，建立村庄的第一批居所。所有增长与价格由原版内核实时计算。"
+        eyebrow={t("营火")}
+        title={t("营火")}
+        description={t(
+          "收集猫薄荷与木材，建立村庄的第一批居所。所有增长与价格由原版内核实时计算。"
+        )}
         icon={Sprout}
         actions={
           <>
@@ -142,7 +148,7 @@ export function BonfirePanel({
               onClick={onGather}
             >
               <Sprout className="size-4" />
-              采集猫薄荷
+              {t("采集猫薄荷")}
             </Button>
             <Button
               type="button"
@@ -152,7 +158,7 @@ export function BonfirePanel({
               onClick={onCraft}
             >
               <Trees className="size-4" />
-              精炼木材
+              {t("精炼木材")}
             </Button>
           </>
         }
@@ -160,28 +166,32 @@ export function BonfirePanel({
 
       <div className="border-kg-line bg-kg-inset grid grid-cols-2 border-b lg:grid-cols-4">
         <Metric
-          label="猫薄荷"
-          value={formatNumber(catnip?.value ?? 0)}
-          detail={formatRate(catnip?.perTick ?? 0) + " / 刻"}
+          label={t("猫薄荷")}
+          value={formatNumber(catnip?.value ?? 0, 2, formatLocale)}
+          detail={t("{rate} / 刻", {
+            rate: formatRate(catnip?.perTick ?? 0, formatLocale),
+          })}
           tone="green"
         />
         <Metric
-          label="人口"
+          label={t("人口")}
           value={snapshot.village.kittens}
-          detail={`上限 ${snapshot.village.maxKittens}`}
+          detail={t("上限 {value}", { value: snapshot.village.maxKittens })}
         />
         <Metric
-          label="幸福"
-          value={formatPercent(snapshot.village.happiness)}
+          label={t("幸福")}
+          value={formatPercent(snapshot.village.happiness, formatLocale)}
           tone="amber"
         />
         <Metric
-          label="已建建筑"
+          label={t("已建建筑")}
           value={snapshot.buildings.reduce(
             (total, building) => total + building.enabled,
             0
           )}
-          detail={`${snapshot.buildings.length} 种可建造`}
+          detail={t("{count} 种可建造", {
+            count: snapshot.buildings.length,
+          })}
         />
       </div>
 
@@ -202,8 +212,8 @@ export function BonfirePanel({
         ))
       ) : (
         <EmptyState
-          title="还没有可建造设施"
-          description="继续采集资源，解锁下一步建筑。"
+          title={t("还没有可建造设施")}
+          description={t("继续采集资源，解锁下一步建筑。")}
         />
       )}
     </div>
@@ -221,6 +231,7 @@ function JobRow({
   onAssign: (id: string, amount: number) => void;
   onUnassign: (id: string, amount: number) => void;
 }) {
+  const { t } = useGameI18n();
   const batch = Math.min(10, freeKittens);
 
   return (
@@ -237,7 +248,7 @@ function JobRow({
           </span>
         </div>
         <p className="text-kg-muted mt-1 max-w-2xl text-xs leading-relaxed">
-          {job.description || "村庄职业"}
+          {job.description || t("村庄职业")}
         </p>
         <div className="mt-2 flex flex-wrap gap-1.5">
           {job.effects.length > 0 ? (
@@ -253,7 +264,7 @@ function JobRow({
               </span>
             ))
           ) : (
-            <span className="text-kg-faint text-[10px]">基础职业</span>
+            <span className="text-kg-faint text-[10px]">{t("基础职业")}</span>
           )}
         </div>
       </div>
@@ -265,7 +276,7 @@ function JobRow({
           className={quietActionClass}
           disabled={!job.canUnassign}
           onClick={() => onUnassign(job.id, 1)}
-          aria-label={`减少${job.label} 1 只猫`}
+          aria-label={t("减少{label} 1 只猫", { label: job.label })}
         >
           <Minus className="size-3.5" />1
         </Button>
@@ -275,7 +286,7 @@ function JobRow({
           className={primaryActionClass}
           disabled={!job.canAssign}
           onClick={() => onAssign(job.id, 1)}
-          aria-label={`为${job.label}分配 1 只猫`}
+          aria-label={t("为{label}分配 1 只猫", { label: job.label })}
           data-job-assign={job.id}
         >
           <Plus className="size-3.5" />1
@@ -287,7 +298,10 @@ function JobRow({
           className={quietActionClass}
           disabled={!job.canAssign || batch <= 0}
           onClick={() => onAssign(job.id, batch)}
-          aria-label={`为${job.label}分配 ${batch} 只猫`}
+          aria-label={t("为{label}分配 {count} 只猫", {
+            label: job.label,
+            count: batch,
+          })}
         >
           +{batch}
         </Button>
@@ -298,9 +312,9 @@ function JobRow({
           className="text-kg-muted hover:bg-kg-hover hover:text-kg-strong"
           disabled={!job.canAssign || freeKittens <= 0}
           onClick={() => onAssign(job.id, freeKittens)}
-          aria-label={`为${job.label}分配全部空闲猫`}
+          aria-label={t("为{label}分配全部空闲猫", { label: job.label })}
         >
-          全部
+          {t("全部")}
         </Button>
       </div>
     </article>
@@ -316,46 +330,53 @@ export function VillagePanel({
   onAssign: (id: string, amount: number) => void;
   onUnassign: (id: string, amount: number) => void;
 }) {
+  const { formatLocale, t } = useGameI18n();
   const village = snapshot.village;
   const happinessPercent = Math.max(0, Math.min(100, village.happiness * 100));
 
   return (
     <div className="animate-in fade-in-0 duration-200">
       <PanelHeading
-        eyebrow="村庄"
-        title="村庄"
-        description="安排猫猫从事食物、木材、科学与探索工作。分配结果会直接进入原版生产结算。"
+        eyebrow={t("村庄")}
+        title={t("村庄")}
+        description={t(
+          "安排猫猫从事食物、木材、科学与探索工作。分配结果会直接进入原版生产结算。"
+        )}
         icon={Cat}
       />
 
       <div className="border-kg-line bg-kg-inset grid grid-cols-2 border-b lg:grid-cols-4">
         <Metric
-          label="猫猫"
+          label={t("猫猫")}
           value={village.kittens}
-          detail={`容量 ${village.maxKittens}`}
+          detail={t("容量 {count}", { count: village.maxKittens })}
         />
         <Metric
-          label="空闲"
+          label={t("空闲")}
           value={village.freeKittens}
           tone={village.freeKittens > 0 ? "green" : "default"}
         />
         <Metric
-          label="幸福"
-          value={formatPercent(village.happiness)}
+          label={t("幸福")}
+          value={formatPercent(village.happiness, formatLocale)}
           tone="amber"
-          detail={<Meter value={happinessPercent} label="幸福度" />}
+          detail={<Meter value={happinessPercent} label={t("幸福度")} />}
         />
         <Metric
-          label="领袖"
-          value={village.leaderName ?? "尚未任命"}
-          detail={`${village.jobs.filter((job) => job.value > 0).length} 种职业在岗`}
+          label={t("领袖")}
+          value={village.leaderName ?? t("尚未任命")}
+          detail={t("{count} 种职业在岗", {
+            count: village.jobs.filter((job) => job.value > 0).length,
+          })}
         />
       </div>
 
       {village.jobs.length > 0 ? (
         <section>
-          <SectionLabel aside={`${village.freeKittens} 空闲`}>
-            职业分配
+          <SectionLabel
+            aside={t("{count} 空闲", { count: village.freeKittens })}
+          >
+            {t("职业分配")}
           </SectionLabel>
           {village.jobs.map((job) => (
             <JobRow
@@ -369,8 +390,8 @@ export function VillagePanel({
         </section>
       ) : (
         <EmptyState
-          title="村庄还没有工作"
-          description="建造小屋并等待第一只猫猫到来。"
+          title={t("村庄还没有工作")}
+          description={t("建造小屋并等待第一只猫猫到来。")}
         />
       )}
     </div>
@@ -384,13 +405,14 @@ function ResearchRow({
   item: ResearchItemSnapshot;
   onResearch: (id: string, kind: "tech" | "policy") => void;
 }) {
+  const { t } = useGameI18n();
   const stateLabel = item.researched
-    ? "已完成"
+    ? t("已完成")
     : item.blocked
-      ? "已封锁"
+      ? t("已封锁")
       : item.canResearch
-        ? "可研究"
-        : "资源不足";
+        ? t("可研究")
+        : t("资源不足");
 
   return (
     <article
@@ -428,7 +450,7 @@ function ResearchRow({
           </span>
         </div>
         <p className="text-kg-muted mt-1 max-w-2xl text-xs leading-relaxed">
-          {item.description || item.flavor || "研究项目"}
+          {item.description || item.flavor || t("研究项目")}
         </p>
         {item.effectDescription ? (
           <p className="text-kg-success/65 mt-1.5 text-[11px] leading-relaxed">
@@ -447,16 +469,18 @@ function ResearchRow({
         )}
         disabled={!item.canResearch}
         onClick={() => onResearch(item.id, item.kind)}
-        aria-label={`${
-          item.kind === "policy" ? "采纳政策" : "研究"
-        }${item.label}`}
+        aria-label={
+          item.kind === "policy"
+            ? t("采纳政策：{label}", { label: item.label })
+            : t("研究{label}", { label: item.label })
+        }
       >
         {item.kind === "policy" ? (
           <BookOpen className="size-3.5" />
         ) : (
           <Leaf className="size-3.5" />
         )}
-        {item.kind === "policy" ? "采纳" : "研究"}
+        {item.kind === "policy" ? t("采纳") : t("研究")}
       </Button>
     </article>
   );
@@ -469,6 +493,7 @@ export function SciencePanel({
   snapshot: GameSnapshot;
   onResearch: (id: string, kind: "tech" | "policy") => void;
 }) {
+  const { t } = useGameI18n();
   const [tab, setTab] = useState<"tech" | "policy">("tech");
   const [query, setQuery] = useState("");
   const items =
@@ -485,9 +510,11 @@ export function SciencePanel({
   return (
     <div className="animate-in fade-in-0 duration-200">
       <PanelHeading
-        eyebrow="科学"
-        title="科学"
-        description="投入科学资源研究技术，或以政策确立长期方向。价格增长、解锁与排他关系均来自原版规则。"
+        eyebrow={t("科学")}
+        title={t("科学")}
+        description={t(
+          "投入科学资源研究技术，或以政策确立长期方向。价格增长、解锁与排他关系均来自原版规则。"
+        )}
         icon={Leaf}
       />
 
@@ -502,7 +529,7 @@ export function SciencePanel({
               value="tech"
               className="data-[state=active]:text-kg-accent h-7 px-3 text-xs data-[state=active]:bg-amber-400/15"
             >
-              科技
+              {t("科技")}
               <span className="text-kg-muted font-mono text-[10px]">
                 {snapshot.science.techs.length}
               </span>
@@ -511,7 +538,7 @@ export function SciencePanel({
               value="policy"
               className="data-[state=active]:text-kg-accent h-7 px-3 text-xs data-[state=active]:bg-amber-400/15"
             >
-              政策
+              {t("政策")}
               <span className="text-kg-muted font-mono text-[10px]">
                 {snapshot.science.policies.length}
               </span>
@@ -524,14 +551,16 @@ export function SciencePanel({
             <Input
               value={query}
               onChange={(event) => setQuery(event.target.value)}
-              placeholder="筛选研究"
-              aria-label="筛选研究"
+              placeholder={t("筛选研究")}
+              aria-label={t("筛选研究")}
               className="border-kg-line bg-kg-inset-strong text-kg-body placeholder:text-kg-faint h-8 pl-8 text-xs"
             />
           </div>
           <span className="text-kg-muted shrink-0 font-mono text-[10px]">
-            {snapshot.science.researchedCount} 完成 ·{" "}
-            {snapshot.science.availableCount} 可用
+            {t("{completed} 完成 · {available} 可用", {
+              completed: snapshot.science.researchedCount,
+              available: snapshot.science.availableCount,
+            })}
           </span>
         </div>
       </div>
@@ -544,14 +573,14 @@ export function SciencePanel({
         <TabsContent value="tech" className="m-0">
           <ResearchList
             items={visibleItems}
-            emptyDescription="建造图书馆并积累科学资源，解锁第一批技术。"
+            emptyDescription={t("建造图书馆并积累科学资源，解锁第一批技术。")}
             onResearch={onResearch}
           />
         </TabsContent>
         <TabsContent value="policy" className="m-0">
           <ResearchList
             items={visibleItems}
-            emptyDescription="满足社会条件后，政策会出现在这里。"
+            emptyDescription={t("满足社会条件后，政策会出现在这里。")}
             onResearch={onResearch}
           />
         </TabsContent>
@@ -569,13 +598,16 @@ function ResearchList({
   emptyDescription: string;
   onResearch: (id: string, kind: "tech" | "policy") => void;
 }) {
+  const { t } = useGameI18n();
   if (items.length === 0) {
-    return <EmptyState title="没有可用项目" description={emptyDescription} />;
+    return (
+      <EmptyState title={t("没有可用项目")} description={emptyDescription} />
+    );
   }
 
   return (
     <section>
-      <SectionLabel aside={items.length}>研究项目</SectionLabel>
+      <SectionLabel aside={items.length}>{t("研究项目")}</SectionLabel>
       {items.map((item) => (
         <ResearchRow key={item.id} item={item} onResearch={onResearch} />
       ))}
@@ -592,6 +624,8 @@ function CraftRow({
   onCraft: (id: string, amount: number) => void;
   onCraftAll: (id: string) => void;
 }) {
+  const { formatLocale, t } = useGameI18n();
+
   return (
     <article
       className={cn(
@@ -607,24 +641,26 @@ function CraftRow({
             {craft.label}
           </h3>
           <span className="bg-kg-wash-strong text-kg-muted rounded-sm px-1.5 py-px font-mono text-[10px]">
-            {craft.value} 工程师
+            {craft.value} {t("工程师")}
           </span>
           <span className="text-kg-success rounded-sm bg-emerald-400/10 px-1.5 py-px font-mono text-[10px]">
-            产出 +{formatPercent(craft.craftRatio)}
+            {t("产出 +{value}", {
+              value: formatPercent(craft.craftRatio, formatLocale),
+            })}
           </span>
         </div>
         <p className="text-kg-muted mt-1 max-w-2xl text-xs leading-relaxed">
-          {craft.description || "工坊制作配方"}
+          {craft.description || t("工坊制作配方")}
         </p>
         {craft.value > 0 ? (
           <div className="mt-2 max-w-sm">
             <div className="text-kg-muted mb-1 flex items-center justify-between font-mono text-[10px]">
-              <span>自动制作进度</span>
-              <span>{formatNumber(craft.progress, 2)}%</span>
+              <span>{t("自动制作进度")}</span>
+              <span>{formatNumber(craft.progress, 2, formatLocale)}%</span>
             </div>
             <Meter
               value={craft.progress}
-              label={`${craft.label}自动制作进度`}
+              label={t("{label}自动制作进度", { label: craft.label })}
               tone="green"
             />
           </div>
@@ -638,10 +674,10 @@ function CraftRow({
           className={primaryActionClass}
           disabled={!craft.canCraft}
           onClick={() => onCraft(craft.id, 1)}
-          aria-label={`制作${craft.label}`}
+          aria-label={t("制作{label}", { label: craft.label })}
         >
           <Hammer className="size-3.5" />
-          制作
+          {t("制作")}
         </Button>
         <Button
           type="button"
@@ -650,7 +686,7 @@ function CraftRow({
           className={quietActionClass}
           disabled={!craft.canCraft}
           onClick={() => onCraft(craft.id, 10)}
-          aria-label={`制作 10 个${craft.label}`}
+          aria-label={t("制作 10 个{label}", { label: craft.label })}
         >
           ×10
         </Button>
@@ -661,10 +697,12 @@ function CraftRow({
           className="text-kg-muted hover:bg-kg-hover hover:text-kg-strong"
           disabled={!craft.canCraftAll}
           onClick={() => onCraftAll(craft.id)}
-          aria-label={`全部制作${craft.label}`}
-          title={`最多 ${formatNumber(craft.maxCraftable, 0)} 个`}
+          aria-label={t("全部制作{label}", { label: craft.label })}
+          title={t("最多 {count} 个", {
+            count: formatNumber(craft.maxCraftable, 0, formatLocale),
+          })}
         >
-          全部
+          {t("全部")}
         </Button>
       </div>
     </article>
@@ -678,6 +716,8 @@ function UpgradeRow({
   upgrade: UpgradeSnapshot;
   onBuy: (id: string) => void;
 }) {
+  const { t } = useGameI18n();
+
   return (
     <article
       className={cn(
@@ -695,12 +735,12 @@ function UpgradeRow({
           {upgrade.researched ? (
             <span className="text-kg-success inline-flex items-center gap-1 rounded-sm bg-emerald-400/10 px-1.5 py-px text-[10px]">
               <CircleCheck className="size-3" />
-              已购买
+              {t("已购买")}
             </span>
           ) : null}
         </div>
         <p className="text-kg-muted mt-1 max-w-2xl text-xs leading-relaxed">
-          {upgrade.description || "工坊升级"}
+          {upgrade.description || t("工坊升级")}
         </p>
         <PricePills prices={upgrade.prices} className="mt-2.5" />
       </div>
@@ -711,10 +751,10 @@ function UpgradeRow({
         className={cn("self-center", quietActionClass)}
         disabled={!upgrade.canBuy}
         onClick={() => onBuy(upgrade.id)}
-        aria-label={`购买${upgrade.label}`}
+        aria-label={t("购买{label}", { label: upgrade.label })}
       >
         <Cog className="size-3.5" />
-        购买
+        {t("购买")}
       </Button>
     </article>
   );
@@ -731,6 +771,7 @@ export function WorkshopPanel({
   onCraftAll: (id: string) => void;
   onBuy: (id: string) => void;
 }) {
+  const { formatLocale, t } = useGameI18n();
   const [query, setQuery] = useState("");
   const crafts = snapshot.workshop.crafts.filter((craft) =>
     matchesSearch(query, [craft.label, craft.description])
@@ -742,9 +783,11 @@ export function WorkshopPanel({
   return (
     <div className="animate-in fade-in-0 duration-200">
       <PanelHeading
-        eyebrow="工坊"
-        title="工坊"
-        description="把基础资源加工为高级材料，购买永久升级。制作倍率、工程师进度与特殊配方均由原版内核提供。"
+        eyebrow={t("工坊")}
+        title={t("工坊")}
+        description={t(
+          "把基础资源加工为高级材料，购买永久升级。制作倍率、工程师进度与特殊配方均由原版内核提供。"
+        )}
         icon={Wrench}
       />
 
@@ -752,10 +795,10 @@ export function WorkshopPanel({
         <div className="text-kg-muted flex items-center gap-3 text-[11px]">
           <span className="inline-flex items-center gap-1.5">
             <Cog className="text-kg-accent/75 size-3.5" />
-            全局制作加成
+            {t("全局制作加成")}
           </span>
           <span className="text-kg-success font-mono">
-            +{formatPercent(snapshot.workshop.craftRatio)}
+            +{formatPercent(snapshot.workshop.craftRatio, formatLocale)}
           </span>
         </div>
         <div className="relative min-w-0 sm:w-56">
@@ -763,15 +806,15 @@ export function WorkshopPanel({
           <Input
             value={query}
             onChange={(event) => setQuery(event.target.value)}
-            placeholder="筛选配方与升级"
-            aria-label="筛选工坊"
+            placeholder={t("筛选配方与升级")}
+            aria-label={t("筛选工坊")}
             className="border-kg-line bg-kg-inset-strong text-kg-body placeholder:text-kg-faint h-8 pl-8 text-xs"
           />
         </div>
       </div>
 
       <section>
-        <SectionLabel aside={crafts.length}>制作配方</SectionLabel>
+        <SectionLabel aside={crafts.length}>{t("制作配方")}</SectionLabel>
         {crafts.length > 0 ? (
           crafts.map((craft) => (
             <CraftRow
@@ -783,22 +826,22 @@ export function WorkshopPanel({
           ))
         ) : (
           <EmptyState
-            title="没有可制作配方"
-            description="研究相关技术后会解锁新的加工配方。"
+            title={t("没有可制作配方")}
+            description={t("研究相关技术后会解锁新的加工配方。")}
           />
         )}
       </section>
 
       <section>
-        <SectionLabel aside={upgrades.length}>工坊升级</SectionLabel>
+        <SectionLabel aside={upgrades.length}>{t("工坊升级")}</SectionLabel>
         {upgrades.length > 0 ? (
           upgrades.map((upgrade) => (
             <UpgradeRow key={upgrade.id} upgrade={upgrade} onBuy={onBuy} />
           ))
         ) : (
           <EmptyState
-            title="没有可购买升级"
-            description="继续研究并积累工坊资源。"
+            title={t("没有可购买升级")}
+            description={t("继续研究并积累工坊资源。")}
           />
         )}
       </section>
@@ -833,25 +876,28 @@ export function GameSettingsPanel({
   snapshot: GameSnapshot;
   onSet: (id: string, value: boolean) => void;
 }) {
+  const { t } = useGameI18n();
   const standard = snapshot.settings.filter((setting) => !setting.advanced);
   const advanced = snapshot.settings.filter((setting) => setting.advanced);
 
   return (
     <div className="flex flex-col gap-5" data-game-settings>
       <div className="stack-1">
-        <h2 className="text-sm font-semibold tracking-tight">游戏设置</h2>
+        <h2 className="text-sm font-semibold tracking-tight">
+          {t("游戏设置")}
+        </h2>
         <p className="text-muted-sm">
-          调整确认流程、离线进度与显示精度。设置写入原版存档并即时生效。
+          {t("调整确认流程、离线进度与显示精度。设置写入原版存档并即时生效。")}
         </p>
       </div>
 
-      <SettingItemGroup title="常规">
+      <SettingItemGroup title={t("常规")}>
         {standard.map((setting) => (
           <SettingRow key={setting.id} setting={setting} onSet={onSet} />
         ))}
       </SettingItemGroup>
 
-      <SettingItemGroup title="高级">
+      <SettingItemGroup title={t("高级")}>
         {advanced.map((setting) => (
           <SettingRow key={setting.id} setting={setting} onSet={onSet} />
         ))}

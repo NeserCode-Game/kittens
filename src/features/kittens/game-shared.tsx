@@ -11,8 +11,10 @@ import { cn } from "@/lib/utils";
 import type { PriceSnapshot, ResourceSnapshot } from "@/game/kernel/types";
 
 import { formatNumber, formatRate } from "./game-format";
+import { useGameI18n } from "./use-game-i18n";
 
 export function ResourceChip({ resource }: { resource: ResourceSnapshot }) {
+  const { formatLocale, t } = useGameI18n();
   const capacity =
     resource.maxValue > 0
       ? Math.min(100, (resource.value / resource.maxValue) * 100)
@@ -40,15 +42,15 @@ export function ResourceChip({ resource }: { resource: ResourceSnapshot }) {
                     : "text-kg-muted"
               )}
             >
-              {formatRate(resource.perTick)}
+              {formatRate(resource.perTick, formatLocale)}
             </span>
           </div>
           <div className="text-kg-strong mt-0.5 overflow-hidden text-right font-mono text-[15px] font-semibold whitespace-nowrap tabular-nums">
             <span className="block overflow-hidden text-ellipsis">
-              {formatNumber(resource.value)}
+              {formatNumber(resource.value, 2, formatLocale)}
               {resource.maxValue > 0 ? (
                 <span className="text-kg-muted ml-1 text-[10px] font-normal">
-                  / {formatNumber(resource.maxValue)}
+                  / {formatNumber(resource.maxValue, 2, formatLocale)}
                 </span>
               ) : null}
             </span>
@@ -67,8 +69,10 @@ export function ResourceChip({ resource }: { resource: ResourceSnapshot }) {
         </div>
       </TooltipTrigger>
       <TooltipContent side="bottom">
-        当前 {formatNumber(resource.value, 3)}，每刻
-        {formatRate(resource.perTick)}
+        {t("当前 {value}，每刻 {rate}", {
+          value: formatNumber(resource.value, 3, formatLocale),
+          rate: formatRate(resource.perTick, formatLocale),
+        })}
       </TooltipContent>
     </Tooltip>
   );
@@ -81,6 +85,7 @@ export function PricePills({
   prices: PriceSnapshot[];
   className?: string;
 }) {
+  const { formatLocale } = useGameI18n();
   if (prices.length === 0) return null;
 
   return (
@@ -97,7 +102,7 @@ export function PricePills({
         >
           {price.label}
           <strong className="font-mono font-semibold">
-            {formatNumber(price.value)}
+            {formatNumber(price.value, 2, formatLocale)}
           </strong>
         </span>
       ))}

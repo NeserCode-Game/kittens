@@ -22,8 +22,10 @@ import { useKittensGameUiContext } from "@/contexts/kittens-game-ui-context";
 import { actionReasonLabel, RESOURCE_ORDER } from "./game-format";
 import { openResourceWindow } from "./resource-window-manager";
 import { ResourceChip } from "./game-shared";
+import { useGameI18n } from "./use-game-i18n";
 
 export function GameTitlebar() {
+  const { t } = useGameI18n();
   const { kernel, snapshot } = useKittensGameContext();
   const { setMobileNavOpen, setSaveDialogOpen, setLastAction } =
     useKittensGameUiContext();
@@ -46,18 +48,22 @@ export function GameTitlebar() {
     if (!kernel) return;
     const result = kernel.save();
     setLastAction(
-      result.ok ? "游戏已保存" : `未完成：${actionReasonLabel(result.reason)}`
+      result.ok
+        ? t("游戏已保存")
+        : t("未完成：{reason}", {
+            reason: actionReasonLabel(result.reason, t),
+          })
     );
     setSaveOpen(false);
   };
 
   return (
     <div className="flex h-full w-fit shrink-0 items-center" data-game-titlebar>
-      <Tooltip content="系统导航">
+      <Tooltip content={t("系统导航")}>
         <button
           type="button"
           className="titlebar-op h-full w-7 px-0 text-neutral-600 lg:hidden dark:text-neutral-200"
-          aria-label="打开系统导航"
+          aria-label={t("打开系统导航")}
           data-action="open-game-navigation"
           onClick={() => setMobileNavOpen(true)}
         >
@@ -66,12 +72,12 @@ export function GameTitlebar() {
       </Tooltip>
 
       <Popover open={resourceOpen} onOpenChange={setResourceOpen}>
-        <Tooltip content="资源">
+        <Tooltip content={t("资源")}>
           <PopoverTrigger asChild>
             <button
               type="button"
               className="titlebar-op h-full w-8 px-0"
-              aria-label="资源"
+              aria-label={t("资源")}
               data-action="toggle-game-resources"
             >
               <Boxes className="titlebar-op-icon" />
@@ -82,30 +88,32 @@ export function GameTitlebar() {
           align="end"
           sideOffset={6}
           className="kittens-game-theme border-kg-line bg-kg-dialog text-kg-body w-[552px] p-2 shadow-xl"
-          aria-label="资源"
+          aria-label={t("资源")}
           data-resource-panel
         >
           <div className="mb-2 flex h-7 items-center justify-between gap-3 px-1">
             <div>
-              <span className="text-kg-body text-xs font-medium">资源</span>
+              <span className="text-kg-body text-xs font-medium">
+                {t("资源")}
+              </span>
               <span className="text-kg-faint ml-2 text-[10px]">
-                {resources.length} 项
+                {t("{count} 项", { count: resources.length })}
               </span>
             </div>
             <button
               type="button"
               className="text-kg-muted hover:text-kg-accent hover:bg-kg-hover flex h-6 items-center gap-1.5 rounded-sm px-2 text-[10px] transition-colors"
-              aria-label="打开资源浮窗"
+              aria-label={t("打开资源浮窗")}
               data-action="open-resource-window"
               onClick={() => {
                 setResourceOpen(false);
-                void openResourceWindow().catch(() => {
-                  setLastAction("资源浮窗未能打开");
+                void openResourceWindow(t("资源")).catch(() => {
+                  setLastAction(t("资源浮窗未能打开"));
                 });
               }}
             >
               <PictureInPicture2 className="size-3.5" />
-              独立显示
+              {t("独立显示")}
             </button>
           </div>
           <div className="grid grid-cols-4 gap-1.5" data-resource-grid>
@@ -117,15 +125,27 @@ export function GameTitlebar() {
       </Popover>
 
       <Popover open={dateOpen} onOpenChange={setDateOpen}>
-        <Tooltip content="日期与时间">
+        <Tooltip content={t("日期与时间")}>
           <PopoverTrigger asChild>
             <button
               type="button"
-              className="titlebar-op h-full w-8 px-0"
-              aria-label="日期与时间"
+              className="titlebar-op h-full w-[132px] shrink-0 justify-start gap-1 px-2"
+              aria-label={t("日期与时间")}
               data-action="toggle-game-calendar"
             >
-              <CalendarDays className="titlebar-op-icon" />
+              <CalendarDays className="titlebar-op-icon shrink-0" />
+              <span
+                className="min-w-0 flex-1 overflow-hidden text-left font-mono text-[10px] text-ellipsis whitespace-nowrap tabular-nums"
+                data-game-calendar-label
+              >
+                {snapshot
+                  ? t("年{year}{season}{day}", {
+                      year: snapshot.calendar.year,
+                      season: snapshot.calendar.seasonLabel,
+                      day: snapshot.calendar.day,
+                    })
+                  : t("季节")}
+              </span>
             </button>
           </PopoverTrigger>
         </Tooltip>
@@ -133,17 +153,21 @@ export function GameTitlebar() {
           align="end"
           sideOffset={6}
           className="kittens-game-theme border-kg-line bg-kg-dialog text-kg-body w-56 p-3 shadow-xl"
-          aria-label="日期与时间"
+          aria-label={t("日期与时间")}
           data-game-calendar-panel
         >
           <div className="flex items-start justify-between gap-3">
             <div>
               <div className="text-kg-muted text-[10px]">
-                {snapshot?.calendar.seasonLabel ?? "季节"} · 第{" "}
-                {snapshot?.calendar.year ?? 0} 年
+                {t("{season} · 第 {year} 年", {
+                  season: snapshot?.calendar.seasonLabel ?? t("季节"),
+                  year: snapshot?.calendar.year ?? 0,
+                })}
               </div>
               <div className="text-kg-strong mt-1 font-mono text-lg font-semibold tabular-nums">
-                第 {snapshot?.calendar.day ?? 0} 天
+                {t("第 {day} 天", {
+                  day: snapshot?.calendar.day ?? 0,
+                })}
               </div>
             </div>
             <span
@@ -158,12 +182,15 @@ export function GameTitlebar() {
               ) : (
                 <Play className="size-3" />
               )}
-              {snapshot?.paused ? "已暂停" : "运行中"}
+              {snapshot?.paused ? t("已暂停") : t("运行中")}
             </span>
           </div>
           <div className="text-kg-muted mt-3 flex items-center justify-between text-[10px]">
-            <span>世界刻度</span>
-            <span className="text-kg-body font-mono tabular-nums">
+            <span>{t("世界刻度")}</span>
+            <span
+              className="text-kg-body font-mono tabular-nums"
+              data-game-ticks={snapshot?.ticks ?? 0}
+            >
               {snapshot?.ticks ?? 0}
             </span>
           </div>
@@ -171,12 +198,12 @@ export function GameTitlebar() {
       </Popover>
 
       <Popover open={saveOpen} onOpenChange={setSaveOpen}>
-        <Tooltip content="存档操作">
+        <Tooltip content={t("存档操作")}>
           <PopoverTrigger asChild>
             <button
               type="button"
               className="titlebar-op h-full w-8 px-0"
-              aria-label="存档操作"
+              aria-label={t("存档操作")}
               aria-keyshortcuts="Control+S Meta+S Control+Shift+S Meta+Shift+S"
               data-action="toggle-save-actions"
             >
@@ -188,7 +215,7 @@ export function GameTitlebar() {
           align="end"
           sideOffset={6}
           className="kittens-game-theme border-kg-line bg-kg-dialog text-kg-body w-60 p-2 shadow-xl"
-          aria-label="存档操作"
+          aria-label={t("存档操作")}
           data-save-actions-panel
         >
           <button
@@ -198,7 +225,7 @@ export function GameTitlebar() {
             onClick={quickSave}
           >
             <Save className="text-kg-accent size-3.5" />
-            <span className="min-w-0 flex-1">快速保存</span>
+            <span className="min-w-0 flex-1">{t("快速保存")}</span>
             <span className="text-kg-faint font-mono text-[9px]">Ctrl+S</span>
           </button>
           <button
@@ -211,7 +238,7 @@ export function GameTitlebar() {
             }}
           >
             <FolderOpen className="text-kg-muted size-3.5" />
-            <span className="min-w-0 flex-1">存档管理</span>
+            <span className="min-w-0 flex-1">{t("存档管理")}</span>
             <span className="text-kg-faint font-mono text-[9px]">
               Ctrl+Shift+S
             </span>

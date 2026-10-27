@@ -176,7 +176,7 @@ async function attachToMainWindow(mainWindow: Window, resourceWindow: Window) {
   };
 }
 
-async function openTauriResourceWindow(): Promise<void> {
+async function openTauriResourceWindow(title: string): Promise<void> {
   const mainWindow = getCurrentWindowOrNull();
   if (!mainWindow) return;
 
@@ -189,7 +189,7 @@ async function openTauriResourceWindow(): Promise<void> {
 
   const resourceWindow = new WebviewWindow(RESOURCE_WINDOW_LABEL, {
     url: "/resource",
-    title: "资源",
+    title,
     width: RESOURCE_WINDOW_WIDTH,
     height: RESOURCE_WINDOW_HEIGHT,
     visible: false,
@@ -217,7 +217,7 @@ async function openTauriResourceWindow(): Promise<void> {
   await resourceWindow.show();
 }
 
-export async function openResourceWindow(): Promise<void> {
+export async function openResourceWindow(title: string): Promise<void> {
   if (!isTauriRuntime()) {
     const resourceWindow = window.open(
       "/resource",
@@ -229,7 +229,7 @@ export async function openResourceWindow(): Promise<void> {
   }
 
   try {
-    await openTauriResourceWindow();
+    await openTauriResourceWindow(title);
   } catch (error) {
     log.error("openResourceWindow failed", error);
     throw error;

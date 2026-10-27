@@ -43,6 +43,7 @@ import {
   actionReasonLabel,
   formatPercent,
 } from "@/features/kittens/game-format";
+import { useGameI18n } from "@/features/kittens/use-game-i18n";
 import {
   BonfirePanel,
   SciencePanel,
@@ -59,6 +60,7 @@ import {
 } from "@/features/kittens/game-midgame-panels";
 import { SaveManagementDialog } from "@/features/kittens/game-save-dialog";
 import type { ActionResult, GameSnapshot } from "@/game/kernel/types";
+import type { GameTextKey } from "@/game/kernel/game-text";
 import { cn } from "@/lib/utils";
 
 interface NavItem {
@@ -73,8 +75,8 @@ interface NavItem {
     | "time"
     | "challenges"
     | "progress";
-  label: string;
-  caption: string;
+  label: GameTextKey;
+  caption: GameTextKey;
   icon: LucideIcon;
 }
 
@@ -155,6 +157,7 @@ function Navigation({
   onNavigate: (id: NavId) => void;
   compact?: boolean;
 }) {
+  const { t } = useGameI18n();
   const renderItem = (item: NavItem) => {
     const Icon = item.icon;
     const active = activeNav === item.id;
@@ -183,12 +186,18 @@ function Navigation({
           <Icon className="size-4" />
         </span>
         <span className="min-w-0 flex-1">
-          <span className="block truncate text-xs font-medium">
-            {item.label}
+          <span
+            className="block text-xs leading-4 font-medium break-words"
+            data-nav-label
+          >
+            {t(item.label)}
           </span>
           {!compact ? (
-            <span className="text-kg-faint mt-0.5 block truncate text-[10px]">
-              {item.caption}
+            <span
+              className="text-kg-faint mt-0.5 block text-[10px] leading-[1.35] break-words"
+              data-nav-caption
+            >
+              {t(item.caption)}
             </span>
           ) : null}
         </span>
@@ -199,7 +208,7 @@ function Navigation({
 
   return (
     <nav
-      aria-label="游戏系统"
+      aria-label={t("游戏系统")}
       className="flex min-h-0 flex-1 flex-col"
       data-game-navigation
     >
@@ -225,6 +234,7 @@ function GameConfirmation({
   snapshot: GameSnapshot;
   onResolve: (accept: boolean) => void;
 }) {
+  const { t } = useGameI18n();
   const pending = snapshot.pendingConfirmation;
 
   return (
@@ -241,7 +251,7 @@ function GameConfirmation({
       >
         <DialogHeader>
           <DialogTitle className="text-kg-strong font-serif text-lg">
-            {pending?.title || "确认操作"}
+            {pending?.title || t("确认操作")}
           </DialogTitle>
           <DialogDescription className="text-kg-muted leading-relaxed">
             {pending?.message}
@@ -254,14 +264,14 @@ function GameConfirmation({
             className="border-kg-control text-kg-body hover:bg-kg-hover-strong hover:text-kg-strong bg-transparent"
             onClick={() => onResolve(false)}
           >
-            取消
+            {t("取消")}
           </Button>
           <Button
             type="button"
             className="text-kg-accent-foreground bg-amber-400 hover:bg-amber-300"
             onClick={() => onResolve(true)}
           >
-            确认
+            {t("确认")}
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -270,6 +280,7 @@ function GameConfirmation({
 }
 
 export default function KittensGame() {
+  const { formatLocale, t } = useGameI18n();
   const { kernel, snapshot, error } = useKittensGameContext();
   const {
     lastAction,
@@ -299,19 +310,25 @@ export default function KittensGame() {
       if (!kernel) return;
       const result = kernel.save();
       setLastAction(
-        result.ok ? "游戏已保存" : `未完成：${actionReasonLabel(result.reason)}`
+        result.ok
+          ? t("游戏已保存")
+          : t("未完成：{reason}", {
+              reason: actionReasonLabel(result.reason, t),
+            })
       );
     };
     window.addEventListener("keydown", handleShortcut);
     return () => window.removeEventListener("keydown", handleShortcut);
-  }, [kernel, setLastAction, setSaveDialogOpen]);
+  }, [kernel, setLastAction, setSaveDialogOpen, t]);
 
   if (error) {
     return (
       <section className="kittens-game-theme bg-kg-canvas text-kg-body flex h-full w-full items-center justify-center px-6">
         <div className="max-w-md rounded-lg border border-rose-500/30 bg-rose-400/10 p-6 text-center">
           <CircleAlert className="text-kg-danger mx-auto size-8" />
-          <h1 className="mt-3 text-lg font-semibold">游戏引擎未能启动</h1>
+          <h1 className="mt-3 text-lg font-semibold">
+            {t("游戏引擎未能启动")}
+          </h1>
           <p className="text-kg-muted mt-2 text-sm leading-relaxed">{error}</p>
           <Button
             type="button"
@@ -320,7 +337,7 @@ export default function KittensGame() {
             onClick={() => window.location.reload()}
           >
             <RefreshCw className="size-4" />
-            重新加载
+            {t("重新加载")}
           </Button>
         </div>
       </section>
@@ -335,7 +352,7 @@ export default function KittensGame() {
       >
         <div className="text-kg-muted flex flex-col items-center gap-3">
           <LoaderCircle className="text-kg-accent size-7 animate-spin" />
-          <span className="text-sm">正在唤醒猫薄荷森林</span>
+          <span className="text-sm">{t("正在唤醒猫薄荷森林")}</span>
         </div>
       </section>
     );
@@ -344,7 +361,11 @@ export default function KittensGame() {
   const runAction = (label: string, action: () => ActionResult) => {
     const result = action();
     setLastAction(
-      result.ok ? label : `未完成：${actionReasonLabel(result.reason)}`
+      result.ok
+        ? label
+        : t("未完成：{reason}", {
+            reason: actionReasonLabel(result.reason, t),
+          })
     );
   };
   const navigate = (id: NavId) => {
@@ -359,9 +380,11 @@ export default function KittensGame() {
         return (
           <BonfirePanel
             snapshot={snapshot}
-            onGather={() => runAction("采集了猫薄荷", () => kernel.gather())}
-            onCraft={() => runAction("精炼了木材", () => kernel.craftWood())}
-            onBuy={(id) => runAction("完成建造", () => kernel.buyBuilding(id))}
+            onGather={() => runAction(t("采集了猫薄荷"), () => kernel.gather())}
+            onCraft={() => runAction(t("精炼了木材"), () => kernel.craftWood())}
+            onBuy={(id) =>
+              runAction(t("完成建造"), () => kernel.buyBuilding(id))
+            }
           />
         );
       case "village":
@@ -369,10 +392,10 @@ export default function KittensGame() {
           <VillagePanel
             snapshot={snapshot}
             onAssign={(id, amount) =>
-              runAction("已调整职业", () => kernel.assignJob(id, amount))
+              runAction(t("已调整职业"), () => kernel.assignJob(id, amount))
             }
             onUnassign={(id, amount) =>
-              runAction("已调整职业", () => kernel.unassignJob(id, amount))
+              runAction(t("已调整职业"), () => kernel.unassignJob(id, amount))
             }
           />
         );
@@ -381,7 +404,7 @@ export default function KittensGame() {
           <SciencePanel
             snapshot={snapshot}
             onResearch={(id, kind) =>
-              runAction("研究完成", () => kernel.research(id, kind))
+              runAction(t("研究完成"), () => kernel.research(id, kind))
             }
           />
         );
@@ -390,12 +413,14 @@ export default function KittensGame() {
           <WorkshopPanel
             snapshot={snapshot}
             onCraft={(id, amount) =>
-              runAction("制作完成", () => kernel.craft(id, amount))
+              runAction(t("制作完成"), () => kernel.craft(id, amount))
             }
             onCraftAll={(id) =>
-              runAction("批量制作完成", () => kernel.craftAll(id))
+              runAction(t("批量制作完成"), () => kernel.craftAll(id))
             }
-            onBuy={(id) => runAction("购买升级", () => kernel.buyUpgrade(id))}
+            onBuy={(id) =>
+              runAction(t("购买升级"), () => kernel.buyUpgrade(id))
+            }
           />
         );
       case "trade":
@@ -403,10 +428,10 @@ export default function KittensGame() {
           <TradePanel
             snapshot={snapshot}
             onTrade={(id, amount) =>
-              runAction("贸易完成", () => kernel.trade(id, amount))
+              runAction(t("贸易完成"), () => kernel.trade(id, amount))
             }
             onEmbassy={(id) =>
-              runAction("大使馆已建造", () => kernel.buyEmbassy(id))
+              runAction(t("大使馆已建造"), () => kernel.buyEmbassy(id))
             }
           />
         );
@@ -414,16 +439,18 @@ export default function KittensGame() {
         return (
           <ReligionPanel
             snapshot={snapshot}
-            onPraise={() => runAction("赞美完成", () => kernel.praise())}
+            onPraise={() => runAction(t("赞美完成"), () => kernel.praise())}
             onResetFaith={() =>
-              runAction("信仰已重置", () => kernel.resetFaith())
+              runAction(t("信仰已重置"), () => kernel.resetFaith())
             }
-            onTranscend={() => runAction("超越完成", () => kernel.transcend())}
+            onTranscend={() =>
+              runAction(t("超越完成"), () => kernel.transcend())
+            }
             onSacrifice={() =>
-              runAction("独角兽献祭完成", () => kernel.sacrificeUnicorns())
+              runAction(t("独角兽献祭完成"), () => kernel.sacrificeUnicorns())
             }
             onBuyUpgrade={(id, kind) =>
-              runAction("宗教升级已购买", () =>
+              runAction(t("宗教升级已购买"), () =>
                 kernel.buyReligionUpgrade(id, kind)
               )
             }
@@ -434,10 +461,12 @@ export default function KittensGame() {
           <SpacePanel
             snapshot={snapshot}
             onLaunch={(id) =>
-              runAction("太空任务已启动", () => kernel.launchSpaceProgram(id))
+              runAction(t("太空任务已启动"), () =>
+                kernel.launchSpaceProgram(id)
+              )
             }
             onBuy={(id) =>
-              runAction("太空建筑已建造", () => kernel.buySpaceBuilding(id))
+              runAction(t("太空建筑已建造"), () => kernel.buySpaceBuilding(id))
             }
           />
         );
@@ -446,19 +475,23 @@ export default function KittensGame() {
           <TimePanel
             snapshot={snapshot}
             onAccelerate={() =>
-              runAction("时间流速已切换", () => kernel.toggleTimeAcceleration())
+              runAction(t("时间流速已切换"), () =>
+                kernel.toggleTimeAcceleration()
+              )
             }
             onShatter={() =>
-              runAction("时间跳跃完成", () => kernel.shatterTime(1))
+              runAction(t("时间跳跃完成"), () => kernel.shatterTime(1))
             }
             onUseHeat={() =>
-              runAction("热机跳跃完成", () => kernel.useChronoforgeHeat(1))
+              runAction(t("热机跳跃完成"), () => kernel.useChronoforgeHeat(1))
             }
             onBuyUpgrade={(id, kind) =>
-              runAction("时间装置已购买", () => kernel.buyTimeUpgrade(id, kind))
+              runAction(t("时间装置已购买"), () =>
+                kernel.buyTimeUpgrade(id, kind)
+              )
             }
             onResetTimeline={() =>
-              runAction("已请求重置时间线", () => kernel.resetTimeline())
+              runAction(t("已请求重置时间线"), () => kernel.resetTimeline())
             }
           />
         );
@@ -467,10 +500,12 @@ export default function KittensGame() {
           <ChallengesPanel
             snapshot={snapshot}
             onToggle={(id) =>
-              runAction("挑战准备状态已更新", () => kernel.toggleChallenge(id))
+              runAction(t("挑战准备状态已更新"), () =>
+                kernel.toggleChallenge(id)
+              )
             }
             onApply={() =>
-              runAction("挑战已开始", () => kernel.applyPendingChallenges())
+              runAction(t("挑战已开始"), () => kernel.applyPendingChallenges())
             }
           />
         );
@@ -482,14 +517,14 @@ export default function KittensGame() {
   return (
     <section
       className="kittens-game-theme kittens-game-view bg-kg-canvas text-kg-body relative h-full min-h-0 w-full overflow-hidden"
-      aria-label="猫国建设者"
+      aria-label={t("猫国建设者")}
       data-game-paused={snapshot.paused}
     >
       <a
         href="#kittens-main"
         className="text-kg-accent-foreground sr-only fixed top-3 left-3 z-50 rounded-md bg-amber-300 px-3 py-2 text-xs font-semibold focus:not-sr-only"
       >
-        跳到主要内容
+        {t("跳到主要内容")}
       </a>
       <Sheet open={mobileNavOpen} onOpenChange={setMobileNavOpen}>
         <SheetContent
@@ -499,10 +534,10 @@ export default function KittensGame() {
           <SheetHeader className="border-kg-line border-b pb-5 text-left">
             <SheetTitle className="text-kg-strong flex items-center gap-2 font-serif text-lg">
               <Cat className="text-kg-accent size-5" />
-              猫国建设者
+              {t("猫国建设者")}
             </SheetTitle>
             <SheetDescription className="text-kg-muted text-xs">
-              原生逻辑 · {snapshot.version}
+              {t("原生逻辑 · {version}", { version: snapshot.version })}
             </SheetDescription>
           </SheetHeader>
           <div className="mt-2 min-h-0 flex-1 px-2">
@@ -514,7 +549,7 @@ export default function KittensGame() {
       <div className="grid h-full min-h-0 grid-cols-1 overflow-hidden lg:grid-cols-[168px_minmax(0,1fr)] xl:grid-cols-[176px_minmax(0,1fr)_280px]">
         <aside className="border-kg-line bg-kg-sidebar hidden min-h-0 border-r p-2.5 lg:flex lg:flex-col">
           <div className="text-kg-faint mb-3 px-2 text-[10px] font-semibold tracking-[0.18em] uppercase">
-            发展阶段
+            {t("发展阶段")}
           </div>
           <Navigation activeNav={activeNav} onNavigate={navigate} />
         </aside>
@@ -544,12 +579,12 @@ export default function KittensGame() {
                     <div className="min-w-0">
                       <div className="font-semibold">
                         {snapshot.saveStatus.health === "corrupt"
-                          ? "本地存档无法读取"
-                          : "游戏模拟已暂停"}
+                          ? t("本地存档无法读取")
+                          : t("游戏模拟已暂停")}
                       </div>
                       <div className="text-kg-danger/65 mt-0.5">
                         {snapshot.runtimeError ??
-                          "自动保存已停止，请导入有效存档或恢复备份。"}
+                          t("自动保存已停止，请导入有效存档或恢复备份。")}
                       </div>
                     </div>
                   </div>
@@ -561,7 +596,7 @@ export default function KittensGame() {
                     onClick={() => setSaveDialogOpen(true)}
                     data-action="open-save-recovery"
                   >
-                    打开存档恢复
+                    {t("打开存档恢复")}
                   </Button>
                 </div>
               ) : null}
@@ -574,10 +609,10 @@ export default function KittensGame() {
           <div className="border-kg-line border-b p-4">
             <div className="flex items-center justify-between">
               <span className="text-kg-muted text-[10px] font-semibold tracking-[0.16em] uppercase">
-                本地存档
+                {t("本地存档")}
               </span>
               <span className="text-kg-success rounded-sm bg-emerald-400/10 px-1.5 py-0.5 text-[10px]">
-                原版格式
+                {t("原版格式")}
               </span>
             </div>
             <Button
@@ -585,10 +620,10 @@ export default function KittensGame() {
               variant="outline"
               size="sm"
               className="border-kg-control bg-kg-wash text-kg-body hover:bg-kg-hover-strong mt-3 w-full"
-              onClick={() => runAction("游戏已保存", () => kernel.save())}
+              onClick={() => runAction(t("游戏已保存"), () => kernel.save())}
             >
               <Save className="size-4" />
-              保存游戏
+              {t("保存游戏")}
             </Button>
             <Button
               type="button"
@@ -600,70 +635,72 @@ export default function KittensGame() {
               data-action="open-save-manager-sidebar"
             >
               <FolderOpen className="size-4" />
-              存档管理
+              {t("存档管理")}
             </Button>
           </div>
 
           <div className="border-kg-line grid grid-cols-2 border-b">
             <div className="border-kg-line-subtle border-r p-4">
-              <div className="text-kg-faint text-[10px]">人口</div>
+              <div className="text-kg-faint text-[10px]">{t("人口")}</div>
               <div className="text-kg-strong mt-1 font-mono text-lg">
                 {snapshot.village.kittens}
               </div>
               <div className="text-kg-faint text-[10px]">
-                {snapshot.village.freeKittens} 空闲
+                {t("{count} 空闲", {
+                  count: snapshot.village.freeKittens,
+                })}
               </div>
             </div>
             <div className="p-4">
-              <div className="text-kg-faint text-[10px]">幸福</div>
+              <div className="text-kg-faint text-[10px]">{t("幸福")}</div>
               <div className="text-kg-accent mt-1 font-mono text-lg">
-                {formatPercent(snapshot.village.happiness)}
+                {formatPercent(snapshot.village.happiness, formatLocale)}
               </div>
               <div className="text-kg-faint text-[10px]">
-                {snapshot.village.leaderName ?? "无领袖"}
+                {snapshot.village.leaderName ?? t("无领袖")}
               </div>
             </div>
           </div>
 
           <div className="border-kg-line border-b p-4">
             <div className="text-kg-muted text-[10px] font-semibold tracking-[0.16em] uppercase">
-              最近行动
+              {t("最近行动")}
             </div>
             <div
               className="bg-kg-inset text-kg-muted mt-3 h-[74px] overflow-hidden border-l-2 border-amber-400/35 px-3 py-2 text-xs leading-relaxed"
               aria-live="polite"
               data-action-feedback
             >
-              {lastAction ?? snapshot.lastMessage ?? "还没有行动记录。"}
+              {lastAction ?? snapshot.lastMessage ?? t("还没有行动记录。")}
             </div>
           </div>
 
           <ScrollArea type="hover" className="min-h-0 flex-1">
             <div className="p-4 pb-8">
               <div className="text-kg-muted text-[10px] font-semibold tracking-[0.16em] uppercase">
-                进度
+                {t("进度")}
               </div>
               <div className="mt-3 space-y-2 text-[11px]">
                 <div className="flex items-center justify-between gap-3">
-                  <span className="text-kg-muted">可用研究</span>
+                  <span className="text-kg-muted">{t("可用研究")}</span>
                   <span className="text-kg-body font-mono">
                     {snapshot.science.availableCount}
                   </span>
                 </div>
                 <div className="flex items-center justify-between gap-3">
-                  <span className="text-kg-muted">已完成研究</span>
+                  <span className="text-kg-muted">{t("已完成研究")}</span>
                   <span className="text-kg-body font-mono">
                     {snapshot.science.researchedCount}
                   </span>
                 </div>
                 <div className="flex items-center justify-between gap-3">
-                  <span className="text-kg-muted">工坊配方</span>
+                  <span className="text-kg-muted">{t("工坊配方")}</span>
                   <span className="text-kg-body font-mono">
                     {snapshot.workshop.crafts.length}
                   </span>
                 </div>
                 <div className="flex items-center justify-between gap-3">
-                  <span className="text-kg-muted">待购升级</span>
+                  <span className="text-kg-muted">{t("待购升级")}</span>
                   <span className="text-kg-body font-mono">
                     {
                       snapshot.workshop.upgrades.filter(
@@ -678,12 +715,17 @@ export default function KittensGame() {
 
           <footer className="border-kg-line text-kg-faint border-t p-4 text-[10px] leading-relaxed">
             <div className="mb-3 grid grid-cols-2 gap-x-3 gap-y-1.5">
-              {[
-                ["官方网站", "https://kittensgame.com/web/"],
-                ["英文 WIKI", "https://wiki.kittensgame.com/en/home"],
-                ["中文 WIKI", "https://lolitalibrary.com/wiki/"],
-                ["上游源码", "https://github.com/nuclear-unicorn/kittensgame"],
-              ].map(([label, href]) => (
+              {(
+                [
+                  ["官方网站", "https://kittensgame.com/web/"],
+                  ["英文 WIKI", "https://wiki.kittensgame.com/en/home"],
+                  ["中文 WIKI", "https://lolitalibrary.com/wiki/"],
+                  [
+                    "上游源码",
+                    "https://github.com/nuclear-unicorn/kittensgame",
+                  ],
+                ] satisfies Array<[GameTextKey, string]>
+              ).map(([label, href]) => (
                 <a
                   key={href}
                   href={href}
@@ -691,19 +733,19 @@ export default function KittensGame() {
                   rel="noreferrer"
                   className="text-kg-muted hover:text-kg-accent inline-flex min-w-0 items-center gap-1 transition-colors"
                 >
-                  <span className="truncate">{label}</span>
+                  <span className="truncate">{t(label)}</span>
                   <ExternalLink className="size-2.5 shrink-0" />
                 </a>
               ))}
             </div>
             <div className="flex items-center justify-between">
-              <span>逻辑版本</span>
+              <span>{t("逻辑版本")}</span>
               <span className="text-kg-muted font-mono">
                 {snapshot.version}
               </span>
             </div>
             <div className="mt-1 flex items-center justify-between">
-              <span>世界刻度</span>
+              <span>{t("世界刻度")}</span>
               <span className="text-kg-muted font-mono tabular-nums">
                 {snapshot.ticks}
               </span>
@@ -729,7 +771,7 @@ export default function KittensGame() {
       <GameConfirmation
         snapshot={snapshot}
         onResolve={(accept) =>
-          runAction(accept ? "操作已确认" : "操作已取消", () =>
+          runAction(accept ? t("操作已确认") : t("操作已取消"), () =>
             kernel.resolvePendingConfirmation(accept)
           )
         }

@@ -42,18 +42,19 @@ import {
   PricePills,
   SectionLabel,
 } from "./game-shared";
+import { useGameI18n, type GameTranslate } from "./use-game-i18n";
 
 const primaryActionClass =
   "border-amber-400/25 bg-amber-400/90 text-kg-accent-foreground hover:bg-amber-300";
 const quietActionClass =
   "border-kg-control bg-transparent text-kg-body hover:bg-kg-hover-strong hover:text-kg-strong";
 
-function standingLabel(standing: number): string {
-  if (standing >= 0.25) return "友好";
-  if (standing > 0) return "亲近";
-  if (standing === 0) return "中立";
-  if (standing > -0.25) return "冷淡";
-  return "敌对";
+function standingLabel(standing: number, t: GameTranslate): string {
+  if (standing >= 0.25) return t("友好");
+  if (standing > 0) return t("亲近");
+  if (standing === 0) return t("中立");
+  if (standing > -0.25) return t("冷淡");
+  return t("敌对");
 }
 
 function OfferPill({
@@ -63,6 +64,8 @@ function OfferPill({
   offer: TradeOfferSnapshot;
   kind: "buy" | "sell";
 }) {
+  const { formatLocale } = useGameI18n();
+
   return (
     <span
       className={cn(
@@ -76,11 +79,11 @@ function OfferPill({
     >
       <span>{offer.label}</span>
       <strong className="font-mono font-medium">
-        {formatNumber(offer.amount)}
+        {formatNumber(offer.amount, 2, formatLocale)}
       </strong>
       {kind === "sell" ? (
         <span className="text-kg-muted font-mono">
-          {formatPercent(Math.min(offer.chance, 1))}
+          {formatPercent(Math.min(offer.chance, 1), formatLocale)}
         </span>
       ) : null}
     </span>
@@ -96,6 +99,8 @@ function TradeRaceRow({
   onTrade: (id: string, amount: number | "all") => void;
   onEmbassy: (id: string) => void;
 }) {
+  const { formatLocale, t } = useGameI18n();
+
   return (
     <article
       className="border-kg-line-subtle border-b px-5 py-4 last:border-b-0"
@@ -111,11 +116,12 @@ function TradeRaceRow({
               {race.label}
             </h3>
             <span className="border-kg-line-subtle bg-kg-wash text-kg-muted rounded-sm border px-1.5 py-px text-[10px]">
-              {standingLabel(race.standing)} {formatPercent(race.standing)}
+              {standingLabel(race.standing, t)}{" "}
+              {formatPercent(race.standing, formatLocale)}
             </span>
             {race.embassy.level > 0 ? (
               <span className="text-kg-accent rounded-sm bg-amber-400/10 px-1.5 py-px font-mono text-[10px]">
-                大使馆 {race.embassy.level}
+                {t("大使馆 {level}", { level: race.embassy.level })}
               </span>
             ) : null}
           </div>
@@ -123,7 +129,7 @@ function TradeRaceRow({
           <div className="mt-3 grid gap-3 lg:grid-cols-2">
             <div>
               <div className="text-kg-faint mb-1.5 text-[10px] tracking-wide">
-                商队支出
+                {t("商队支出")}
               </div>
               <div className="flex flex-wrap gap-1.5">
                 {race.buys.map((offer) => (
@@ -133,7 +139,7 @@ function TradeRaceRow({
             </div>
             <div>
               <div className="text-kg-faint mb-1.5 text-[10px] tracking-wide">
-                可带回资源
+                {t("可带回资源")}
               </div>
               <div className="flex flex-wrap gap-1.5">
                 {race.sells.map((offer) => (
@@ -145,21 +151,21 @@ function TradeRaceRow({
 
           <div className="text-kg-muted mt-3 flex flex-wrap items-center gap-x-4 gap-y-2 text-[10px]">
             <span>
-              单次容量{" "}
+              {t("单次容量")}{" "}
               <strong className="text-kg-body font-mono">
                 {race.maxTradeAmount || "0"}
               </strong>
             </span>
             <span>
-              蓝图{" "}
+              {t("蓝图")}{" "}
               <strong className="text-kg-body font-mono">
-                {formatPercent(race.blueprintChance)}
+                {formatPercent(race.blueprintChance, formatLocale)}
               </strong>
             </span>
             <span>
-              香料{" "}
+              {t("香料")}{" "}
               <strong className="text-kg-body font-mono">
-                {formatPercent(race.spiceChance)}
+                {formatPercent(race.spiceChance, formatLocale)}
               </strong>
             </span>
           </div>
@@ -172,11 +178,11 @@ function TradeRaceRow({
             className={primaryActionClass}
             disabled={!race.canTrade}
             onClick={() => onTrade(race.id, 1)}
-            aria-label={`与${race.label}贸易`}
+            aria-label={t("与{race}贸易", { race: race.label })}
             data-trade-action={race.id}
           >
             <ArrowRightLeft className="size-3.5" />
-            贸易
+            {t("贸易")}
           </Button>
           <Button
             type="button"
@@ -185,10 +191,10 @@ function TradeRaceRow({
             className={quietActionClass}
             disabled={!race.canTrade || race.maxTradeAmount <= 1}
             onClick={() => onTrade(race.id, "all")}
-            aria-label={`与${race.label}全部贸易`}
+            aria-label={t("与{race}全部贸易", { race: race.label })}
             data-trade-all={race.id}
           >
-            全部
+            {t("全部")}
           </Button>
           <Button
             type="button"
@@ -197,10 +203,10 @@ function TradeRaceRow({
             className="text-kg-muted hover:bg-kg-hover hover:text-kg-accent"
             disabled={!race.embassy.canBuy}
             onClick={() => onEmbassy(race.id)}
-            aria-label={`建造${race.label}大使馆`}
+            aria-label={t("建造{race}大使馆", { race: race.label })}
             data-embassy-build={race.id}
           >
-            大使馆
+            {t("大使馆")}
           </Button>
         </div>
       </div>
@@ -220,43 +226,52 @@ export function TradePanel({
   onTrade: (id: string, amount: number | "all") => void;
   onEmbassy: (id: string) => void;
 }) {
+  const { formatLocale, t } = useGameI18n();
   const trade = snapshot.trade;
 
   return (
     <div className="animate-in fade-in-0 duration-200">
       <PanelHeading
-        eyebrow="外交"
-        title="贸易"
-        description="派遣商队交换资源，提高种族关系并建立大使馆。商队容量、资源抽取与特殊收获由原版内核结算。"
+        eyebrow={t("外交")}
+        title={t("贸易")}
+        description={t(
+          "派遣商队交换资源，提高种族关系并建立大使馆。商队容量、资源抽取与特殊收获由原版内核结算。"
+        )}
         icon={Handshake}
       />
 
       <div className="border-kg-line bg-kg-inset grid grid-cols-2 border-b lg:grid-cols-4">
-        <Metric label="贸易种族" value={trade.races.length} />
+        <Metric label={t("贸易种族")} value={trade.races.length} />
         <Metric
-          label="贸易容量"
-          value={`×${formatNumber(trade.tradeVolume, 2)}`}
+          label={t("贸易容量")}
+          value={`×${formatNumber(trade.tradeVolume, 2, formatLocale)}`}
           tone="green"
         />
         <Metric
-          label="金币 / 人力"
-          value={`${formatNumber(trade.goldCost)} / ${formatNumber(trade.manpowerCost)}`}
+          label={t("金币 / 人力")}
+          value={`${formatNumber(trade.goldCost, 2, formatLocale)} / ${formatNumber(
+            trade.manpowerCost,
+            2,
+            formatLocale
+          )}`}
         />
         <Metric
-          label="总贸易"
+          label={t("总贸易")}
           value={
             snapshot.progress.statGroups
               .flatMap((group) => group.stats)
               .find((stat) => stat.id === "totalTrades")?.value ?? 0
           }
-          detail="本存档累计"
+          detail={t("本存档累计")}
         />
       </div>
 
       {trade.races.length > 0 ? (
         <section>
-          <SectionLabel aside={`${trade.races.length} 个已结识`}>
-            贸易伙伴
+          <SectionLabel
+            aside={t("{count} 个已结识", { count: trade.races.length })}
+          >
+            {t("贸易伙伴")}
           </SectionLabel>
           {trade.races.map((race) => (
             <TradeRaceRow
@@ -269,8 +284,8 @@ export function TradePanel({
         </section>
       ) : (
         <EmptyState
-          title="尚未发现贸易种族"
-          description="推进探索和外交条件后，新的贸易伙伴会出现在这里。"
+          title={t("尚未发现贸易种族")}
+          description={t("推进探索和外交条件后，新的贸易伙伴会出现在这里。")}
         />
       )}
     </div>
@@ -284,6 +299,8 @@ function ReligionUpgradeRow({
   upgrade: ReligionUpgradeSnapshot;
   onBuy: (id: string, kind: ReligionUpgradeKind) => void;
 }) {
+  const { t } = useGameI18n();
+
   return (
     <article
       className={cn(
@@ -306,7 +323,7 @@ function ReligionUpgradeRow({
           ) : null}
         </div>
         <p className="text-kg-muted mt-1 max-w-2xl text-xs leading-relaxed">
-          {upgrade.description || "宗教升级"}
+          {upgrade.description || t("宗教升级")}
         </p>
         <PricePills prices={upgrade.prices} className="mt-2.5" />
       </div>
@@ -317,11 +334,11 @@ function ReligionUpgradeRow({
         className={cn("self-center", quietActionClass)}
         disabled={!upgrade.canBuy}
         onClick={() => onBuy(upgrade.id, upgrade.kind)}
-        aria-label={`购买${upgrade.label}`}
+        aria-label={t("购买{label}", { label: upgrade.label })}
         data-religion-buy={upgrade.id}
       >
         <Sparkles className="size-3.5" />
-        购买
+        {t("购买")}
       </Button>
     </article>
   );
@@ -342,6 +359,7 @@ export function ReligionPanel({
   onSacrifice: () => void;
   onBuyUpgrade: (id: string, kind: ReligionUpgradeKind) => void;
 }) {
+  const { formatLocale, t } = useGameI18n();
   const religion = snapshot.religion;
   const groups: Array<{
     kind: ReligionUpgradeKind;
@@ -350,17 +368,17 @@ export function ReligionPanel({
   }> = [
     {
       kind: "religion",
-      title: "宗教升级",
+      title: t("宗教升级"),
       items: religion.upgrades.filter((item) => item.kind === "religion"),
     },
     {
       kind: "ziggurat",
-      title: "金字塔建筑",
+      title: t("金字塔建筑"),
       items: religion.upgrades.filter((item) => item.kind === "ziggurat"),
     },
     {
       kind: "transcendence",
-      title: "超越升级",
+      title: t("超越升级"),
       items: religion.upgrades.filter((item) => item.kind === "transcendence"),
     },
   ];
@@ -374,9 +392,11 @@ export function ReligionPanel({
       data-religion-sacrifices={religion.unicornSacrifices}
     >
       <PanelHeading
-        eyebrow="宗教"
-        title="宗教"
-        description="赞美积累崇拜，重置信仰换取顿悟，并逐步开启超越。所有换算与独角兽献祭均沿用原版规则。"
+        eyebrow={t("宗教")}
+        title={t("宗教")}
+        description={t(
+          "赞美积累崇拜，重置信仰换取顿悟，并逐步开启超越。所有换算与独角兽献祭均沿用原版规则。"
+        )}
         icon={Church}
         actions={
           <>
@@ -389,7 +409,7 @@ export function ReligionPanel({
               data-action="praise"
             >
               <Sparkles className="size-3.5" />
-              赞美
+              {t("赞美")}
             </Button>
             <Button
               type="button"
@@ -400,7 +420,7 @@ export function ReligionPanel({
               onClick={onResetFaith}
               data-action="reset-faith"
             >
-              重置信仰
+              {t("重置信仰")}
             </Button>
             <Button
               type="button"
@@ -411,7 +431,7 @@ export function ReligionPanel({
               onClick={onTranscend}
               data-action="transcend"
             >
-              超越
+              {t("超越")}
             </Button>
           </>
         }
@@ -419,34 +439,48 @@ export function ReligionPanel({
 
       <div className="border-kg-line bg-kg-inset grid grid-cols-2 border-b lg:grid-cols-4">
         <Metric
-          label="信仰"
-          value={formatNumber(religion.faith)}
+          label={t("信仰")}
+          value={formatNumber(religion.faith, 2, formatLocale)}
           tone="amber"
-          detail={`崇拜 ${formatNumber(religion.worship)}`}
+          detail={t("崇拜 {value}", {
+            value: formatNumber(religion.worship, 2, formatLocale),
+          })}
         />
         <Metric
-          label="顿悟"
-          value={formatNumber(religion.faithRatio)}
-          detail={`加成 ${formatPercent(religion.apocryphaBonus)}`}
+          label={t("顿悟")}
+          value={formatNumber(religion.faithRatio, 2, formatLocale)}
+          detail={t("加成 {value}", {
+            value: formatPercent(religion.apocryphaBonus, formatLocale),
+          })}
           tone="green"
         />
         <Metric
-          label="超越层级"
+          label={t("超越层级")}
           value={religion.transcendenceTier}
-          detail={`下级 ${formatNumber(religion.nextTranscendenceCost)}`}
+          detail={t("下级 {value}", {
+            value: formatNumber(
+              religion.nextTranscendenceCost,
+              2,
+              formatLocale
+            ),
+          })}
         />
         <Metric
-          label="独角兽献祭"
+          label={t("独角兽献祭")}
           value={religion.unicornSacrifices}
-          detail={`腐化 ${formatNumber(religion.corruption, 3)}`}
+          detail={t("腐化 {value}", {
+            value: formatNumber(religion.corruption, 3, formatLocale),
+          })}
         />
       </div>
 
       <div className="border-kg-line-subtle flex flex-wrap items-center justify-between gap-3 border-b px-5 py-3">
         <div className="min-w-40 flex-1">
           <div className="text-kg-muted mb-1 flex items-center justify-between text-[10px]">
-            <span>崇拜积累</span>
-            <span className="font-mono">{formatNumber(religion.worship)}</span>
+            <span>{t("崇拜积累")}</span>
+            <span className="font-mono">
+              {formatNumber(religion.worship, 2, formatLocale)}
+            </span>
           </div>
           <Meter
             value={
@@ -456,7 +490,7 @@ export function ReligionPanel({
                   ? 100
                   : 0
             }
-            label="崇拜积累"
+            label={t("崇拜积累")}
             tone="green"
           />
         </div>
@@ -469,7 +503,7 @@ export function ReligionPanel({
           onClick={onSacrifice}
           data-action="sacrifice-unicorns"
         >
-          献祭独角兽
+          {t("献祭独角兽")}
         </Button>
       </div>
 
@@ -489,15 +523,15 @@ export function ReligionPanel({
               ))
             ) : (
               <div className="text-kg-faint px-5 py-4 text-xs">
-                暂无可用项目
+                {t("暂无可用项目")}
               </div>
             )}
           </section>
         ))
       ) : (
         <EmptyState
-          title="宗教尚未开启"
-          description="积累信仰并建造宗教设施后，升级会出现在这里。"
+          title={t("宗教尚未开启")}
+          description={t("积累信仰并建造宗教设施后，升级会出现在这里。")}
         />
       )}
     </div>
@@ -511,8 +545,13 @@ function SpaceProgramRow({
   program: SpaceProgramSnapshot;
   onLaunch: (id: string) => void;
 }) {
+  const { t } = useGameI18n();
   const state =
-    program.value === 0 ? null : program.enabled === 0 ? "航行中" : "已完成";
+    program.value === 0
+      ? null
+      : program.enabled === 0
+        ? t("航行中")
+        : t("已完成");
 
   return (
     <article
@@ -535,7 +574,7 @@ function SpaceProgramRow({
           ) : null}
         </div>
         <p className="text-kg-muted mt-1 max-w-2xl text-xs leading-relaxed">
-          {program.description || "太空任务"}
+          {program.description || t("太空任务")}
         </p>
         <PricePills prices={program.prices} className="mt-2.5" />
       </div>
@@ -545,11 +584,11 @@ function SpaceProgramRow({
         className={cn("self-center", primaryActionClass)}
         disabled={!program.canLaunch}
         onClick={() => onLaunch(program.id)}
-        aria-label={`启动${program.label}`}
+        aria-label={t("启动{label}", { label: program.label })}
         data-space-launch={program.id}
       >
         <Rocket className="size-3.5" />
-        启动
+        {t("启动")}
       </Button>
     </article>
   );
@@ -562,6 +601,8 @@ function SpaceBuildingRow({
   building: SpaceBuildingSnapshot;
   onBuy: (id: string) => void;
 }) {
+  const { t } = useGameI18n();
+
   return (
     <article
       className={cn(
@@ -583,7 +624,7 @@ function SpaceBuildingRow({
           ) : null}
         </div>
         <p className="text-kg-muted mt-1 max-w-2xl text-xs leading-relaxed">
-          {building.description || "太空建筑"}
+          {building.description || t("太空建筑")}
         </p>
         <PricePills prices={building.prices} className="mt-2.5" />
       </div>
@@ -594,11 +635,11 @@ function SpaceBuildingRow({
         className={cn("self-center", quietActionClass)}
         disabled={!building.canBuy}
         onClick={() => onBuy(building.id)}
-        aria-label={`建造${building.label}`}
+        aria-label={t("建造{label}", { label: building.label })}
         data-space-build={building.id}
       >
         <Rocket className="size-3.5" />
-        建造
+        {t("建造")}
       </Button>
     </article>
   );
@@ -613,6 +654,7 @@ export function SpacePanel({
   onLaunch: (id: string) => void;
   onBuy: (id: string) => void;
 }) {
+  const { formatLocale, t } = useGameI18n();
   const [tab, setTab] = useState<"programs" | "planets">("programs");
   const space = snapshot.space;
   const visiblePlanets = space.planets.filter(
@@ -622,28 +664,30 @@ export function SpacePanel({
   return (
     <div className="animate-in fade-in-0 duration-200">
       <PanelHeading
-        eyebrow="太空"
-        title="太空"
-        description="研发并启动太空任务，抵达行星后建造轨道设施。航程、价格倍率与解锁条件由原版太空管理器计算。"
+        eyebrow={t("太空")}
+        title={t("太空")}
+        description={t(
+          "研发并启动太空任务，抵达行星后建造轨道设施。航程、价格倍率与解锁条件由原版太空管理器计算。"
+        )}
         icon={Rocket}
       />
 
       <div className="border-kg-line bg-kg-inset grid grid-cols-2 border-b lg:grid-cols-4">
         <Metric
-          label="可用任务"
+          label={t("可用任务")}
           value={space.programs.filter((program) => program.canLaunch).length}
         />
         <Metric
-          label="已完成任务"
+          label={t("已完成任务")}
           value={space.programs.filter((program) => program.value > 0).length}
           tone="green"
         />
         <Metric
-          label="已抵达行星"
+          label={t("已抵达行星")}
           value={visiblePlanets.filter((p) => p.reached).length}
         />
         <Metric
-          label="太空建筑"
+          label={t("太空建筑")}
           value={visiblePlanets.reduce(
             (total, planet) =>
               total +
@@ -667,7 +711,7 @@ export function SpacePanel({
               value="programs"
               className="data-[state=active]:text-kg-accent h-7 px-3 text-xs data-[state=active]:bg-amber-400/15"
             >
-              任务
+              {t("任务")}
               <span className="text-kg-muted font-mono text-[10px]">
                 {space.programs.length}
               </span>
@@ -676,7 +720,7 @@ export function SpacePanel({
               value="planets"
               className="data-[state=active]:text-kg-accent h-7 px-3 text-xs data-[state=active]:bg-amber-400/15"
             >
-              行星
+              {t("行星")}
               <span className="text-kg-muted font-mono text-[10px]">
                 {visiblePlanets.length}
               </span>
@@ -688,7 +732,7 @@ export function SpacePanel({
           {space.programs.length > 0 ? (
             <section>
               <SectionLabel aside={space.programs.length}>
-                太空任务
+                {t("太空任务")}
               </SectionLabel>
               {space.programs.map((program) => (
                 <SpaceProgramRow
@@ -700,8 +744,8 @@ export function SpacePanel({
             </section>
           ) : (
             <EmptyState
-              title="还没有可用任务"
-              description="完成轨道工程研究并积累星图与燃料。"
+              title={t("还没有可用任务")}
+              description={t("完成轨道工程研究并积累星图与燃料。")}
             />
           )}
         </TabsContent>
@@ -713,8 +757,12 @@ export function SpacePanel({
                 <SectionLabel
                   aside={
                     planet.reached
-                      ? `${planet.buildings.length} 种设施`
-                      : `航程 ${formatNumber(planet.routeDays, 1)} 天`
+                      ? t("{count} 种设施", {
+                          count: planet.buildings.length,
+                        })
+                      : t("航程 {days} 天", {
+                          days: formatNumber(planet.routeDays, 1, formatLocale),
+                        })
                   }
                 >
                   {planet.label}
@@ -729,15 +777,15 @@ export function SpacePanel({
                   ))
                 ) : (
                   <div className="text-kg-faint px-5 py-4 text-xs">
-                    任务抵达后开放建造。
+                    {t("任务抵达后开放建造。")}
                   </div>
                 )}
               </section>
             ))
           ) : (
             <EmptyState
-              title="尚未抵达行星"
-              description="启动太空任务后，行星设施会逐步开放。"
+              title={t("尚未抵达行星")}
+              description={t("启动太空任务后，行星设施会逐步开放。")}
             />
           )}
         </TabsContent>
@@ -753,6 +801,8 @@ function TimeUpgradeRow({
   upgrade: TimeUpgradeSnapshot;
   onBuy: (id: string, kind: TimeUpgradeKind) => void;
 }) {
+  const { t } = useGameI18n();
+
   return (
     <article
       className={cn(
@@ -775,7 +825,7 @@ function TimeUpgradeRow({
           ) : null}
         </div>
         <p className="text-kg-muted mt-1 max-w-2xl text-xs leading-relaxed">
-          {upgrade.description || "时间装置"}
+          {upgrade.description || t("时间装置")}
         </p>
         <PricePills prices={upgrade.prices} className="mt-2.5" />
       </div>
@@ -786,11 +836,11 @@ function TimeUpgradeRow({
         className={cn("self-center", quietActionClass)}
         disabled={!upgrade.canBuy}
         onClick={() => onBuy(upgrade.id, upgrade.kind)}
-        aria-label={`购买${upgrade.label}`}
+        aria-label={t("购买{label}", { label: upgrade.label })}
         data-time-buy={upgrade.id}
       >
         <Clock3 className="size-3.5" />
-        购买
+        {t("购买")}
       </Button>
     </article>
   );
@@ -811,6 +861,7 @@ export function TimePanel({
   onBuyUpgrade: (id: string, kind: TimeUpgradeKind) => void;
   onResetTimeline: () => void;
 }) {
+  const { formatLocale, t } = useGameI18n();
   const time = snapshot.time;
   const prestige = snapshot.prestige;
   const reset = prestige.reset;
@@ -823,12 +874,12 @@ export function TimePanel({
   }> = [
     {
       kind: "chronoforge",
-      title: "时间熔炉",
+      title: t("时间熔炉"),
       items: time.upgrades.filter((item) => item.kind === "chronoforge"),
     },
     {
       kind: "voidspace",
-      title: "虚空空间",
+      title: t("虚空空间"),
       items: time.upgrades.filter((item) => item.kind === "voidspace"),
     },
   ];
@@ -841,9 +892,11 @@ export function TimePanel({
       data-time-furnace-heat={time.furnaceHeat}
     >
       <PanelHeading
-        eyebrow="时间"
-        title="时间"
-        description="操控时间通量、热量与时间水晶。加速、碎裂与热机转换均调用原版时间管理器。"
+        eyebrow={t("时间")}
+        title={t("时间")}
+        description={t(
+          "操控时间通量、热量与时间水晶。加速、碎裂与热机转换均调用原版时间管理器。"
+        )}
         icon={Clock3}
         actions={
           <Button
@@ -855,44 +908,51 @@ export function TimePanel({
             data-action="toggle-time-acceleration"
           >
             <Hourglass className="size-3.5" />
-            {time.isAccelerated ? "停止加速" : "开始加速"}
+            {time.isAccelerated ? t("停止加速") : t("开始加速")}
           </Button>
         }
       />
 
       <div className="border-kg-line bg-kg-inset grid grid-cols-2 border-b lg:grid-cols-4">
         <Metric
-          label="时间通量"
-          value={formatNumber(time.temporalFlux)}
-          detail={`上限 ${formatNumber(time.temporalFluxMax)}`}
+          label={t("时间通量")}
+          value={formatNumber(time.temporalFlux, 2, formatLocale)}
+          detail={t("上限 {value}", {
+            value: formatNumber(time.temporalFluxMax, 2, formatLocale),
+          })}
           tone="green"
         />
         <Metric
-          label="时间热量"
-          value={formatNumber(time.heat)}
-          detail={`上限 ${formatNumber(time.heatMax)}`}
+          label={t("时间热量")}
+          value={formatNumber(time.heat, 2, formatLocale)}
+          detail={t("上限 {value}", {
+            value: formatNumber(time.heatMax, 2, formatLocale),
+          })}
           tone={time.heat > time.heatMax ? "amber" : "default"}
         />
         <Metric
-          label="熔炉热量"
-          value={formatNumber(time.furnaceHeat)}
-          detail="每 100 可跳跃一次"
+          label={t("熔炉热量")}
+          value={formatNumber(time.furnaceHeat, 2, formatLocale)}
+          detail={t("每 100 可跳跃一次")}
         />
         <Metric
-          label="时间流速"
-          value={time.isAccelerated ? "加速" : "正常"}
+          label={t("时间流速")}
+          value={time.isAccelerated ? t("加速") : t("正常")}
           tone={time.isAccelerated ? "amber" : "default"}
         />
       </div>
 
       <div className="border-kg-line-subtle border-b px-5 py-3">
         <div className="text-kg-muted mb-1 flex items-center justify-between text-[10px]">
-          <span>时间热量负载</span>
+          <span>{t("时间热量负载")}</span>
           <span className="font-mono">
-            {formatPercent(time.heatMax > 0 ? time.heat / time.heatMax : 0)}
+            {formatPercent(
+              time.heatMax > 0 ? time.heat / time.heatMax : 0,
+              formatLocale
+            )}
           </span>
         </div>
-        <Meter value={heatPercent} label="时间热量负载" tone="amber" />
+        <Meter value={heatPercent} label={t("时间热量负载")} tone="amber" />
         <div className="mt-3 flex flex-wrap items-center gap-2">
           <Button
             type="button"
@@ -903,7 +963,7 @@ export function TimePanel({
             data-action="shatter-time"
           >
             <Hourglass className="size-3.5" />
-            碎裂时间水晶
+            {t("碎裂时间水晶")}
           </Button>
           <Button
             type="button"
@@ -915,7 +975,7 @@ export function TimePanel({
             data-action="use-chronoforge-heat"
           >
             <Flame className="size-3.5" />
-            使用熔炉热量
+            {t("使用熔炉热量")}
           </Button>
           <PricePills prices={time.shatterPrices} className="ml-0 sm:ml-2" />
         </div>
@@ -931,44 +991,58 @@ export function TimePanel({
           <div className="min-w-0 flex-1">
             <div className="text-kg-body flex items-center gap-2 text-sm font-semibold">
               <RotateCcw className="text-kg-accent size-4" />
-              开始新一轮
+              {t("开始新一轮")}
             </div>
             <div className="mt-3 grid grid-cols-2 gap-x-6 gap-y-3 sm:grid-cols-4">
               <div className="min-w-0">
-                <div className="text-kg-faint text-[10px]">业力</div>
+                <div className="text-kg-faint text-[10px]">{t("业力")}</div>
                 <div className="text-kg-body mt-0.5 font-mono text-xs">
-                  +{formatNumber(reset.karmaPoints)}
+                  +{formatNumber(reset.karmaPoints, 2, formatLocale)}
                 </div>
                 <div className="text-kg-faint mt-0.5 truncate text-[10px]">
-                  累计 {formatNumber(reset.karmaKittens)}
+                  {t("累计 {value}", {
+                    value: formatNumber(reset.karmaKittens, 2, formatLocale),
+                  })}
                 </div>
               </div>
               <div className="min-w-0">
-                <div className="text-kg-faint text-[10px]">领导力</div>
+                <div className="text-kg-faint text-[10px]">{t("领导力")}</div>
                 <div className="text-kg-body mt-0.5 font-mono text-xs">
-                  +{formatNumber(reset.paragonPoints)}
+                  +{formatNumber(reset.paragonPoints, 2, formatLocale)}
                 </div>
                 <div className="text-kg-faint mt-0.5 truncate text-[10px]">
-                  现有 {formatNumber(prestige.paragon)}
+                  {t("现有 {value}", {
+                    value: formatNumber(prestige.paragon, 2, formatLocale),
+                  })}
                 </div>
               </div>
               <div className="min-w-0">
-                <div className="text-kg-faint text-[10px]">幸福度</div>
+                <div className="text-kg-faint text-[10px]">{t("幸福度")}</div>
                 <div className="text-kg-success/80 mt-0.5 font-mono text-xs">
-                  +{formatPercent(reset.happinessBonus)}
+                  +{formatPercent(reset.happinessBonus, formatLocale)}
                 </div>
-                <div className="text-kg-faint mt-0.5 text-[10px]">来自业力</div>
+                <div className="text-kg-faint mt-0.5 text-[10px]">
+                  {t("来自业力")}
+                </div>
               </div>
               <div className="min-w-0">
-                <div className="text-kg-faint text-[10px]">存储 / 产出</div>
+                <div className="text-kg-faint text-[10px]">
+                  {t("存储 / 产出")}
+                </div>
                 <div className="text-kg-accent/80 mt-0.5 truncate font-mono text-xs">
-                  +{formatPercent(reset.storageBonus)} / +
-                  {formatPercent(reset.productionBonus)}
+                  +{formatPercent(reset.storageBonus, formatLocale)} / +
+                  {formatPercent(reset.productionBonus, formatLocale)}
                 </div>
                 <div className="text-kg-faint mt-0.5 truncate text-[10px]">
                   {prestige.ironWill
-                    ? `铁猫额外斑马 ${formatNumber(reset.zebraKittens)}`
-                    : "业力斑马保留"}
+                    ? t("铁猫额外斑马 {value}", {
+                        value: formatNumber(
+                          reset.zebraKittens,
+                          2,
+                          formatLocale
+                        ),
+                      })
+                    : t("业力斑马保留")}
                 </div>
               </div>
             </div>
@@ -983,7 +1057,7 @@ export function TimePanel({
             data-action="reset-timeline"
           >
             <RotateCcw className="size-3.5" />
-            开始新一轮
+            {t("开始新一轮")}
           </Button>
         </div>
       </section>
@@ -1004,15 +1078,15 @@ export function TimePanel({
               ))
             ) : (
               <div className="text-kg-faint px-5 py-4 text-xs">
-                暂无可用装置
+                {t("暂无可用装置")}
               </div>
             )}
           </section>
         ))
       ) : (
         <EmptyState
-          title="时间系统尚未开启"
-          description="研究时间相关技术后，时间装置会在这里出现。"
+          title={t("时间系统尚未开启")}
+          description={t("研究时间相关技术后，时间装置会在这里出现。")}
         />
       )}
     </div>
@@ -1026,6 +1100,8 @@ function ChallengeRow({
   challenge: ChallengeSnapshot;
   onToggle: (id: string) => void;
 }) {
+  const { t } = useGameI18n();
+
   return (
     <article
       className={cn(
@@ -1044,12 +1120,12 @@ function ChallengeRow({
           </h3>
           {challenge.active ? (
             <span className="text-kg-accent rounded-sm bg-amber-400/10 px-1.5 py-px text-[10px]">
-              进行中
+              {t("进行中")}
             </span>
           ) : null}
           {challenge.pending ? (
             <span className="text-kg-danger rounded-sm bg-rose-400/10 px-1.5 py-px text-[10px]">
-              待开始
+              {t("待开始")}
             </span>
           ) : null}
           {challenge.completions > 0 ? (
@@ -1059,7 +1135,7 @@ function ChallengeRow({
           ) : null}
         </div>
         <p className="text-kg-muted mt-1 max-w-2xl text-xs leading-relaxed">
-          {challenge.description || "挑战规则"}
+          {challenge.description || t("挑战规则")}
         </p>
         {challenge.effectDescription ? (
           <p className="text-kg-success/65 mt-1.5 text-[11px] leading-relaxed">
@@ -1079,12 +1155,12 @@ function ChallengeRow({
         onClick={() => onToggle(challenge.id)}
         aria-label={
           challenge.pending
-            ? `取消${challenge.label}`
-            : `准备${challenge.label}`
+            ? t("取消{label}", { label: challenge.label })
+            : t("准备{label}", { label: challenge.label })
         }
         data-challenge-toggle={challenge.id}
       >
-        {challenge.pending ? "取消" : "准备"}
+        {challenge.pending ? t("取消") : t("准备")}
       </Button>
     </article>
   );
@@ -1099,14 +1175,17 @@ export function ChallengesPanel({
   onToggle: (id: string) => void;
   onApply: () => void;
 }) {
+  const { t } = useGameI18n();
   const challenges = snapshot.challenges;
 
   return (
     <div className="animate-in fade-in-0 duration-200">
       <PanelHeading
-        eyebrow="挑战"
-        title="挑战"
-        description="选择挑战规则并在下一次重置时生效。完成次数会永久叠加相应效果，开始挑战前的确认与原版一致。"
+        eyebrow={t("挑战")}
+        title={t("挑战")}
+        description={t(
+          "选择挑战规则并在下一次重置时生效。完成次数会永久叠加相应效果，开始挑战前的确认与原版一致。"
+        )}
         icon={Trophy}
         actions={
           <Button
@@ -1118,25 +1197,27 @@ export function ChallengesPanel({
             data-action="apply-challenges"
           >
             <Trophy className="size-3.5" />
-            开始 {challenges.pendingCount} 项挑战
+            {t("开始 {count} 项挑战", {
+              count: challenges.pendingCount,
+            })}
           </Button>
         }
       />
 
       <div className="border-kg-line bg-kg-inset grid grid-cols-2 border-b lg:grid-cols-4">
-        <Metric label="可用挑战" value={challenges.challenges.length} />
+        <Metric label={t("可用挑战")} value={challenges.challenges.length} />
         <Metric
-          label="进行中"
+          label={t("进行中")}
           value={challenges.activeCount}
           tone={challenges.activeCount > 0 ? "amber" : "default"}
         />
         <Metric
-          label="待开始"
+          label={t("待开始")}
           value={challenges.pendingCount}
           tone={challenges.pendingCount > 0 ? "amber" : "default"}
         />
         <Metric
-          label="完成次数"
+          label={t("完成次数")}
           value={challenges.completionCount}
           tone="green"
         />
@@ -1145,7 +1226,7 @@ export function ChallengesPanel({
       {challenges.challenges.length > 0 ? (
         <section>
           <SectionLabel aside={challenges.challenges.length}>
-            挑战列表
+            {t("挑战列表")}
           </SectionLabel>
           {challenges.challenges.map((challenge) => (
             <ChallengeRow
@@ -1157,8 +1238,8 @@ export function ChallengesPanel({
         </section>
       ) : (
         <EmptyState
-          title="挑战尚未解锁"
-          description="继续推进太空与时间系统。"
+          title={t("挑战尚未解锁")}
+          description={t("继续推进太空与时间系统。")}
         />
       )}
     </div>
@@ -1166,6 +1247,8 @@ export function ChallengesPanel({
 }
 
 function AchievementRow({ achievement }: { achievement: AchievementSnapshot }) {
+  const { t } = useGameI18n();
+
   return (
     <article
       className={cn(
@@ -1210,7 +1293,7 @@ function AchievementRow({ achievement }: { achievement: AchievementSnapshot }) {
           ) : null}
           {achievement.unethical ? (
             <span className="text-kg-danger/75 rounded-sm border border-rose-400/15 bg-rose-400/[0.06] px-1.5 py-px text-[10px]">
-              不计量
+              {t("不计量")}
             </span>
           ) : null}
         </div>
@@ -1223,15 +1306,16 @@ function AchievementRow({ achievement }: { achievement: AchievementSnapshot }) {
 }
 
 export function ProgressPanel({ snapshot }: { snapshot: GameSnapshot }) {
+  const { formatLocale, t } = useGameI18n();
   const [tab, setTab] = useState<"achievements" | "stats">("achievements");
   const [query, setQuery] = useState("");
   const progress = snapshot.progress;
   const visibleAchievements = useMemo(() => {
-    const needle = query.trim().toLocaleLowerCase("zh-CN");
+    const needle = query.trim().toLocaleLowerCase();
     if (!needle) return progress.achievements;
     return progress.achievements.filter((achievement) =>
       [achievement.label, achievement.description].some((value) =>
-        value.toLocaleLowerCase("zh-CN").includes(needle)
+        value.toLocaleLowerCase().includes(needle)
       )
     );
   }, [progress.achievements, query]);
@@ -1244,31 +1328,36 @@ export function ProgressPanel({ snapshot }: { snapshot: GameSnapshot }) {
       data-progress-stars={`${progress.unlockedStars}/${progress.totalStars}`}
     >
       <PanelHeading
-        eyebrow="传承"
-        title="进度"
-        description="回顾成就、徽章与跨存档统计。隐藏成就只在解锁后揭示条件，历史数据直接来自原版管理器。"
+        eyebrow={t("传承")}
+        title={t("进度")}
+        description={t(
+          "回顾成就、徽章与跨存档统计。隐藏成就只在解锁后揭示条件，历史数据直接来自原版管理器。"
+        )}
         icon={Trophy}
       />
 
       <div className="border-kg-line bg-kg-inset grid grid-cols-2 border-b lg:grid-cols-4">
         <Metric
-          label="成就"
+          label={t("成就")}
           value={`${progress.unlockedAchievements} / ${progress.totalAchievements}`}
           tone="green"
         />
         <Metric
-          label="星标"
+          label={t("星标")}
           value={`${progress.unlockedStars} / ${progress.totalStars}`}
           tone="amber"
         />
-        <Metric label="徽章" value={unlockedBadges.length} />
-        <Metric label="挑战完成" value={snapshot.challenges.completionCount} />
+        <Metric label={t("徽章")} value={unlockedBadges.length} />
+        <Metric
+          label={t("挑战完成")}
+          value={snapshot.challenges.completionCount}
+        />
       </div>
 
       {unlockedBadges.length > 0 ? (
         <div className="border-kg-line-subtle flex flex-wrap items-center gap-2 border-b px-5 py-3">
           <span className="text-kg-faint mr-1 text-[10px] tracking-wide">
-            已获徽章
+            {t("已获徽章")}
           </span>
           {unlockedBadges.map((badge) => (
             <span
@@ -1294,13 +1383,13 @@ export function ProgressPanel({ snapshot }: { snapshot: GameSnapshot }) {
               value="achievements"
               className="data-[state=active]:text-kg-accent h-7 px-3 text-xs data-[state=active]:bg-amber-400/15"
             >
-              成就
+              {t("成就")}
             </TabsTrigger>
             <TabsTrigger
               value="stats"
               className="data-[state=active]:text-kg-accent h-7 px-3 text-xs data-[state=active]:bg-amber-400/15"
             >
-              统计
+              {t("统计")}
             </TabsTrigger>
           </TabsList>
           {tab === "achievements" ? (
@@ -1308,8 +1397,8 @@ export function ProgressPanel({ snapshot }: { snapshot: GameSnapshot }) {
               <Input
                 value={query}
                 onChange={(event) => setQuery(event.target.value)}
-                placeholder="筛选成就"
-                aria-label="筛选成就"
+                placeholder={t("筛选成就")}
+                aria-label={t("筛选成就")}
                 className="border-kg-line bg-kg-inset-strong text-kg-body placeholder:text-kg-faint h-8 text-xs"
               />
             </div>
@@ -1320,7 +1409,7 @@ export function ProgressPanel({ snapshot }: { snapshot: GameSnapshot }) {
           {visibleAchievements.length > 0 ? (
             <section>
               <SectionLabel aside={visibleAchievements.length}>
-                成就列表
+                {t("成就列表")}
               </SectionLabel>
               {visibleAchievements.map((achievement) => (
                 <AchievementRow
@@ -1331,8 +1420,8 @@ export function ProgressPanel({ snapshot }: { snapshot: GameSnapshot }) {
             </section>
           ) : (
             <EmptyState
-              title="没有匹配的成就"
-              description="调整筛选条件后再试。"
+              title={t("没有匹配的成就")}
+              description={t("调整筛选条件后再试。")}
             />
           )}
         </TabsContent>
@@ -1358,7 +1447,7 @@ export function ProgressPanel({ snapshot }: { snapshot: GameSnapshot }) {
                     <span className="text-kg-body shrink-0 font-mono text-xs">
                       {stat.unlocked
                         ? typeof stat.value === "number"
-                          ? formatNumber(stat.value)
+                          ? formatNumber(stat.value, 2, formatLocale)
                           : stat.value
                         : ""}
                     </span>

@@ -35,6 +35,7 @@ import { useKittensGameContext } from "@/contexts/kittens-game-context";
 import type { SettingsSection } from "@/contexts/settings";
 import { GameSettingsPanel } from "@/features/kittens/game-panels";
 import { actionReasonLabel } from "@/features/kittens/game-format";
+import { useGameI18n } from "@/features/kittens/use-game-i18n";
 
 /** 设置项索引：供搜索与「最近修改」跳转使用 */
 interface SettingIndexItem {
@@ -100,13 +101,14 @@ function SettingsScroll({
 
 function GameSettingsSection() {
   const { kernel, snapshot, error } = useKittensGameContext();
+  const { t } = useGameI18n();
   const { success, error: notifyError } = useToast({ duration: 2000 });
 
   if (error) {
     return (
       <div className="border-border flex min-h-64 flex-col items-center justify-center gap-2 border-y border-dashed px-6 py-10 text-center">
         <CircleAlert className="text-destructive h-5 w-5" />
-        <p className="text-sm font-medium">游戏设置暂不可用</p>
+        <p className="text-sm font-medium">{t("游戏设置暂不可用")}</p>
         <p className="text-muted-sm max-w-md">{error}</p>
       </div>
     );
@@ -119,7 +121,7 @@ function GameSettingsSection() {
         role="status"
       >
         <LoaderCircle className="h-4 w-4 animate-spin" />
-        正在载入游戏设置
+        {t("正在载入游戏设置")}
       </div>
     );
   }
@@ -131,9 +133,15 @@ function GameSettingsSection() {
         onSet={(id, value) => {
           const result = kernel.setSetting(id, value);
           if (result.ok) {
-            success("游戏设置已更新");
+            success(
+              t("游戏设置已更新：{label}", {
+                label:
+                  snapshot.settings.find((setting) => setting.id === id)
+                    ?.label ?? id,
+              })
+            );
           } else {
-            notifyError(actionReasonLabel(result.reason));
+            notifyError(actionReasonLabel(result.reason, t));
           }
         }}
       />

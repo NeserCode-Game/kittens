@@ -8,8 +8,10 @@ import { cn } from "@/lib/utils";
 
 import { formatNumber, formatRate, RESOURCE_ORDER } from "./game-format";
 import { useResourceWindowState } from "./resource-bridge";
+import { useGameI18n } from "./use-game-i18n";
 
 function ResourceWindowItem({ resource }: { resource: ResourceSnapshot }) {
+  const { formatLocale, t } = useGameI18n();
   const capacity =
     resource.maxValue > 0
       ? Math.min(100, (resource.value / resource.maxValue) * 100)
@@ -20,7 +22,10 @@ function ResourceWindowItem({ resource }: { resource: ResourceSnapshot }) {
       className="border-kg-line relative flex h-[28px] w-[92px] shrink-0 flex-col justify-center overflow-hidden border-r px-1.5 last:border-r-0"
       data-resource-id={resource.id}
       data-resource-value={resource.value}
-      title={`${resource.label}，当前 ${formatNumber(resource.value, 3)}，每刻 ${formatRate(resource.perTick)}`}
+      title={`${resource.label}: ${t("当前 {value}，每刻 {rate}", {
+        value: formatNumber(resource.value, 3, formatLocale),
+        rate: formatRate(resource.perTick, formatLocale),
+      })}`}
     >
       <div className="flex min-w-0 items-center justify-between gap-1">
         <span className="text-kg-muted min-w-0 truncate text-[8px]">
@@ -36,7 +41,7 @@ function ResourceWindowItem({ resource }: { resource: ResourceSnapshot }) {
                 : "text-kg-faint"
           )}
         >
-          {formatRate(resource.perTick)}
+          {formatRate(resource.perTick, formatLocale)}
         </span>
       </div>
       <div
@@ -45,10 +50,10 @@ function ResourceWindowItem({ resource }: { resource: ResourceSnapshot }) {
           resource.capped ? "text-kg-accent" : "text-kg-strong"
         )}
       >
-        {formatNumber(resource.value)}
+        {formatNumber(resource.value, 2, formatLocale)}
         {resource.maxValue > 0 ? (
           <span className="text-kg-faint font-normal">
-            /{formatNumber(resource.maxValue)}
+            /{formatNumber(resource.maxValue, 2, formatLocale)}
           </span>
         ) : null}
       </div>
@@ -68,6 +73,7 @@ function ResourceWindowItem({ resource }: { resource: ResourceSnapshot }) {
 }
 
 export default function ResourceWindow() {
+  const { t } = useGameI18n();
   const state = useResourceWindowState();
 
   useEffect(() => {
@@ -114,7 +120,7 @@ export default function ResourceWindow() {
           className="text-kg-accent relative flex size-6 shrink-0 cursor-grab items-center justify-center active:cursor-grabbing"
           data-tauri-drag-region
           data-resource-drag-handle
-          title="拖动可切换上下吸附"
+          title={t("拖动可切换上下吸附")}
         >
           <Cat className="size-3.5" />
           {state?.paused ? (
@@ -126,7 +132,7 @@ export default function ResourceWindow() {
           <ScrollArea
             type="hover"
             className="h-full min-w-0 flex-1"
-            aria-label="资源栏"
+            aria-label={t("资源栏")}
             data-resource-scroll
           >
             <div className="flex h-[28px] w-max items-center">
@@ -138,14 +144,14 @@ export default function ResourceWindow() {
         ) : (
           <span className="text-kg-muted flex min-w-0 flex-1 items-center gap-2 text-[10px]">
             <LoaderCircle className="text-kg-accent size-3.5 animate-spin" />
-            等待游戏数据
+            {t("等待游戏数据")}
           </span>
         )}
 
         <button
           type="button"
           className="text-kg-muted hover:bg-kg-hover-strong hover:text-kg-strong flex size-6 shrink-0 items-center justify-center rounded-sm transition-colors"
-          aria-label="关闭资源浮窗"
+          aria-label={t("关闭资源浮窗")}
           onClick={close}
         >
           <X className="size-3.5" />

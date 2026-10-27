@@ -1,4 +1,12 @@
 import { getEngineContext } from "./engine-loader";
+import {
+  normalizeGameLocale,
+  SEASON_LABELS,
+  translateGameText,
+  type GameLocale,
+  type GameTextKey,
+  type GameTextVariables,
+} from "./game-text";
 import type {
   AchievementSnapshot,
   ActionResult,
@@ -39,6 +47,8 @@ import type {
   VillageSnapshot,
   WorkshopSnapshot,
 } from "./types";
+
+export { normalizeGameLocale, type GameLocale } from "./game-text";
 
 const SAVE_KEY = "com.nuclearunicorn.kittengame.savedata";
 const SAVE_BACKUP_KEY = "com.nuclearunicorn.kittengame.savedata.backup";
@@ -640,13 +650,6 @@ interface PendingConfirmation {
   onCancel?: () => void;
 }
 
-const SEASON_LABELS: Record<string, string> = {
-  spring: "春",
-  summer: "夏",
-  autumn: "秋",
-  winter: "冬",
-};
-
 const SETTING_IDS = new Set([
   "forceHighPrecision",
   "usePerSecondValues",
@@ -685,7 +688,7 @@ function deepGet(root: Record<string, unknown>, path: string[]): unknown {
   }, root);
 }
 
-const EFFECT_LABELS: Record<string, string> = {
+const EFFECT_LABELS: Record<string, GameTextKey> = {
   catnip: "猫薄荷",
   culture: "文化",
   faith: "信仰",
@@ -696,7 +699,7 @@ const EFFECT_LABELS: Record<string, string> = {
   wood: "木材",
 };
 
-function formatEffectValue(value: number): string {
+function formatEffectValue(value: number, locale: string): string {
   if (!Number.isFinite(value)) return "∞";
   if (value === 0) return "0";
   const sign = value > 0 ? "+" : "";
@@ -704,7 +707,7 @@ function formatEffectValue(value: number): string {
   const formatted =
     magnitude > 0 && magnitude < 0.01
       ? magnitude.toFixed(5)
-      : new Intl.NumberFormat("zh-CN", {
+      : new Intl.NumberFormat(locale, {
           maximumFractionDigits: 3,
         }).format(magnitude);
   return `${sign}${formatted}`;
@@ -727,9 +730,20 @@ export class GameKernel {
   private saveMigrated = false;
   private runtimeError: string | null = null;
   private lastPersistFailed = false;
+  private disposed = false;
+  private readonly locale: GameLocale;
+
+  private get formatLocale(): string {
+    return this.locale === "en" ? "en-US" : "zh-CN";
+  }
+
+  private t(source: GameTextKey, variables?: GameTextVariables): string {
+    return translateGameText(this.locale, source, variables);
+  }
 
   constructor(locale = "zh") {
-    const engine = getEngineContext(locale);
+    this.locale = normalizeGameLocale(locale);
+    const engine = getEngineContext(this.locale);
     const classes = deepGet(engine.namespace, ["classes"]) as KernelClasses;
     const controllers = deepGet(engine.namespace, [
       "com",
@@ -738,7 +752,7 @@ export class GameKernel {
       "ui",
     ]) as KernelControllers;
     if (!classes || !controllers || !engine.gameClass) {
-      throw new Error("Kittens Game engine failed to initialize.");
+      throw new Error(this.t("游戏引擎初始化失败"));
     }
 
     this.classes = classes;
@@ -748,20 +762,27 @@ export class GameKernel {
     this.game.opts.hideSell = false;
     const saveGame = this.game.save.bind(this.game);
     this.game.save = () => {
+      const wasPaused = this.game.isPaused;
       this.lastPersistFailed = false;
-      const data = saveGame();
-      const raw = this.game._saveDataToString(data);
-      if (!writeStorage(SAVE_KEY, raw)) {
-        this.lastPersistFailed = true;
-        this.saveHealth = "unavailable";
-        this.lastMessage = "保存失败，浏览器存储不可用；请立即手动导出当前进度";
+      try {
+        const data = saveGame();
+        const raw = this.game._saveDataToString(data);
+        if (!writeStorage(SAVE_KEY, raw)) {
+          this.lastPersistFailed = true;
+          this.saveHealth = "unavailable";
+          this.lastMessage = this.t(
+            "保存失败，浏览器存储不可用；请立即手动导出当前进度"
+          );
+          return data;
+        }
+        this.saveHealth = "healthy";
+        this.sourceSaveVersion = this.game.saveVersion;
+        this.saveMigrated = false;
+        this.updateSaveMetadata({ lastSavedAt: Date.now() });
         return data;
+      } finally {
+        this.game.isPaused = wasPaused;
       }
-      this.saveHealth = "healthy";
-      this.sourceSaveVersion = this.game.saveVersion;
-      this.saveMigrated = false;
-      this.updateSaveMetadata({ lastSavedAt: Date.now() });
-      return data;
     };
     this.game.setUI(new this.classes.ui.UISystem());
     this.game.ui.confirm = (
@@ -772,7 +793,7 @@ export class GameKernel {
     ) => {
       this.pendingConfirmation = {
         id: this.nextConfirmationId++,
-        title: plainText(title || "确认操作"),
+        title: plainText(title || this.t("确认操作")),
         message: plainText(message),
         onConfirm,
         onCancel,
@@ -800,12 +821,17 @@ export class GameKernel {
 
   getSnapshot = (): GameSnapshot => this.snapshot;
 
+  getLocale(): GameLocale {
+    return this.locale;
+  }
+
   subscribe = (listener: () => void): (() => void) => {
     this.listeners.add(listener);
     return () => this.listeners.delete(listener);
   };
 
   start(): void {
+    if (this.disposed) return;
     if (this.stopSaveTimer !== null) {
       window.clearTimeout(this.stopSaveTimer);
       this.stopSaveTimer = null;
@@ -820,6 +846,7 @@ export class GameKernel {
   }
 
   stop(): void {
+    if (this.disposed) return;
     if (this.timer !== null) window.clearInterval(this.timer);
     if (this.snapshotTimer !== null) {
       window.clearInterval(this.snapshotTimer);
@@ -836,6 +863,25 @@ export class GameKernel {
       this.stopSaveTimer = null;
       this.saveOnLifecycle();
     }, 500);
+  }
+
+  dispose(): void {
+    if (this.timer !== null) window.clearInterval(this.timer);
+    if (this.snapshotTimer !== null) {
+      window.clearInterval(this.snapshotTimer);
+    }
+    if (this.stopSaveTimer !== null) {
+      window.clearTimeout(this.stopSaveTimer);
+    }
+    document.removeEventListener(
+      "visibilitychange",
+      this.handleVisibilityChange
+    );
+    window.removeEventListener("pagehide", this.handlePageHide);
+    this.timer = null;
+    this.snapshotTimer = null;
+    this.stopSaveTimer = null;
+    this.disposed = true;
   }
 
   private readonly handleVisibilityChange = (): void => {
@@ -857,7 +903,7 @@ export class GameKernel {
       const message = cause instanceof Error ? cause.message : String(cause);
       this.runtimeError = message;
       this.game.isPaused = true;
-      this.lastMessage = "游戏模拟发生错误，已暂停以防止存档继续变化";
+      this.lastMessage = this.t("游戏模拟发生错误，已暂停以防止存档继续变化");
       console.error("Kittens Game tick failed", cause);
       if (this.timer !== null) window.clearInterval(this.timer);
       this.timer = null;
@@ -869,7 +915,7 @@ export class GameKernel {
     const stored = readStorage(SAVE_KEY);
     if (!stored.ok) {
       this.saveHealth = "unavailable";
-      this.lastMessage = "浏览器存储不可用，本局进度只能手动导出";
+      this.lastMessage = this.t("浏览器存储不可用，本局进度只能手动导出");
       return;
     }
     if (!stored.value) {
@@ -883,7 +929,7 @@ export class GameKernel {
     } catch {
       this.saveHealth = "corrupt";
       this.game.isPaused = true;
-      this.lastMessage = "本地存档无法解析，已暂停自动保存";
+      this.lastMessage = this.t("本地存档无法解析，已暂停自动保存");
       return;
     }
 
@@ -892,7 +938,7 @@ export class GameKernel {
     if (!loaded || this.game.currentSaveIsBroken) {
       this.saveHealth = "corrupt";
       this.game.isPaused = true;
-      this.lastMessage = "本地存档加载失败，已暂停自动保存";
+      this.lastMessage = this.t("本地存档加载失败，已暂停自动保存");
       return;
     }
 
@@ -901,7 +947,10 @@ export class GameKernel {
       prepared.sourceVersion !== null &&
       prepared.sourceVersion !== this.game.saveVersion;
     this.lastMessage = this.saveMigrated
-      ? `存档已从版本 ${prepared.sourceVersion} 迁移到 ${this.game.saveVersion}`
+      ? this.t("存档已从版本 {source} 迁移到 {target}", {
+          source: prepared.sourceVersion ?? "",
+          target: this.game.saveVersion,
+        })
       : null;
   }
 
@@ -987,14 +1036,17 @@ export class GameKernel {
   ): SaveImportResult {
     const versionText =
       prepared.sourceVersion === null
-        ? "未标记版本"
-        : `版本 ${prepared.sourceVersion}`;
+        ? this.t("未标记版本")
+        : this.t("版本 {version}", { version: prepared.sourceVersion });
     this.game.ui.confirm(
       title,
-      `将导入${versionText}的存档。当前可读取进度会先建立恢复点，确认继续？`,
+      this.t(
+        "将导入{version}的存档。当前可读取进度会先建立恢复点，确认继续？",
+        { version: versionText }
+      ),
       () => this.applyImportedSave(prepared)
     );
-    this.lastMessage = `等待确认${title}`;
+    this.lastMessage = this.t("等待确认{title}", { title });
     this.refreshSnapshot();
     return {
       ok: false,
@@ -1010,7 +1062,7 @@ export class GameKernel {
     const previousBackup = readStorage(SAVE_BACKUP_KEY);
 
     if (previousHealth === "unavailable") {
-      this.lastMessage = "浏览器存储不可用，无法导入存档";
+      this.lastMessage = this.t("浏览器存储不可用，无法导入存档");
       this.refreshSnapshot();
       return { ok: false, reason: "storage-unavailable" };
     }
@@ -1029,7 +1081,7 @@ export class GameKernel {
         !this.backupRawSave(previous.value)
       ) {
         this.saveHealth = previous.ok ? this.saveHealth : "unavailable";
-        this.lastMessage = "无法建立导入前的恢复点，已取消导入";
+        this.lastMessage = this.t("无法建立导入前的恢复点，已取消导入");
         this.refreshSnapshot();
         return { ok: false, reason: "storage-unavailable" };
       }
@@ -1039,14 +1091,14 @@ export class GameKernel {
       previous.value &&
       !this.backupRawSave(previous.value)
     ) {
-      this.lastMessage = "无法建立导入前的恢复点，已取消导入";
+      this.lastMessage = this.t("无法建立导入前的恢复点，已取消导入");
       this.refreshSnapshot();
       return { ok: false, reason: "storage-unavailable" };
     }
 
     if (!writeStorage(SAVE_KEY, prepared.data)) {
       this.saveHealth = "unavailable";
-      this.lastMessage = "无法写入导入存档，浏览器存储不可用";
+      this.lastMessage = this.t("无法写入导入存档，浏览器存储不可用");
       this.refreshSnapshot();
       return { ok: false, reason: "storage-unavailable" };
     }
@@ -1068,9 +1120,14 @@ export class GameKernel {
       }
       this.lastMessage = migrated
         ? this.lastPersistFailed
-          ? `存档已从版本 ${prepared.sourceVersion} 载入，但迁移结果写入失败`
-          : `存档已从版本 ${prepared.sourceVersion} 迁移到 ${this.game.saveVersion}`
-        : "存档已导入";
+          ? this.t("存档已从版本 {source} 载入，但迁移结果写入失败", {
+              source: prepared.sourceVersion ?? "",
+            })
+          : this.t("存档已从版本 {source} 迁移到 {target}", {
+              source: prepared.sourceVersion ?? "",
+              target: this.game.saveVersion,
+            })
+        : this.t("存档已导入");
       this.refreshGameState();
       return {
         ok: true,
@@ -1103,14 +1160,14 @@ export class GameKernel {
       this.saveHealth = previousHealth;
     }
     this.game.isPaused = this.saveHealth === "corrupt";
-    this.lastMessage = "导入失败，已恢复导入前的游戏状态";
+    this.lastMessage = this.t("导入失败，已恢复导入前的游戏状态");
     this.refreshGameState();
     return { ok: false, reason: "invalid-save" };
   }
 
   private applyReset(): ActionResult {
     if (this.saveHealth === "unavailable") {
-      this.lastMessage = "浏览器存储不可用，无法重置存档";
+      this.lastMessage = this.t("浏览器存储不可用，无法重置存档");
       this.refreshSnapshot();
       return { ok: false, reason: "storage-unavailable" };
     }
@@ -1128,7 +1185,7 @@ export class GameKernel {
         !current.value ||
         !this.backupRawSave(current.value)
       ) {
-        this.lastMessage = "无法建立恢复点，已取消重置";
+        this.lastMessage = this.t("无法建立恢复点，已取消重置");
         this.refreshSnapshot();
         return { ok: false, reason: "storage-unavailable" };
       }
@@ -1140,7 +1197,7 @@ export class GameKernel {
         current.value &&
         !this.backupRawSave(current.value)
       ) {
-        this.lastMessage = "无法建立恢复点，已取消重置";
+        this.lastMessage = this.t("无法建立恢复点，已取消重置");
         this.refreshSnapshot();
         return { ok: false, reason: "storage-unavailable" };
       }
@@ -1158,13 +1215,13 @@ export class GameKernel {
       this.sourceSaveVersion = null;
       this.saveMigrated = false;
       this.runtimeError = null;
-      this.lastMessage = "游戏已重置，导入前恢复点仍保留";
+      this.lastMessage = this.t("游戏已重置，导入前恢复点仍保留");
       this.refreshSnapshot();
       return { ok: true, reason: "ok", changed: true };
     } catch (cause) {
       console.error("Unable to reset Kittens Game save", cause);
       this.saveHealth = "unavailable";
-      this.lastMessage = "无法重置存档，浏览器存储不可用";
+      this.lastMessage = this.t("无法重置存档，浏览器存储不可用");
       this.refreshSnapshot();
       return { ok: false, reason: "storage-unavailable" };
     }
@@ -1174,7 +1231,7 @@ export class GameKernel {
     this.game.bld.gatherCatnip();
     this.game.updateResources();
     this.game.updateCaches();
-    this.lastMessage = "采集了猫薄荷";
+    this.lastMessage = this.t("采集了猫薄荷");
     this.refreshSnapshot();
     return { ok: true, reason: "ok" };
   }
@@ -1201,29 +1258,33 @@ export class GameKernel {
         ? this.game.science.getPolicy(id)
         : this.game.science.get(id);
     if (!metadata) {
-      this.lastMessage = "未找到研究项目";
+      this.lastMessage = this.t("未找到研究项目");
       this.refreshSnapshot();
       return { ok: false, reason: "unknown" };
     }
 
     const model = controller.fetchModel({ key: id, id });
     if (!model.visible) {
-      this.lastMessage = "该项目尚未解锁";
+      this.lastMessage = this.t("该项目尚未解锁");
       this.refreshSnapshot();
       return { ok: false, reason: "locked" };
     }
     if (metadata.researched) {
-      this.lastMessage = `${metadata.label} 已经完成`;
+      this.lastMessage = this.t("{label} 已经完成", {
+        label: metadata.label,
+      });
       this.refreshSnapshot();
       return { ok: false, reason: "already-owned" };
     }
     if (metadata.blocked) {
-      this.lastMessage = `${metadata.label} 当前不可研究`;
+      this.lastMessage = this.t("{label} 当前不可研究", {
+        label: metadata.label,
+      });
       this.refreshSnapshot();
       return { ok: false, reason: "blocked" };
     }
     if (!model.enabled) {
-      this.lastMessage = "资源不足，无法研究";
+      this.lastMessage = this.t("资源不足，无法研究");
       this.refreshSnapshot();
       return { ok: false, reason: "cannot-afford" };
     }
@@ -1232,8 +1293,8 @@ export class GameKernel {
     if (outcome.itemBought) {
       this.lastMessage =
         kind === "policy"
-          ? `采纳政策：${metadata.label}`
-          : `完成研究：${metadata.label}`;
+          ? this.t("采纳政策：{label}", { label: metadata.label })
+          : this.t("完成研究：{label}", { label: metadata.label });
       this.refreshGameState();
       return { ok: true, reason: "ok", changed: true };
     }
@@ -1241,8 +1302,8 @@ export class GameKernel {
     const reason = this.mapPurchaseReason(outcome.reason);
     this.lastMessage =
       reason === "requires-confirmation"
-        ? `等待确认：${metadata.label}`
-        : `${metadata.label} 当前无法完成`;
+        ? this.t("等待确认：{label}", { label: metadata.label })
+        : this.t("{label} 当前无法完成", { label: metadata.label });
     this.refreshSnapshot();
     return { ok: false, reason };
   }
@@ -1250,29 +1311,29 @@ export class GameKernel {
   craft(id: string, amount = 1): ActionResult {
     const recipe = this.game.workshop.getCraft(id);
     if (!recipe) {
-      this.lastMessage = "未找到制作配方";
+      this.lastMessage = this.t("未找到制作配方");
       this.refreshSnapshot();
       return { ok: false, reason: "unknown" };
     }
     if (!recipe.unlocked) {
-      this.lastMessage = "该配方尚未解锁";
+      this.lastMessage = this.t("该配方尚未解锁");
       this.refreshSnapshot();
       return { ok: false, reason: "locked" };
     }
     if (!Number.isFinite(amount) || amount <= 0) {
-      this.lastMessage = "制作数量无效";
+      this.lastMessage = this.t("制作数量无效");
       this.refreshSnapshot();
       return { ok: false, reason: "blocked" };
     }
 
     const crafted = this.game.workshop.craft(id, amount);
     if (!crafted) {
-      this.lastMessage = "资源不足，无法制作";
+      this.lastMessage = this.t("资源不足，无法制作");
       this.refreshSnapshot();
       return { ok: false, reason: "cannot-afford" };
     }
 
-    this.lastMessage = `制作了 ${recipe.label}`;
+    this.lastMessage = this.t("制作了 {label}", { label: recipe.label });
     this.refreshGameState();
     return { ok: true, reason: "ok", changed: true };
   }
@@ -1280,25 +1341,27 @@ export class GameKernel {
   craftAll(id: string): ActionResult {
     const recipe = this.game.workshop.getCraft(id);
     if (!recipe) {
-      this.lastMessage = "未找到制作配方";
+      this.lastMessage = this.t("未找到制作配方");
       this.refreshSnapshot();
       return { ok: false, reason: "unknown" };
     }
     if (!recipe.unlocked) {
-      this.lastMessage = "该配方尚未解锁";
+      this.lastMessage = this.t("该配方尚未解锁");
       this.refreshSnapshot();
       return { ok: false, reason: "locked" };
     }
 
     const amount = this.game.workshop.getCraftAllCount(id);
     if (!Number.isFinite(amount) || amount <= 0) {
-      this.lastMessage = "资源不足，无法制作";
+      this.lastMessage = this.t("资源不足，无法制作");
       this.refreshSnapshot();
       return { ok: false, reason: "cannot-afford" };
     }
 
     this.game.workshop.craftAll(id);
-    this.lastMessage = `批量制作了 ${recipe.label}`;
+    this.lastMessage = this.t("批量制作了 {label}", {
+      label: recipe.label,
+    });
     this.refreshGameState();
     return { ok: true, reason: "ok", changed: true };
   }
@@ -1307,31 +1370,35 @@ export class GameKernel {
     const controller = new this.controllers.UpgradeButtonController(this.game);
     const metadata = this.game.workshop.get(id);
     if (!metadata) {
-      this.lastMessage = "未找到工坊升级";
+      this.lastMessage = this.t("未找到工坊升级");
       this.refreshSnapshot();
       return { ok: false, reason: "unknown" };
     }
 
     const model = controller.fetchModel({ key: id, id });
     if (!model.visible) {
-      this.lastMessage = "该升级尚未解锁";
+      this.lastMessage = this.t("该升级尚未解锁");
       this.refreshSnapshot();
       return { ok: false, reason: "locked" };
     }
     if (metadata.researched) {
-      this.lastMessage = `${metadata.label} 已经购买`;
+      this.lastMessage = this.t("{label} 已经购买", {
+        label: metadata.label,
+      });
       this.refreshSnapshot();
       return { ok: false, reason: "already-owned" };
     }
     if (!model.enabled) {
-      this.lastMessage = "资源不足，无法购买升级";
+      this.lastMessage = this.t("资源不足，无法购买升级");
       this.refreshSnapshot();
       return { ok: false, reason: "cannot-afford" };
     }
 
     const outcome = controller.buyItem(model);
     if (!outcome.itemBought) {
-      this.lastMessage = `${metadata.label} 当前无法购买`;
+      this.lastMessage = this.t("{label} 当前无法购买", {
+        label: metadata.label,
+      });
       this.refreshSnapshot();
       return {
         ok: false,
@@ -1339,7 +1406,9 @@ export class GameKernel {
       };
     }
 
-    this.lastMessage = `购买升级：${metadata.label}`;
+    this.lastMessage = this.t("购买升级：{label}", {
+      label: metadata.label,
+    });
     this.refreshGameState();
     return { ok: true, reason: "ok", changed: true };
   }
@@ -1347,12 +1416,14 @@ export class GameKernel {
   trade(id: string, requestedAmount: number | "all" = 1): ActionResult {
     const race = this.game.diplomacy.get(id);
     if (!race) {
-      this.lastMessage = "未找到贸易种族";
+      this.lastMessage = this.t("未找到贸易种族");
       this.refreshSnapshot();
       return { ok: false, reason: "unknown" };
     }
     if (!race.unlocked) {
-      this.lastMessage = `${race.title} 尚未建立贸易关系`;
+      this.lastMessage = this.t("{race} 尚未建立贸易关系", {
+        race: race.title,
+      });
       this.refreshSnapshot();
       return { ok: false, reason: "locked" };
     }
@@ -1366,18 +1437,21 @@ export class GameKernel {
         ? maxAmount
         : Math.floor(Number(requestedAmount));
     if (!Number.isFinite(amount) || amount <= 0) {
-      this.lastMessage = "当前资源不足，无法派出商队";
+      this.lastMessage = this.t("当前资源不足，无法派出商队");
       this.refreshSnapshot();
       return { ok: false, reason: "cannot-afford" };
     }
     if (!this.game.diplomacy.hasMultipleResources(race, amount)) {
-      this.lastMessage = "当前资源不足，无法完成贸易";
+      this.lastMessage = this.t("当前资源不足，无法完成贸易");
       this.refreshSnapshot();
       return { ok: false, reason: "cannot-afford" };
     }
 
     this.game.diplomacy.tradeMultiple(race, amount);
-    this.lastMessage = `与${race.title}完成 ${amount} 次贸易`;
+    this.lastMessage = this.t("与{race}完成 {count} 次贸易", {
+      race: race.title,
+      count: amount,
+    });
     this.refreshGameState();
     return { ok: true, reason: "ok", changed: true };
   }
@@ -1385,12 +1459,12 @@ export class GameKernel {
   buyEmbassy(id: string): ActionResult {
     const race = this.game.diplomacy.get(id);
     if (!race) {
-      this.lastMessage = "未找到贸易种族";
+      this.lastMessage = this.t("未找到贸易种族");
       this.refreshSnapshot();
       return { ok: false, reason: "unknown" };
     }
     if (!race.unlocked) {
-      this.lastMessage = "需要先与该种族建立贸易关系";
+      this.lastMessage = this.t("需要先与该种族建立贸易关系");
       this.refreshSnapshot();
       return { ok: false, reason: "locked" };
     }
@@ -1403,36 +1477,36 @@ export class GameKernel {
         race,
         prices: race.embassyPrices,
       },
-      "大使馆",
-      `建造${race.title}大使馆`
+      this.t("大使馆"),
+      this.t("建造{race}大使馆", { race: race.title })
     );
   }
 
   praise(): ActionResult {
     const faith = this.game.resPool.get("faith");
     if (!faith || faith.value <= 0) {
-      this.lastMessage = "没有可赞美的信仰";
+      this.lastMessage = this.t("没有可赞美的信仰");
       this.refreshSnapshot();
       return { ok: false, reason: "cannot-afford" };
     }
 
     this.game.religion.praise();
-    this.lastMessage = "信仰已转化为崇拜";
+    this.lastMessage = this.t("信仰已转化为崇拜");
     this.refreshGameState();
     return { ok: true, reason: "ok", changed: true };
   }
 
   resetFaith(): ActionResult {
     if (!this.game.religion.getRU("apocripha").on) {
-      this.lastMessage = "尚未掌握信仰重置";
+      this.lastMessage = this.t("尚未掌握信仰重置");
       this.refreshSnapshot();
       return { ok: false, reason: "locked" };
     }
 
     this.game.religion.resetFaith(1.01, true);
     this.lastMessage = this.pendingConfirmation
-      ? "等待确认信仰重置"
-      : "信仰已重置";
+      ? this.t("等待确认信仰重置")
+      : this.t("信仰已重置");
     this.refreshGameState();
     return {
       ok: !this.pendingConfirmation,
@@ -1443,7 +1517,7 @@ export class GameKernel {
 
   transcend(): ActionResult {
     if (!this.game.religion.getRU("transcendence").on) {
-      this.lastMessage = "尚未解锁超越";
+      this.lastMessage = this.t("尚未解锁超越");
       this.refreshSnapshot();
       return { ok: false, reason: "locked" };
     }
@@ -1453,15 +1527,15 @@ export class GameKernel {
       !Number.isFinite(nextCost) ||
       this.game.religion.faithRatio <= nextCost
     ) {
-      this.lastMessage = "顿悟不足，无法超越";
+      this.lastMessage = this.t("顿悟不足，无法超越");
       this.refreshSnapshot();
       return { ok: false, reason: "cannot-afford" };
     }
 
     this.game.religion.transcend();
     this.lastMessage = this.pendingConfirmation
-      ? "等待确认超越"
-      : "超越状态未改变";
+      ? this.t("等待确认超越")
+      : this.t("超越状态未改变");
     this.refreshGameState();
     return {
       ok: !this.pendingConfirmation,
@@ -1473,13 +1547,15 @@ export class GameKernel {
   sacrificeUnicorns(): ActionResult {
     const available = this.game.religion.getAvailableUnicornSacrifices();
     if (available <= 0) {
-      this.lastMessage = "没有足够的独角兽可供献祭";
+      this.lastMessage = this.t("没有足够的独角兽可供献祭");
       this.refreshSnapshot();
       return { ok: false, reason: "cannot-afford" };
     }
 
     this.game.religion.sacrificeAllUnicorns();
-    this.lastMessage = `献祭了 ${available} 批独角兽`;
+    this.lastMessage = this.t("献祭了 {count} 批独角兽", {
+      count: available,
+    });
     this.refreshGameState();
     return { ok: true, reason: "ok", changed: true };
   }
@@ -1487,7 +1563,7 @@ export class GameKernel {
   buyReligionUpgrade(id: string, kind: ReligionUpgradeKind): ActionResult {
     const metadata = this.getReligionUpgrade(id, kind);
     if (!metadata) {
-      this.lastMessage = "未找到宗教升级";
+      this.lastMessage = this.t("未找到宗教升级");
       this.refreshSnapshot();
       return { ok: false, reason: "unknown" };
     }
@@ -1502,19 +1578,21 @@ export class GameKernel {
       controller,
       { key: id, id },
       metadata.label,
-      `购买${metadata.label}`
+      this.t("购买{label}", { label: metadata.label })
     );
   }
 
   launchSpaceProgram(id: string): ActionResult {
     const metadata = this.game.space.getProgram(id);
     if (!metadata) {
-      this.lastMessage = "未找到太空项目";
+      this.lastMessage = this.t("未找到太空项目");
       this.refreshSnapshot();
       return { ok: false, reason: "unknown" };
     }
     if (metadata.val > 0) {
-      this.lastMessage = `${metadata.label} 已经完成或正在执行`;
+      this.lastMessage = this.t("{label} 已经完成或正在执行", {
+        label: metadata.label,
+      });
       this.refreshSnapshot();
       return { ok: false, reason: "already-owned" };
     }
@@ -1523,14 +1601,14 @@ export class GameKernel {
       new this.controllers.SpaceProgramBtnController(this.game),
       { key: id, id },
       metadata.label,
-      `启动${metadata.label}`
+      this.t("启动{label}", { label: metadata.label })
     );
   }
 
   buySpaceBuilding(id: string): ActionResult {
     const metadata = this.game.space.getBuilding(id);
     if (!metadata) {
-      this.lastMessage = "未找到太空建筑";
+      this.lastMessage = this.t("未找到太空建筑");
       this.refreshSnapshot();
       return { ok: false, reason: "unknown" };
     }
@@ -1539,7 +1617,7 @@ export class GameKernel {
       new this.classes.ui.space.PlanetBuildingBtnController(this.game),
       { key: id, id },
       metadata.label,
-      `建造${metadata.label}`
+      this.t("建造{label}", { label: metadata.label })
     );
   }
 
@@ -1550,12 +1628,12 @@ export class GameKernel {
     const model = controller.fetchModel({
       key: "accelerateTime",
       id: "accelerateTime",
-      name: "时间加速",
-      description: "加速或恢复正常时间流速",
+      name: this.t("时间加速"),
+      description: this.t("加速或恢复正常时间流速"),
     });
     const outcome = controller.buyItem(model);
     if (!outcome.itemBought) {
-      this.lastMessage = "无法切换时间加速";
+      this.lastMessage = this.t("无法切换时间加速");
       this.refreshSnapshot();
       return {
         ok: false,
@@ -1564,8 +1642,8 @@ export class GameKernel {
     }
 
     this.lastMessage = this.game.time.isAccelerated
-      ? "时间加速已开启"
-      : "时间加速已关闭";
+      ? this.t("时间加速已开启")
+      : this.t("时间加速已关闭");
     this.refreshGameState();
     return { ok: true, reason: "ok", changed: true };
   }
@@ -1582,8 +1660,8 @@ export class GameKernel {
     const model = controller.fetchModel({
       key: "shatterTimeCrystal",
       id: "shatterTimeCrystal",
-      name: "碎裂时间水晶",
-      description: "跳跃一个年份并积累时间热量",
+      name: this.t("碎裂时间水晶"),
+      description: this.t("跳跃一个年份并积累时间热量"),
       prices: [{ name: "timeCrystal", val: 1 }],
     });
     const prices = controller.getPricesMultiple(model, shatterAmount);
@@ -1593,8 +1671,8 @@ export class GameKernel {
       (prices.void ?? 0) > this.game.resPool.get("void").value
     ) {
       this.lastMessage = model.visible
-        ? "没有足够的时间水晶或虚空"
-        : "碎裂时间水晶尚未解锁";
+        ? this.t("没有足够的时间水晶或虚空")
+        : this.t("碎裂时间水晶尚未解锁");
       this.refreshSnapshot();
       return {
         ok: false,
@@ -1613,12 +1691,14 @@ export class GameKernel {
         (this.game.time.getCFU("blastFurnace").heat ?? 0) > furnaceHeatBefore ||
         this.game.calendar.day !== calendarBefore);
     if (!changed) {
-      this.lastMessage = "时间水晶未能碎裂";
+      this.lastMessage = this.t("时间水晶未能碎裂");
       this.refreshSnapshot();
       return { ok: false, reason: "blocked" };
     }
 
-    this.lastMessage = `碎裂了 ${shatterAmount} 个时间水晶`;
+    this.lastMessage = this.t("碎裂了 {count} 个时间水晶", {
+      count: shatterAmount,
+    });
     this.refreshGameState();
     return { ok: true, reason: "ok", changed: true };
   }
@@ -1633,14 +1713,14 @@ export class GameKernel {
     const model = controller.fetchModel({
       key: "useHeat",
       id: "useHeat",
-      name: "使用时间热量",
-      description: "消耗热机热量进行时间跳跃",
+      name: this.t("使用时间热量"),
+      description: this.t("消耗热机热量进行时间跳跃"),
     });
     const furnace = this.game.time.getCFU("blastFurnace");
     if (!model.visible || (furnace.heat ?? 0) < shatterAmount * 100) {
       this.lastMessage = model.visible
-        ? "热机中没有足够的时间热量"
-        : "尚未解锁热机控制";
+        ? this.t("热机中没有足够的时间热量")
+        : this.t("尚未解锁热机控制");
       this.refreshSnapshot();
       return {
         ok: false,
@@ -1655,12 +1735,14 @@ export class GameKernel {
       (furnace.heat ?? 0) < furnaceHeatBefore ||
       this.game.calendar.day !== calendarBefore;
     if (!changed) {
-      this.lastMessage = "热机未能完成时间跳跃";
+      this.lastMessage = this.t("热机未能完成时间跳跃");
       this.refreshSnapshot();
       return { ok: false, reason: "blocked" };
     }
 
-    this.lastMessage = `使用热机跳跃了 ${shatterAmount} 次`;
+    this.lastMessage = this.t("使用热机跳跃了 {count} 次", {
+      count: shatterAmount,
+    });
     this.refreshGameState();
     return { ok: true, reason: "ok", changed: true };
   }
@@ -1671,7 +1753,7 @@ export class GameKernel {
         ? this.game.time.getCFU(id)
         : this.game.time.getVSU(id);
     if (!metadata) {
-      this.lastMessage = "未找到时间升级";
+      this.lastMessage = this.t("未找到时间升级");
       this.refreshSnapshot();
       return { ok: false, reason: "unknown" };
     }
@@ -1684,19 +1766,19 @@ export class GameKernel {
       controller,
       { key: id, id },
       metadata.label,
-      `购买${metadata.label}`
+      this.t("购买{label}", { label: metadata.label })
     );
   }
 
   toggleChallenge(id: string): ActionResult {
     const metadata = this.game.challenges.getChallenge(id);
     if (!metadata) {
-      this.lastMessage = "未找到挑战";
+      this.lastMessage = this.t("未找到挑战");
       this.refreshSnapshot();
       return { ok: false, reason: "unknown" };
     }
     if (!metadata.unlocked) {
-      this.lastMessage = "该挑战尚未解锁";
+      this.lastMessage = this.t("该挑战尚未解锁");
       this.refreshSnapshot();
       return { ok: false, reason: "locked" };
     }
@@ -1705,7 +1787,7 @@ export class GameKernel {
     const model = controller.fetchModel({ key: id, id });
     const outcome = controller.buyItem(model);
     if (!outcome.itemBought) {
-      this.lastMessage = "无法切换挑战";
+      this.lastMessage = this.t("无法切换挑战");
       this.refreshSnapshot();
       return {
         ok: false,
@@ -1714,8 +1796,8 @@ export class GameKernel {
     }
 
     this.lastMessage = metadata.pending
-      ? `${metadata.label} 已加入待开始列表`
-      : `${metadata.label} 已从待开始列表移除`;
+      ? this.t("{label} 已加入待开始列表", { label: metadata.label })
+      : this.t("{label} 已从待开始列表移除", { label: metadata.label });
     this.refreshGameState();
     return { ok: true, reason: "ok", changed: true };
   }
@@ -1723,15 +1805,15 @@ export class GameKernel {
   applyPendingChallenges(): ActionResult {
     const pendingCount = this.game.challenges.getCountPending();
     if (pendingCount <= 0) {
-      this.lastMessage = "没有待开始的挑战";
+      this.lastMessage = this.t("没有待开始的挑战");
       this.refreshSnapshot();
       return { ok: false, reason: "blocked" };
     }
 
     this.game.challenges.applyPending();
     this.lastMessage = this.pendingConfirmation
-      ? `等待确认开始 ${pendingCount} 个挑战`
-      : "挑战已开始";
+      ? this.t("等待确认开始 {count} 个挑战", { count: pendingCount })
+      : this.t("挑战已开始");
     this.refreshGameState();
     return {
       ok: !this.pendingConfirmation,
@@ -1745,16 +1827,16 @@ export class GameKernel {
       (entry) => entry.name === id && SETTING_IDS.has(entry.name)
     );
     if (!setting) {
-      this.lastMessage = "该设置不可用";
+      this.lastMessage = this.t("该设置不可用");
       this.refreshSnapshot();
       return { ok: false, reason: "unknown" };
     }
 
     this.game.settings.set(setting, value);
     this.game.ui.updateOptions();
-    this.lastMessage = `游戏设置已更新：${plainText(
-      setting.mobileTitle ?? setting.label ?? setting.name
-    )}`;
+    this.lastMessage = this.t("游戏设置已更新：{label}", {
+      label: plainText(setting.mobileTitle ?? setting.label ?? setting.name),
+    });
     this.refreshGameState();
     return { ok: true, reason: "ok", changed: true };
   }
@@ -1769,14 +1851,14 @@ export class GameKernel {
     try {
       if (accept) {
         pending.onConfirm?.();
-        this.lastMessage = pending.title || "操作已确认";
+        this.lastMessage = pending.title || this.t("操作已确认");
       } else {
         pending.onCancel?.();
-        this.lastMessage = "操作已取消";
+        this.lastMessage = this.t("操作已取消");
       }
     } catch (error) {
       console.error("Unable to resolve Kittens Game confirmation", error);
-      this.lastMessage = "确认操作执行失败";
+      this.lastMessage = this.t("确认操作执行失败");
       this.refreshSnapshot();
       return { ok: false, reason: "blocked" };
     }
@@ -1792,7 +1874,7 @@ export class GameKernel {
   buyBuilding(id: string, amount = 1): ActionResult {
     const accessor = this.game.bld.getBuildingExt(id);
     if (!accessor) {
-      this.lastMessage = "未找到建筑";
+      this.lastMessage = this.t("未找到建筑");
       this.refreshSnapshot();
       return { ok: false, reason: "unknown" };
     }
@@ -1802,12 +1884,12 @@ export class GameKernel {
     );
     const model = controller.fetchModel({ key: id, building: id });
     if (!model.visible) {
-      this.lastMessage = "建筑尚未解锁";
+      this.lastMessage = this.t("建筑尚未解锁");
       this.refreshSnapshot();
       return { ok: false, reason: "locked" };
     }
     if (!model.enabled) {
-      this.lastMessage = "资源不足或尚未解锁";
+      this.lastMessage = this.t("资源不足或尚未解锁");
       this.refreshSnapshot();
       return { ok: false, reason: "not-enabled" };
     }
@@ -1822,7 +1904,9 @@ export class GameKernel {
     this.game.updateCaches();
     this.game.updateResources();
     this.lastMessage =
-      built > 0 ? `建造了 ${meta.label}` : "资源不足或尚未解锁";
+      built > 0
+        ? this.t("建造了 {label}", { label: meta.label })
+        : this.t("资源不足或尚未解锁");
     this.refreshSnapshot();
     return built > 0
       ? { ok: true, reason: "ok" }
@@ -1837,10 +1921,10 @@ export class GameKernel {
     ) {
       this.lastMessage =
         this.saveHealth === "corrupt"
-          ? "当前存档损坏，保存已阻止"
+          ? this.t("当前存档损坏，保存已阻止")
           : this.runtimeError
-            ? "模拟运行异常，保存已阻止"
-            : "浏览器存储不可用，无法保存";
+            ? this.t("模拟运行异常，保存已阻止")
+            : this.t("浏览器存储不可用，无法保存");
       this.refreshSnapshot();
       return {
         ok: false,
@@ -1858,7 +1942,7 @@ export class GameKernel {
     } catch (cause) {
       console.error("Unable to save Kittens Game", cause);
       this.saveHealth = "unavailable";
-      this.lastMessage = "保存失败，浏览器存储不可用";
+      this.lastMessage = this.t("保存失败，浏览器存储不可用");
       this.refreshSnapshot();
       return { ok: false, reason: "storage-unavailable" };
     }
@@ -1866,7 +1950,7 @@ export class GameKernel {
     const stored = readStorage(SAVE_KEY);
     if (this.lastPersistFailed || !stored.ok || !stored.value) {
       this.saveHealth = "unavailable";
-      this.lastMessage = "保存失败，浏览器存储不可用";
+      this.lastMessage = this.t("保存失败，浏览器存储不可用");
       this.refreshSnapshot();
       return { ok: false, reason: "storage-unavailable" };
     }
@@ -1874,7 +1958,7 @@ export class GameKernel {
     this.saveHealth = "healthy";
     this.sourceSaveVersion = this.game.saveVersion;
     this.saveMigrated = false;
-    this.lastMessage = "游戏已保存";
+    this.lastMessage = this.t("游戏已保存");
     this.refreshSnapshot();
     return { ok: true, reason: "ok", changed: true };
   }
@@ -1883,13 +1967,13 @@ export class GameKernel {
     if (this.saveHealth === "corrupt" || this.runtimeError) {
       const stored = readStorage(SAVE_KEY);
       if (!stored.ok || !stored.value) {
-        this.lastMessage = "无法读取损坏的本地存档";
+        this.lastMessage = this.t("无法读取损坏的本地存档");
         this.refreshSnapshot();
         return { ok: false, reason: "storage-unavailable" };
       }
       this.lastMessage = this.runtimeError
-        ? "已导出上次成功保存的原始存档"
-        : "已导出损坏的原始存档，请联系开发者或重新导入备份";
+        ? this.t("已导出上次成功保存的原始存档")
+        : this.t("已导出损坏的原始存档，请联系开发者或重新导入备份");
       this.refreshSnapshot();
       return {
         ok: true,
@@ -1903,8 +1987,8 @@ export class GameKernel {
       const data = this.game.save();
       const encoded = this.game.compressLZData(JSON.stringify(data), false);
       this.lastMessage = this.lastPersistFailed
-        ? "存档文本已生成，但本地保存失败"
-        : "存档文本已生成";
+        ? this.t("存档文本已生成，但本地保存失败")
+        : this.t("存档文本已生成");
       this.refreshSnapshot();
       return {
         ok: true,
@@ -1914,7 +1998,7 @@ export class GameKernel {
       };
     } catch (cause) {
       console.error("Unable to export Kittens Game save", cause);
-      this.lastMessage = "无法生成存档导出文本";
+      this.lastMessage = this.t("无法生成存档导出文本");
       this.refreshSnapshot();
       return { ok: false, reason: "invalid-save" };
     }
@@ -1922,7 +2006,7 @@ export class GameKernel {
 
   importSave(raw: string): SaveImportResult {
     if (this.saveHealth === "unavailable") {
-      this.lastMessage = "浏览器存储不可用，无法导入存档";
+      this.lastMessage = this.t("浏览器存储不可用，无法导入存档");
       this.refreshSnapshot();
       return { ok: false, reason: "storage-unavailable" };
     }
@@ -1930,18 +2014,18 @@ export class GameKernel {
     try {
       prepared = this.prepareSaveText(raw);
     } catch {
-      this.lastMessage = "存档文本无效或无法解压";
+      this.lastMessage = this.t("存档文本无效或无法解压");
       this.refreshSnapshot();
       return { ok: false, reason: "invalid-save" };
     }
-    return this.confirmImport(prepared, "导入存档");
+    return this.confirmImport(prepared, this.t("导入存档"));
   }
 
   createBackup(): ActionResult {
     if (this.saveHealth === "corrupt" || this.runtimeError) {
       this.lastMessage = this.runtimeError
-        ? "模拟运行异常，不能覆盖现有恢复点"
-        : "损坏存档不能覆盖现有恢复点";
+        ? this.t("模拟运行异常，不能覆盖现有恢复点")
+        : this.t("损坏存档不能覆盖现有恢复点");
       this.refreshSnapshot();
       return { ok: false, reason: "invalid-save" };
     }
@@ -1950,7 +2034,7 @@ export class GameKernel {
       this.game.save();
     } catch (cause) {
       console.error("Unable to save before creating backup", cause);
-      this.lastMessage = "建立恢复点前无法保存游戏";
+      this.lastMessage = this.t("建立恢复点前无法保存游戏");
       this.refreshSnapshot();
       return { ok: false, reason: "storage-unavailable" };
     }
@@ -1963,7 +2047,7 @@ export class GameKernel {
       !this.backupRawSave(current.value)
     ) {
       this.saveHealth = current.ok ? this.saveHealth : "unavailable";
-      this.lastMessage = "无法建立恢复点";
+      this.lastMessage = this.t("无法建立恢复点");
       this.refreshSnapshot();
       return { ok: false, reason: "storage-unavailable" };
     }
@@ -1972,7 +2056,7 @@ export class GameKernel {
     this.sourceSaveVersion = this.game.saveVersion;
     this.saveMigrated = false;
     this.updateSaveMetadata({ lastSavedAt: Date.now() });
-    this.lastMessage = "恢复点已建立";
+    this.lastMessage = this.t("恢复点已建立");
     this.refreshSnapshot();
     return { ok: true, reason: "ok", changed: true };
   }
@@ -1980,7 +2064,7 @@ export class GameKernel {
   restoreBackup(): SaveImportResult {
     const backup = readStorage(SAVE_BACKUP_KEY);
     if (!backup.ok || !backup.value) {
-      this.lastMessage = "还没有可恢复的备份";
+      this.lastMessage = this.t("还没有可恢复的备份");
       this.refreshSnapshot();
       return {
         ok: false,
@@ -1992,25 +2076,27 @@ export class GameKernel {
     try {
       prepared = this.prepareSaveText(backup.value);
     } catch {
-      this.lastMessage = "备份存档无法解析";
+      this.lastMessage = this.t("备份存档无法解析");
       this.refreshSnapshot();
       return { ok: false, reason: "invalid-save" };
     }
-    return this.confirmImport(prepared, "恢复备份");
+    return this.confirmImport(prepared, this.t("恢复备份"));
   }
 
   resetGame(): ActionResult {
     if (this.saveHealth === "unavailable") {
-      this.lastMessage = "浏览器存储不可用，无法重置存档";
+      this.lastMessage = this.t("浏览器存储不可用，无法重置存档");
       this.refreshSnapshot();
       return { ok: false, reason: "storage-unavailable" };
     }
     this.game.ui.confirm(
-      "重置存档",
-      "这会清除当前游戏。可读取的当前进度会先建立恢复点，重置后可继续导入或恢复备份。确认重置？",
+      this.t("重置存档"),
+      this.t(
+        "这会清除当前游戏。可读取的当前进度会先建立恢复点，重置后可继续导入或恢复备份。确认重置？"
+      ),
       () => this.applyReset()
     );
-    this.lastMessage = "等待确认重置存档";
+    this.lastMessage = this.t("等待确认重置存档");
     this.refreshSnapshot();
     return { ok: false, reason: "requires-confirmation" };
   }
@@ -2023,10 +2109,10 @@ export class GameKernel {
     ) {
       this.lastMessage =
         this.saveHealth === "corrupt"
-          ? "当前存档损坏，无法计算重置收益"
+          ? this.t("当前存档损坏，无法计算重置收益")
           : this.runtimeError
-            ? "模拟运行异常，无法重置时间线"
-            : "浏览器存储不可用，无法重置时间线";
+            ? this.t("模拟运行异常，无法重置时间线")
+            : this.t("浏览器存储不可用，无法重置时间线");
       this.refreshSnapshot();
       return {
         ok: false,
@@ -2041,11 +2127,17 @@ export class GameKernel {
 
     const preview = this.mapPrestige().reset;
     this.game.ui.confirm(
-      "重置时间线",
-      `当前时间线将结束并重新开始。将获得 ${preview.karmaPoints} 点业力与 ${preview.paragonPoints} 点领导力。统计、成就和已继承的升级会保留。确认开始新一轮？`,
+      this.t("重置时间线"),
+      this.t(
+        "当前时间线将结束并重新开始。将获得 {karma} 点业力与 {paragon} 点领导力。统计、成就和已继承的升级会保留。确认开始新一轮？",
+        {
+          karma: preview.karmaPoints,
+          paragon: preview.paragonPoints,
+        }
+      ),
       () => this.applyTimelineReset()
     );
-    this.lastMessage = "等待确认重置时间线";
+    this.lastMessage = this.t("等待确认重置时间线");
     this.refreshSnapshot();
     return { ok: false, reason: "requires-confirmation" };
   }
@@ -2102,7 +2194,7 @@ export class GameKernel {
       this.runtimeError = null;
       this.lastPersistFailed = false;
       this.updateSaveMetadata({ lastSavedAt: Date.now() });
-      this.lastMessage = "新一轮已经开始，继承状态已载入";
+      this.lastMessage = this.t("新一轮已经开始，继承状态已载入");
     } catch (cause) {
       console.error("Unable to reset Kittens Game timeline", cause);
       if (previousSave.ok && previousSave.value) {
@@ -2127,7 +2219,7 @@ export class GameKernel {
       this.saveMigrated = previousMigrated;
       this.runtimeError = previousRuntimeError;
       this.game.isPaused = true;
-      this.lastMessage = "重置时间线失败，已恢复重置前状态";
+      this.lastMessage = this.t("重置时间线失败，已恢复重置前状态");
       throw cause;
     }
   }
@@ -2146,12 +2238,12 @@ export class GameKernel {
     const controller = new this.controllers.JobButtonController(this.game);
     const job = this.game.village.getJob(id);
     if (!job) {
-      this.lastMessage = "未找到职业";
+      this.lastMessage = this.t("未找到职业");
       this.refreshSnapshot();
       return { ok: false, reason: "unknown" };
     }
     if (!job.unlocked) {
-      this.lastMessage = `${job.title} 尚未解锁`;
+      this.lastMessage = this.t("{label} 尚未解锁", { label: job.title });
       this.refreshSnapshot();
       return { ok: false, reason: "locked" };
     }
@@ -2171,8 +2263,8 @@ export class GameKernel {
     const changed = job.value !== before;
     if (!changed) {
       this.lastMessage = assign
-        ? "没有空闲猫或该职业已达上限"
-        : "该职业没有在岗猫";
+        ? this.t("没有空闲猫或该职业已达上限")
+        : this.t("该职业没有在岗猫");
       this.refreshSnapshot();
       return { ok: false, reason: "blocked" };
     }
@@ -2192,12 +2284,12 @@ export class GameKernel {
   ): ActionResult {
     const model = controller.fetchModel(options);
     if (!model.visible) {
-      this.lastMessage = `${label} 尚未解锁`;
+      this.lastMessage = this.t("{label} 尚未解锁", { label });
       this.refreshSnapshot();
       return { ok: false, reason: "locked" };
     }
     if (!model.enabled) {
-      this.lastMessage = "资源不足或条件尚未满足";
+      this.lastMessage = this.t("资源不足或条件尚未满足");
       this.refreshSnapshot();
       return { ok: false, reason: "not-enabled" };
     }
@@ -2207,8 +2299,8 @@ export class GameKernel {
       const reason = this.mapPurchaseReason(outcome.reason);
       this.lastMessage =
         reason === "requires-confirmation"
-          ? `等待确认：${label}`
-          : `${label} 当前无法完成`;
+          ? this.t("等待确认：{label}", { label })
+          : this.t("{label} 当前无法完成", { label });
       this.refreshSnapshot();
       return { ok: false, reason };
     }
@@ -2292,7 +2384,7 @@ export class GameKernel {
         day: this.game.calendar.day,
         year: this.game.calendar.year,
         season: season.name,
-        seasonLabel: SEASON_LABELS[season.name] ?? season.name,
+        seasonLabel: SEASON_LABELS[this.locale][season.name] ?? season.name,
       },
       saveStatus: this.mapSaveStatus(),
       runtimeError: this.runtimeError,
@@ -2365,7 +2457,7 @@ export class GameKernel {
           label: meta.label,
           description: plainText(meta.description),
           group: group?.name ?? "buildings",
-          groupLabel: group?.title ?? "建筑",
+          groupLabel: group?.title ?? this.t("建筑"),
           value: meta.val,
           enabled: meta.on,
           unlocked: meta.unlocked,
@@ -2734,8 +2826,8 @@ export class GameKernel {
     const shatterModel = shatterController.fetchModel({
       key: "shatterTimeCrystal",
       id: "shatterTimeCrystal",
-      name: "碎裂时间水晶",
-      description: "跳跃一个年份并积累时间热量",
+      name: this.t("碎裂时间水晶"),
+      description: this.t("跳跃一个年份并积累时间热量"),
       prices: [{ name: "timeCrystal", val: 1 }],
     });
     const shatterCost = shatterController.getPricesMultiple(shatterModel, 1);
@@ -2745,8 +2837,8 @@ export class GameKernel {
     const heatModel = heatController.fetchModel({
       key: "useHeat",
       id: "useHeat",
-      name: "使用时间热量",
-      description: "消耗热机热量进行时间跳跃",
+      name: this.t("使用时间热量"),
+      description: this.t("消耗热机热量进行时间跳跃"),
       prices: [],
     });
     const furnace = time.getCFU("blastFurnace");
@@ -2894,9 +2986,9 @@ export class GameKernel {
         const hidden = Boolean(achievement.hidden && !achievement.unlocked);
         return {
           id: achievement.name,
-          label: hidden ? "隐藏成就" : achievement.title,
+          label: hidden ? this.t("隐藏成就") : achievement.title,
           description: hidden
-            ? "解锁后揭示这个成就的条件。"
+            ? this.t("解锁后揭示这个成就的条件。")
             : plainText(achievement.description ?? ""),
           hidden,
           unethical: Boolean(achievement.unethical),
@@ -2972,7 +3064,7 @@ export class GameKernel {
         description: plainText(
           setting.tooltip ??
             setting.mobileDesc ??
-            (setting.isExtra ? "高级游戏选项" : "游戏选项")
+            (setting.isExtra ? this.t("高级游戏选项") : this.t("游戏选项"))
         ),
         value: Boolean(this.game.settings.get(setting)),
         advanced: Boolean(setting.isExtra),
@@ -3010,20 +3102,33 @@ export class GameKernel {
 
   private mapEffect(id: string, value: number): EffectSnapshot {
     const display = this.game.getEffectDisplayParams(id, value, true);
+    const fallbackLabel = EFFECT_LABELS[id];
     return {
       id,
-      label: display?.displayEffectName ?? EFFECT_LABELS[id] ?? id,
+      label:
+        display?.displayEffectName ??
+        (fallbackLabel ? this.t(fallbackLabel) : id),
       value,
-      valueLabel: display?.displayEffectValue ?? formatEffectValue(value),
+      valueLabel:
+        display?.displayEffectValue ??
+        formatEffectValue(value, this.formatLocale),
     };
   }
 }
 
 let sharedKernel: GameKernel | null = null;
+let sharedKernelLocale: GameLocale | null = null;
 
-export function getGameKernel(): GameKernel {
+export function getGameKernel(locale = "zh"): GameKernel {
+  const nextLocale = normalizeGameLocale(locale);
+  if (sharedKernel && sharedKernelLocale !== nextLocale) {
+    sharedKernel.save();
+    sharedKernel.dispose();
+    sharedKernel = null;
+  }
   if (!sharedKernel) {
-    sharedKernel = new GameKernel();
+    sharedKernel = new GameKernel(nextLocale);
+    sharedKernelLocale = nextLocale;
   }
   return sharedKernel;
 }

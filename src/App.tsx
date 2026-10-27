@@ -91,6 +91,11 @@ function App() {
     defaultValue: t("Titlebar.default.title"),
   });
 
+  useEffect(() => {
+    document.documentElement.lang = lang;
+    document.title = t("Titlebar.default.title");
+  }, [lang, t]);
+
   /* Detect current window */
   const tauriRuntime = isTauriRuntime();
   const currentLabel = tauriRuntime

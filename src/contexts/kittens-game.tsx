@@ -6,9 +6,11 @@ import {
   type KittensGameState,
 } from "@/features/kittens/use-kittens-game";
 import { useResourceWindowPublisher } from "@/features/kittens/resource-bridge";
+import { useI18n } from "@/composables";
 
 export function KittensGameProvider({ children }: { children: ReactNode }) {
-  const { kernel, snapshot, error } = useKittensGame();
+  const { lang } = useI18n();
+  const { kernel, snapshot, error } = useKittensGame(lang);
   useResourceWindowPublisher(snapshot);
   const value = useMemo<KittensGameState>(
     () => ({ kernel, snapshot, error }),
