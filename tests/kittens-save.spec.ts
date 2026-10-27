@@ -22,8 +22,13 @@ async function installSave(page: Page, save: string) {
 }
 
 async function openSaveManager(page: Page) {
+  await page.locator('[data-action="toggle-save-actions"]').click();
   await page.locator('[data-action="open-save-manager"]').click();
   await expect(page.locator("[data-save-dialog]")).toBeVisible();
+}
+
+async function openSaveActions(page: Page) {
+  await page.locator('[data-action="toggle-save-actions"]').click();
 }
 
 async function confirmPendingAction(page: Page) {
@@ -70,6 +75,7 @@ test("migrates version 14 saves with the upstream migration path", async ({
   await expect(status).toHaveAttribute("data-save-migrated", "true");
 
   await page.keyboard.press("Escape");
+  await openSaveActions(page);
   await page.getByRole("button", { name: "快速保存" }).click();
 
   await expect
@@ -281,8 +287,7 @@ test("supports save shortcuts, dialog focus and mobile access", async ({
   await expect(dialog).toBeHidden();
 
   await page.setViewportSize({ width: 800, height: 600 });
-  await page.locator('[data-action="open-save-manager"]').click();
-  await expect(dialog).toBeVisible();
+  await openSaveManager(page);
   await page.screenshot({
     path: ".agent/smoke/m4-save-800x600.png",
     fullPage: false,

@@ -1,14 +1,6 @@
 import { Tooltip } from "./Tooltip";
 
-import {
-  Minus,
-  X,
-  Sun,
-  Moon,
-  Paperclip,
-  Square,
-  Copy,
-} from "lucide-react";
+import { Minus, X, Sun, Moon, Paperclip, Square, Copy } from "lucide-react";
 import { ThemeContext } from "@/contexts/theme";
 import { Separator } from "../ui/separator";
 import { useContext, useEffect, useMemo, useState } from "react";
@@ -18,10 +10,7 @@ import type { Window } from "@tauri-apps/api/window";
 import { useI18n } from "@/composables";
 import { WindowUtils } from "@/lib/window.utils";
 import { createLogger } from "@/lib/logger";
-import {
-  getCurrentWindowOrNull,
-  isTauriRuntime,
-} from "@/lib/tauri-runtime";
+import { getCurrentWindowOrNull, isTauriRuntime } from "@/lib/tauri-runtime";
 
 const log = createLogger("Titlebar");
 
@@ -61,9 +50,7 @@ async function handleOperation(
 }
 
 /** 切换最大化；返回切换后的状态 */
-async function toggleMaximize(
-  currentWindow: Window | null
-): Promise<boolean> {
+async function toggleMaximize(currentWindow: Window | null): Promise<boolean> {
   if (!currentWindow) return false;
 
   const maximized = await currentWindow.isMaximized().catch(() => false);
@@ -126,36 +113,45 @@ export default function TitlebarOperations() {
           className="mx-0.5 h-1/2 rounded bg-neutral-300 transition-colors duration-100 ease-in-out dark:bg-neutral-700"
         />
         <Tooltip content={t("Titlebar.operations.always-on-top.tooltip")}>
-          <span
+          <button
+            type="button"
             className={alwaysOnTop ? "titlebar-op is-pinned" : "titlebar-op"}
-            onMouseUp={() => {
+            aria-label={t("Titlebar.operations.always-on-top.tooltip")}
+            aria-pressed={Boolean(alwaysOnTop)}
+            data-action="toggle-app-pinned"
+            onClick={() => {
               const next = !alwaysOnTop;
               setAlwaysOnTop(next);
               void currentWindow?.setAlwaysOnTop(next);
             }}
           >
             <Paperclip className="titlebar-op-icon" />
-          </span>
+          </button>
         </Tooltip>
         <Tooltip content={t("Titlebar.operations.theme.tooltip")}>
-          <span
+          <button
+            type="button"
             className="titlebar-op"
-            onMouseUp={() => {
+            aria-label={t("Titlebar.operations.theme.tooltip")}
+            data-action="toggle-app-theme"
+            onClick={() => {
               setThemeMode(theme === "dark" ? "light" : "dark");
             }}
           >
             <ThemeIcon />
-          </span>
+          </button>
         </Tooltip>
         <Tooltip content={t("Titlebar.operations.minimize.tooltip")}>
-          <span
+          <button
+            type="button"
             className="titlebar-op"
-            onMouseUp={() => {
+            aria-label={t("Titlebar.operations.minimize.tooltip")}
+            onClick={() => {
               void handleOperation(currentWindow, "minimize");
             }}
           >
             <Minus className="titlebar-op-icon" />
-          </span>
+          </button>
         </Tooltip>
         <Tooltip
           content={t(
@@ -164,24 +160,32 @@ export default function TitlebarOperations() {
               : "Titlebar.operations.maximize.tooltip"
           )}
         >
-          <span
+          <button
+            type="button"
             className="titlebar-op"
-            onMouseUp={() => {
+            aria-label={t(
+              maximized
+                ? "Titlebar.operations.restore.tooltip"
+                : "Titlebar.operations.maximize.tooltip"
+            )}
+            onClick={() => {
               void toggleMaximize(currentWindow).then(setMaximized);
             }}
           >
             <MaximizeIcon maximized={maximized} />
-          </span>
+          </button>
         </Tooltip>
         <Tooltip content={t("Titlebar.operations.close.tooltip")}>
-          <span
+          <button
+            type="button"
             className="titlebar-op"
-            onMouseUp={() => {
+            aria-label={t("Titlebar.operations.close.tooltip")}
+            onClick={() => {
               void handleOperation(currentWindow, "close");
             }}
           >
             <X className="titlebar-op-icon" />
-          </span>
+          </button>
         </Tooltip>
       </div>
     </>

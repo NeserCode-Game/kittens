@@ -33,6 +33,17 @@ export const useTheme: UseThemeFn = ({ localStorageKey = "theme" }) => {
     return () => matchMedia.removeEventListener("change", onThemeChange);
   }, [localStorageKey]);
 
+  useEffect(() => {
+    const syncTheme = (event: StorageEvent) => {
+      if (event.key !== localStorageKey) return;
+      if (event.newValue === "light" || event.newValue === "dark") {
+        setThemeState(event.newValue);
+      }
+    };
+    window.addEventListener("storage", syncTheme);
+    return () => window.removeEventListener("storage", syncTheme);
+  }, [localStorageKey]);
+
   const setTheme = useCallback(
     (theme: ThemeType) => {
       log.info("setTheme", theme, "(user choice, stops following system)");

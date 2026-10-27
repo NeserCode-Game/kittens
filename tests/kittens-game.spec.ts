@@ -22,9 +22,35 @@ async function clickMany(locator: Locator, count: number) {
   }, count);
 }
 
+async function resourceValue(page: Page, resourceId: string): Promise<number> {
+  const panel = page.locator("[data-resource-panel]");
+  const trigger = page.locator('[data-action="toggle-game-resources"]');
+  if (!(await panel.isVisible())) {
+    await trigger.click();
+  }
+  await expect(panel).toBeVisible();
+  const value = Number(
+    await panel
+      .locator(`[data-resource-id="${resourceId}"]`)
+      .getAttribute("data-resource-value")
+  );
+  await trigger.click();
+  await expect(panel).toBeHidden();
+  return value;
+}
+
 async function openAppSettings(page: Page) {
   await page.getByRole("menuitem", { name: "转到" }).click();
   await page.locator('[data-action="open-app-settings"]').click();
+}
+
+async function openSaveActions(page: Page) {
+  await page.locator('[data-action="toggle-save-actions"]').click();
+}
+
+async function openSaveManager(page: Page) {
+  await openSaveActions(page);
+  await page.locator('[data-action="open-save-manager"]').click();
 }
 
 test("runs the native game kernel and persists resources", async ({
@@ -47,27 +73,16 @@ test("runs the native game kernel and persists resources", async ({
     timeout: 30_000,
   });
 
-  const catnip = page.locator('[data-resource-id="catnip"]');
-  await expect(catnip).toBeVisible();
-  const before = Number(await catnip.getAttribute("data-resource-value"));
+  const before = await resourceValue(page, "catnip");
 
   await clickMany(page.getByRole("button", { name: "采集猫薄荷" }), 500);
-
-  await expect
-    .poll(async () => Number(await catnip.getAttribute("data-resource-value")))
-    .toBeGreaterThan(before);
+  await page.waitForTimeout(100);
+  expect(await resourceValue(page, "catnip")).toBeGreaterThan(before);
 
   await clickMany(page.getByRole("button", { name: "精炼木材" }), 5);
 
-  await expect
-    .poll(async () =>
-      Number(
-        await page
-          .locator('[data-resource-id="wood"]')
-          .getAttribute("data-resource-value")
-      )
-    )
-    .toBeGreaterThanOrEqual(5);
+  await page.waitForTimeout(100);
+  expect(await resourceValue(page, "wood")).toBeGreaterThanOrEqual(5);
 
   const hut = page.locator('[data-building-id="hut"]');
   await expect(hut).toBeVisible();
@@ -79,7 +94,7 @@ test("runs the native game kernel and persists resources", async ({
     .poll(() => page.evaluate((key) => localStorage.getItem(key), SAVE_KEY))
     .not.toBeNull();
 
-  const savedCatnip = Number(await catnip.getAttribute("data-resource-value"));
+  const savedCatnip = await resourceValue(page, "catnip");
 
   await page.screenshot({
     path: ".agent/smoke/desktop-native.png",
@@ -90,15 +105,9 @@ test("runs the native game kernel and persists resources", async ({
   await expect(page.getByRole("heading", { name: "营火" })).toBeVisible({
     timeout: 30_000,
   });
-  await expect
-    .poll(async () =>
-      Number(
-        await page
-          .locator('[data-resource-id="catnip"]')
-          .getAttribute("data-resource-value")
-      )
-    )
-    .toBeGreaterThanOrEqual(savedCatnip);
+  expect(await resourceValue(page, "catnip")).toBeGreaterThanOrEqual(
+    savedCatnip
+  );
   await expect(page.locator('[data-building-id="hut"]')).toHaveAttribute(
     "data-building-enabled",
     "1"
@@ -127,6 +136,201 @@ test("runs the native game kernel and persists resources", async ({
 
   expect(consoleErrors).toEqual([]);
   expect(pageErrors).toEqual([]);
+});
+
+test("integrates game controls into the titlebar and streams the resource window", async ({
+  page,
+}) => {
+  const consoleErrors: string[] = [];
+  page.on("console", (message) => {
+    if (message.type() === "error") consoleErrors.push(message.text());
+  });
+
+  await page.goto("/", { waitUntil: "domcontentloaded" });
+  await expect(page.getByRole("heading", { name: "营火" })).toBeVisible({
+    timeout: 30_000,
+  });
+
+  const titlebar = page.locator("[data-app-titlebar]");
+  const gameView = page.locator(".kittens-game-view");
+  await expect(titlebar.locator("[data-game-titlebar]")).toBeVisible();
+  await expect(gameView.locator(":scope > header")).toHaveCount(0);
+  await expect(titlebar.locator("[data-resource-id]")).toHaveCount(0);
+
+  await titlebar.locator('[data-action="toggle-game-resources"]').click();
+  const resourcePanel = page.locator("[data-resource-panel]");
+  await expect(resourcePanel).toBeVisible();
+  await expect(
+    resourcePanel.locator("[data-resource-grid] [data-resource-id]")
+  ).toHaveCount(7);
+  const panelResourceHeight = await resourcePanel
+    .locator('[data-resource-id="catnip"]')
+    .evaluate((element) => element.getBoundingClientRect().height);
+  expect(panelResourceHeight).toBeGreaterThan(40);
+  await expect(
+    resourcePanel.locator('[data-action="open-resource-window"]')
+  ).toBeVisible();
+  await page.screenshot({
+    path: ".agent/smoke/titlebar-resource-panel-desktop.png",
+    fullPage: false,
+    animations: "disabled",
+  });
+  await titlebar.locator('[data-action="toggle-game-resources"]').click();
+  await expect(resourcePanel).toBeHidden();
+
+  await page.setViewportSize({ width: 800, height: 600 });
+  await titlebar.locator('[data-action="toggle-game-resources"]').click();
+  await expect(resourcePanel).toBeVisible();
+  const panelBounds = await resourcePanel.boundingBox();
+  expect(panelBounds).not.toBeNull();
+  expect(panelBounds!.x).toBeGreaterThanOrEqual(0);
+  expect(panelBounds!.x + panelBounds!.width).toBeLessThanOrEqual(800);
+  await page.screenshot({
+    path: ".agent/smoke/titlebar-resource-panel-800x600.png",
+    fullPage: false,
+    animations: "disabled",
+  });
+  await titlebar.locator('[data-action="toggle-game-resources"]').click();
+  await expect(resourcePanel).toBeHidden();
+
+  await titlebar.locator('[data-action="toggle-game-calendar"]').click();
+  const calendarPanel = page.locator("[data-game-calendar-panel]");
+  await expect(calendarPanel).toBeVisible();
+  await expect(calendarPanel).toContainText("第");
+  await titlebar.locator('[data-action="toggle-game-calendar"]').click();
+  await expect(calendarPanel).toBeHidden();
+
+  await openSaveActions(page);
+  const saveActions = page.locator("[data-save-actions-panel]");
+  await expect(saveActions).toBeVisible();
+  await expect(
+    saveActions.getByRole("button", { name: "快速保存" })
+  ).toBeVisible();
+  await expect(
+    saveActions.locator('[data-action="open-save-manager"]')
+  ).toBeVisible();
+  await page.locator('[data-action="toggle-save-actions"]').click();
+  await expect(saveActions).toBeHidden();
+
+  await titlebar.locator('[data-action="toggle-game-resources"]').click();
+  await expect(resourcePanel).toBeVisible();
+  const before = Number(
+    await resourcePanel
+      .locator('[data-resource-id="catnip"]')
+      .getAttribute("data-resource-value")
+  );
+  const popupPromise = page.waitForEvent("popup");
+  await resourcePanel.locator('[data-action="open-resource-window"]').click();
+  const resourceWindow = await popupPromise;
+  await resourceWindow.waitForLoadState("domcontentloaded");
+  await expect(resourceWindow).toHaveURL(/\/resource$/);
+  await expect(resourceWindow.locator("[data-resource-window]")).toBeVisible();
+  await expect(
+    resourceWindow.locator("[data-resource-window] [data-resource-id]")
+  ).toHaveCount(7);
+  await expect(resourceWindow.locator("[data-app-titlebar]")).toHaveCount(0);
+  await expect(
+    resourceWindow.getByRole("heading", { name: "营火" })
+  ).toHaveCount(0);
+  await resourceWindow.screenshot({
+    path: ".agent/smoke/resource-window-popup.png",
+    animations: "disabled",
+  });
+
+  const popupCatnip = resourceWindow.locator(
+    '[data-resource-window] [data-resource-id="catnip"]'
+  );
+  await clickMany(page.getByRole("button", { name: "采集猫薄荷" }), 20);
+  await expect
+    .poll(async () =>
+      Number(await popupCatnip.getAttribute("data-resource-value"))
+    )
+    .toBeGreaterThan(before);
+
+  const compactItems = await resourceWindow
+    .locator("[data-resource-window] [data-resource-id]")
+    .evaluateAll((elements) => {
+      const bounds = elements.map((element) => element.getBoundingClientRect());
+      return {
+        tops: [...new Set(bounds.map((bound) => Math.round(bound.top)))],
+        heights: bounds.map((bound) => bound.height),
+      };
+    });
+  expect(compactItems.tops).toHaveLength(1);
+  expect(compactItems.heights.every((height) => height <= 30)).toBe(true);
+
+  const scrollMetrics = await resourceWindow
+    .locator("[data-resource-scroll]")
+    .evaluate((root) => {
+      const viewport = root.querySelector<HTMLElement>(
+        "[data-slot='scroll-area-viewport']"
+      );
+      if (!viewport) {
+        throw new Error("Resource ScrollArea is missing");
+      }
+      const scrollbars = [
+        ...root.querySelectorAll<HTMLElement>(
+          "[data-slot='scroll-area-scrollbar']"
+        ),
+      ];
+      return {
+        rootWidth: root.getBoundingClientRect().width,
+        viewportWidth: viewport.getBoundingClientRect().width,
+        scrollbarsAreOverlay: scrollbars.every(
+          (scrollbar) =>
+            getComputedStyle(scrollbar).position === "absolute" &&
+            getComputedStyle(scrollbar).backgroundColor === "rgba(0, 0, 0, 0)"
+        ),
+      };
+    });
+  expect(scrollMetrics.viewportWidth).toBeCloseTo(scrollMetrics.rootWidth, 0);
+  expect(scrollMetrics.scrollbarsAreOverlay).toBe(true);
+
+  const positions = await page.evaluate(async () => {
+    const { computeAttachedWindowPosition } =
+      await import("/src/features/kittens/resource-window-layout.ts");
+    return {
+      below: computeAttachedWindowPosition(
+        { x: 100, y: 80, width: 800, height: 600 },
+        { x: 0, y: 0, width: 1920, height: 1080 },
+        720,
+        32
+      ),
+      above: computeAttachedWindowPosition(
+        { x: 500, y: 700, width: 800, height: 400 },
+        { x: 0, y: 0, width: 1920, height: 1080 },
+        720,
+        32
+      ),
+      fallback: computeAttachedWindowPosition(
+        { x: 0, y: 0, width: 1600, height: 1080 },
+        { x: 0, y: 0, width: 1920, height: 1080 },
+        720,
+        32
+      ),
+    };
+  });
+  expect(positions.below).toEqual({ x: 140, y: 680 });
+  expect(positions.above).toEqual({ x: 540, y: 668 });
+  expect(positions.fallback).toEqual({ x: 440, y: 1048 });
+
+  const initiallyDark = await resourceWindow.evaluate(() =>
+    document.documentElement.classList.contains("dark")
+  );
+  await page.locator('[data-action="toggle-app-theme"]').click();
+  await expect
+    .poll(() =>
+      resourceWindow.evaluate(() =>
+        document.documentElement.classList.contains("dark")
+      )
+    )
+    .toBe(!initiallyDark);
+
+  const closed = resourceWindow.waitForEvent("close");
+  await resourceWindow.getByRole("button", { name: "关闭资源浮窗" }).click();
+  await closed;
+  expect(resourceWindow.isClosed()).toBe(true);
+  expect(consoleErrors).toEqual([]);
 });
 
 test("uses live staged-building unlocks and rejects locked construction", async ({
@@ -376,23 +580,12 @@ test("drives village, research, workshop, upgrades and settings", async ({
   await expect(
     page.getByRole("heading", { name: "工坊", level: 1 })
   ).toBeVisible();
-  const woodBefore = Number(
-    await page
-      .locator('[data-resource-id="wood"]')
-      .getAttribute("data-resource-value")
-  );
+  const woodBefore = await resourceValue(page, "wood");
   const beam = page.locator('[data-craft-id="beam"]');
   await expect(beam).toHaveAttribute("data-craft-can-craft", "true");
   await beam.getByRole("button", { name: /^制作/ }).first().click();
-  await expect
-    .poll(async () =>
-      Number(
-        await page
-          .locator('[data-resource-id="wood"]')
-          .getAttribute("data-resource-value")
-      )
-    )
-    .toBeLessThan(woodBefore);
+  await page.waitForTimeout(100);
+  expect(await resourceValue(page, "wood")).toBeLessThan(woodBefore);
 
   const mineralHoes = page.locator('[data-upgrade-id="mineralHoes"]');
   await expect(mineralHoes).toHaveAttribute("data-upgrade-researched", "false");
@@ -513,6 +706,7 @@ test("keeps game scrolling inside ScrollArea with stable geometry", async ({
         };
       };
       const game = document.querySelector(".kittens-game-view");
+      const titlebar = document.querySelector("[data-app-titlebar]");
       const viewport = document.querySelector<HTMLElement>(
         "[data-game-main-scroll] [data-slot='scroll-area-viewport']"
       );
@@ -532,11 +726,12 @@ test("keeps game scrolling inside ScrollArea with stable geometry", async ({
         ...rect(element),
       }));
 
-      if (!viewport || !navigation || !bottomNav) {
+      if (!game || !titlebar || !viewport || !navigation || !bottomNav) {
         throw new Error("Game layout target is missing");
       }
       return {
-        header: rect(game?.querySelector("header") ?? null),
+        titlebar: rect(titlebar),
+        gameHeaderCount: game.querySelectorAll(":scope > header").length,
         main: rect(document.querySelector("#kittens-main")),
         navigation: rect(navigation),
         bottomNav: rect(bottomNav),
@@ -555,7 +750,7 @@ test("keeps game scrolling inside ScrollArea with stable geometry", async ({
   const initial = await readLayout();
   expect(initial.overflowY).toBe("scroll");
   expect(initial.nativeVerticalScrollContainers).toBe(0);
-  expect(initial.resources).toHaveLength(7);
+  expect(initial.resources).toHaveLength(0);
   await expect(page.getByText("原生逻辑与存档")).toHaveCount(0);
   expect(initial.settingsNavItems).toBe(0);
   expect(initial.bottomNavItems).toEqual(["challenges", "progress"]);
@@ -566,16 +761,17 @@ test("keeps game scrolling inside ScrollArea with stable geometry", async ({
       (initial.bottomNav.y + initial.bottomNav.height)
   ).toBeLessThanOrEqual(12);
 
-  const catnip = page.locator('[data-resource-id="catnip"]');
-  const catnipBefore = Number(await catnip.getAttribute("data-resource-value"));
+  const catnipBefore = await resourceValue(page, "catnip");
   await clickMany(page.getByRole("button", { name: "采集猫薄荷" }), 40);
-  await expect
-    .poll(async () => Number(await catnip.getAttribute("data-resource-value")))
-    .not.toBe(catnipBefore);
+  await page.waitForTimeout(100);
+  expect(await resourceValue(page, "catnip")).not.toBe(catnipBefore);
   await page.waitForTimeout(600);
   const afterTick = await readLayout();
 
-  for (const key of ["header", "main", "navigation"] as const) {
+  expect(initial.gameHeaderCount).toBe(0);
+  expect(afterTick.gameHeaderCount).toBe(0);
+
+  for (const key of ["titlebar", "main", "navigation"] as const) {
     expect(afterTick[key].x).toBeCloseTo(initial[key].x, 0);
     expect(afterTick[key].y).toBeCloseTo(initial[key].y, 0);
     expect(afterTick[key].width).toBeCloseTo(initial[key].width, 0);
@@ -840,21 +1036,10 @@ test("drives trade, religion, space, time, challenges and progress", async ({
   expect(
     Number(await lizardRace.getAttribute("data-trade-max"))
   ).toBeGreaterThan(0);
-  const mineralsBefore = Number(
-    await page
-      .locator('[data-resource-id="minerals"]')
-      .getAttribute("data-resource-value")
-  );
+  const mineralsBefore = await resourceValue(page, "minerals");
   await page.locator('[data-trade-action="lizards"]').click();
-  await expect
-    .poll(async () =>
-      Number(
-        await page
-          .locator('[data-resource-id="minerals"]')
-          .getAttribute("data-resource-value")
-      )
-    )
-    .toBeLessThan(mineralsBefore);
+  await page.waitForTimeout(100);
+  expect(await resourceValue(page, "minerals")).toBeLessThan(mineralsBefore);
   await expect(lizardRace).toHaveAttribute("data-trade-embassy-level", "1");
   await page.locator('[data-embassy-build="lizards"]').click();
   await expect(lizardRace).toHaveAttribute("data-trade-embassy-level", "2");
@@ -1198,7 +1383,9 @@ test("keeps the native game readable in light and dark themes", async ({
       };
       const game = document.querySelector<HTMLElement>(".kittens-game-view");
       const main = document.querySelector<HTMLElement>("#kittens-main");
-      const header = game?.querySelector<HTMLElement>("header");
+      const titlebar = document.querySelector<HTMLElement>(
+        "[data-app-titlebar]"
+      );
       const title = main?.querySelector<HTMLElement>("h1");
       const description = main?.querySelector<HTMLElement>("header p");
       const faint = main?.querySelector<HTMLElement>(".text-kg-faint");
@@ -1211,7 +1398,7 @@ test("keeps the native game readable in light and dark themes", async ({
       if (
         !game ||
         !main ||
-        !header ||
+        !titlebar ||
         !title ||
         !description ||
         !faint ||
@@ -1235,7 +1422,7 @@ test("keeps the native game readable in light and dark themes", async ({
         dark: document.documentElement.classList.contains("dark"),
         colorScheme: getComputedStyle(document.documentElement).colorScheme,
         gameBackground: getComputedStyle(game).backgroundColor,
-        headerBackground: getComputedStyle(header).backgroundColor,
+        headerBackground: getComputedStyle(titlebar).backgroundColor,
         mainBackground,
         titleContrast: contrast(titleColor, mainBackground),
         descriptionContrast: contrast(descriptionColor, mainBackground),
@@ -1285,7 +1472,31 @@ test("keeps the native game readable in light and dark themes", async ({
     animations: "disabled",
   });
 
-  await page.locator('[data-action="open-save-manager"]').click();
+  const resourceTrigger = page.locator('[data-action="toggle-game-resources"]');
+  const resourcePanel = page.locator("[data-resource-panel]");
+  const readResourcePanelStyle = () =>
+    resourcePanel.evaluate((element) => {
+      const style = getComputedStyle(element);
+      return {
+        background: style.backgroundColor,
+        border: style.borderColor,
+        text: getComputedStyle(
+          element.querySelector<HTMLElement>('[data-resource-id="catnip"]')!
+        ).color,
+      };
+    });
+  await resourceTrigger.click();
+  await expect(resourcePanel).toBeVisible();
+  const lightResourcePanel = await readResourcePanelStyle();
+  await page.screenshot({
+    path: ".agent/smoke/theme-light-resource-panel.png",
+    fullPage: false,
+    animations: "disabled",
+  });
+  await resourceTrigger.click();
+  await expect(resourcePanel).toBeHidden();
+
+  await openSaveManager(page);
   const saveDialog = page.locator("[data-save-dialog]");
   await expect(saveDialog).toBeVisible();
   await expect(saveDialog).toHaveClass(/kittens-game-theme/);
@@ -1373,7 +1584,20 @@ test("keeps the native game readable in light and dark themes", async ({
     animations: "disabled",
   });
 
-  await page.locator('[data-action="open-save-manager"]').click();
+  await resourceTrigger.click();
+  await expect(resourcePanel).toBeVisible();
+  const darkResourcePanel = await readResourcePanelStyle();
+  expect(darkResourcePanel.background).not.toBe(lightResourcePanel.background);
+  expect(darkResourcePanel.border).not.toBe(lightResourcePanel.border);
+  await page.screenshot({
+    path: ".agent/smoke/theme-dark-resource-panel.png",
+    fullPage: false,
+    animations: "disabled",
+  });
+  await resourceTrigger.click();
+  await expect(resourcePanel).toBeHidden();
+
+  await openSaveManager(page);
   await expect(saveDialog).toBeVisible();
   const darkDialog = await readDialogState();
   expect(darkDialog.background).not.toBe(dark.mainBackground);

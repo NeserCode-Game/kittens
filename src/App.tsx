@@ -3,7 +3,7 @@ import "./App.css";
 import Titlebar from "@/components/framework/Titlebar";
 import CommandDialog from "@/components/framework/CommandDialog";
 import { Toaster } from "@/components/ui/sonner";
-import { Routes, Route, useNavigate } from "react-router";
+import { Routes, Route, useLocation, useNavigate } from "react-router";
 
 import { useTheme, useI18nLogic } from "@/composables";
 import {
@@ -32,6 +32,7 @@ import AboutDialog from "@/components/framework/AboutDialog";
 import { SettingsDialogContext } from "@/contexts/settings";
 import type { SettingsSection } from "@/contexts/settings";
 import { KittensGameProvider } from "@/contexts/kittens-game";
+import { KittensGameUiProvider } from "@/contexts/kittens-game-ui";
 import { createLogger } from "@/lib/logger";
 import { getCurrentWindowOrNull, isTauriRuntime } from "@/lib/tauri-runtime";
 
@@ -41,6 +42,7 @@ const KittensGame = lazy(() => import("@/views/KittensGame"));
 const Software = lazy(() => import("@/views/Software"));
 const Framework = lazy(() => import("@/views/Framework"));
 const TrayMenu = lazy(() => import("@/views/TrayMenu"));
+const ResourceWindow = lazy(() => import("@/features/kittens/resource-window"));
 
 function ScrollablePage({ children }: { children: ReactNode }) {
   return (
@@ -64,7 +66,12 @@ lifecycle.register({
   once: true,
   run: () => {
     const currentWindow = getCurrentWindowOrNull();
-    if (!currentWindow || currentWindow.label === "tray") return;
+    if (
+      !currentWindow ||
+      currentWindow.label === "tray" ||
+      currentWindow.label === "resources"
+    )
+      return;
     return $windowMain.renderFocus();
   },
 });
@@ -74,6 +81,7 @@ function App() {
   const { lang, t, setLanguage } = useI18nLogic();
   /* Navigator */
   const navigate = useNavigate();
+  const location = useLocation();
   /* Theme */
   const [theme, setThemeMode] = useTheme({
     localStorageKey: "theme-mode",
@@ -88,6 +96,9 @@ function App() {
   const currentLabel = tauriRuntime
     ? (getCurrentWindowOrNull()?.label ?? "main")
     : "main";
+  const resourceWindow =
+    currentLabel === "resources" ||
+    (!tauriRuntime && location.pathname === "/resource");
 
   /* 弹窗状态 */
   const [settingsOpen, setSettingsOpen] = useState(false);
@@ -115,7 +126,12 @@ function App() {
   }, []);
 
   useEffect(() => {
-    if (!tauriRuntime || currentLabel === "tray") return;
+    if (
+      !tauriRuntime ||
+      currentLabel === "tray" ||
+      currentLabel === "resources"
+    )
+      return;
 
     const unlistenPopup = listen<{ x: number; y: number }>(
       "tray-popup",
@@ -169,6 +185,18 @@ function App() {
     [openSettings, openAbout]
   );
 
+  if (resourceWindow) {
+    return (
+      <I18nContext.Provider value={i18nValue}>
+        <ThemeContext.Provider value={themeValue}>
+          <Suspense fallback={null}>
+            <ResourceWindow />
+          </Suspense>
+        </ThemeContext.Provider>
+      </I18nContext.Provider>
+    );
+  }
+
   if (currentLabel === "tray") {
     return (
       <I18nContext.Provider value={i18nValue}>
@@ -189,41 +217,43 @@ function App() {
             <TitleContext.Provider value={titleValue}>
               <NavigatorContext.Provider value={navigatorValue}>
                 <KittensGameProvider>
-                  <main id="app-main" className="app-shell">
-                    <Titlebar />
-                    <CommandDialog />
+                  <KittensGameUiProvider>
+                    <main id="app-main" className="app-shell">
+                      <Titlebar />
+                      <CommandDialog />
 
-                    <div id="container" className="app-body">
-                      <Suspense fallback={null}>
-                        <Routes>
-                          <Route path="/" index element={<KittensGame />} />
-                          <Route
-                            path="/software"
-                            element={
-                              <ScrollablePage>
-                                <Software />
-                              </ScrollablePage>
-                            }
-                          />
-                          <Route
-                            path="/framework"
-                            element={
-                              <ScrollablePage>
-                                <Framework />
-                              </ScrollablePage>
-                            }
-                          />
-                        </Routes>
-                      </Suspense>
-                    </div>
-                  </main>
-                  <SettingsDialog
-                    open={settingsOpen}
-                    initialSection={settingsSection}
-                    onOpenChange={setSettingsOpen}
-                  />
-                  <AboutDialog open={aboutOpen} onOpenChange={setAboutOpen} />
-                  <Toaster richColors theme={theme} position="bottom-right" />
+                      <div id="container" className="app-body">
+                        <Suspense fallback={null}>
+                          <Routes>
+                            <Route path="/" index element={<KittensGame />} />
+                            <Route
+                              path="/software"
+                              element={
+                                <ScrollablePage>
+                                  <Software />
+                                </ScrollablePage>
+                              }
+                            />
+                            <Route
+                              path="/framework"
+                              element={
+                                <ScrollablePage>
+                                  <Framework />
+                                </ScrollablePage>
+                              }
+                            />
+                          </Routes>
+                        </Suspense>
+                      </div>
+                    </main>
+                    <SettingsDialog
+                      open={settingsOpen}
+                      initialSection={settingsSection}
+                      onOpenChange={setSettingsOpen}
+                    />
+                    <AboutDialog open={aboutOpen} onOpenChange={setAboutOpen} />
+                    <Toaster richColors theme={theme} position="bottom-right" />
+                  </KittensGameUiProvider>
                 </KittensGameProvider>
               </NavigatorContext.Provider>
             </TitleContext.Provider>

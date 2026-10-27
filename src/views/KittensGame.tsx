@@ -1,7 +1,6 @@
 import type { LucideIcon } from "lucide-react";
 import {
   Activity,
-  CalendarDays,
   Cat,
   ChevronRight,
   Church,
@@ -12,7 +11,6 @@ import {
   Handshake,
   Leaf,
   LoaderCircle,
-  Menu,
   RefreshCw,
   Rocket,
   Save,
@@ -20,7 +18,7 @@ import {
   Trophy,
   Wrench,
 } from "lucide-react";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -37,14 +35,13 @@ import {
   SheetDescription,
   SheetHeader,
   SheetTitle,
-  SheetTrigger,
 } from "@/components/ui/sheet";
-import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { useKittensGameContext } from "@/contexts/kittens-game-context";
+import { useKittensGameUiContext } from "@/contexts/kittens-game-ui-context";
 import {
   actionReasonLabel,
   formatPercent,
-  RESOURCE_ORDER,
 } from "@/features/kittens/game-format";
 import {
   BonfirePanel,
@@ -61,7 +58,6 @@ import {
   TradePanel,
 } from "@/features/kittens/game-midgame-panels";
 import { SaveManagementDialog } from "@/features/kittens/game-save-dialog";
-import { ResourceChip } from "@/features/kittens/game-shared";
 import type { ActionResult, GameSnapshot } from "@/game/kernel/types";
 import { cn } from "@/lib/utils";
 
@@ -148,7 +144,6 @@ const BOTTOM_NAV_ITEMS: NavItem[] = [
   },
 ];
 
-const NAV_ITEMS = [...SYSTEM_NAV_ITEMS, ...BOTTOM_NAV_ITEMS];
 type NavId = NavItem["id"];
 
 function Navigation({
@@ -276,22 +271,16 @@ function GameConfirmation({
 
 export default function KittensGame() {
   const { kernel, snapshot, error } = useKittensGameContext();
-  const [lastAction, setLastAction] = useState<string | null>(null);
+  const {
+    lastAction,
+    mobileNavOpen,
+    saveDialogOpen,
+    setLastAction,
+    setMobileNavOpen,
+    setSaveDialogOpen,
+  } = useKittensGameUiContext();
   const [activeNav, setActiveNav] = useState<NavId>("bonfire");
-  const [mobileNavOpen, setMobileNavOpen] = useState(false);
-  const [saveDialogOpen, setSaveDialogOpen] = useState(false);
   const mainRef = useRef<HTMLElement>(null);
-
-  const resources = useMemo(() => {
-    if (!snapshot) return [];
-    const byId = new Map(
-      snapshot.resources.map((resource) => [resource.id, resource])
-    );
-    return RESOURCE_ORDER.flatMap((id) => {
-      const resource = byId.get(id);
-      return resource?.visible ? [resource] : [];
-    });
-  }, [snapshot]);
 
   useEffect(() => {
     const handleShortcut = (event: KeyboardEvent) => {
@@ -315,7 +304,7 @@ export default function KittensGame() {
     };
     window.addEventListener("keydown", handleShortcut);
     return () => window.removeEventListener("keydown", handleShortcut);
-  }, [kernel]);
+  }, [kernel, setLastAction, setSaveDialogOpen]);
 
   if (error) {
     return (
@@ -363,9 +352,6 @@ export default function KittensGame() {
     setMobileNavOpen(false);
     window.requestAnimationFrame(() => mainRef.current?.focus());
   };
-
-  const activeLabel =
-    NAV_ITEMS.find((item) => item.id === activeNav)?.label ?? "营火";
 
   const renderPanel = () => {
     switch (activeNav) {
@@ -495,7 +481,7 @@ export default function KittensGame() {
 
   return (
     <section
-      className="kittens-game-theme kittens-game-view bg-kg-canvas text-kg-body grid h-full min-h-0 w-full grid-rows-[auto_minmax(0,1fr)] overflow-hidden"
+      className="kittens-game-theme kittens-game-view bg-kg-canvas text-kg-body relative h-full min-h-0 w-full overflow-hidden"
       aria-label="猫国建设者"
       data-game-paused={snapshot.paused}
     >
@@ -505,106 +491,27 @@ export default function KittensGame() {
       >
         跳到主要内容
       </a>
-      <header className="border-kg-line bg-kg-chrome flex min-h-16 min-w-0 items-center gap-2 border-b px-3 py-2 sm:gap-3 sm:px-4">
-        <Sheet open={mobileNavOpen} onOpenChange={setMobileNavOpen}>
-          <SheetTrigger asChild>
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon"
-              className="text-kg-muted hover:bg-kg-hover-strong hover:text-kg-strong size-8 shrink-0 lg:hidden"
-              aria-label="打开系统导航"
-            >
-              <Menu className="size-4" />
-            </Button>
-          </SheetTrigger>
-          <SheetContent
-            side="left"
-            className="kittens-game-theme border-kg-line bg-kg-sidebar text-kg-body flex w-[280px] flex-col overflow-hidden"
-          >
-            <SheetHeader className="border-kg-line border-b pb-5 text-left">
-              <SheetTitle className="text-kg-strong flex items-center gap-2 font-serif text-lg">
-                <Cat className="text-kg-accent size-5" />
-                猫国建设者
-              </SheetTitle>
-              <SheetDescription className="text-kg-muted text-xs">
-                原生逻辑 · {snapshot.version}
-              </SheetDescription>
-            </SheetHeader>
-            <div className="mt-2 min-h-0 flex-1 px-2">
-              <Navigation activeNav={activeNav} onNavigate={navigate} />
-            </div>
-          </SheetContent>
-        </Sheet>
-
-        <div className="flex min-w-0 shrink items-center gap-2 lg:mr-2 lg:flex">
-          <span className="text-kg-accent hidden size-7 shrink-0 items-center justify-center rounded-md bg-amber-400/15 sm:flex">
-            <Cat className="size-4" />
-          </span>
-          <div className="min-w-0">
-            <div className="text-kg-body truncate text-xs font-semibold lg:text-sm">
-              <span className="lg:hidden">{activeLabel}</span>
-              <span className="hidden lg:inline">猫国建设者</span>
-            </div>
-            <div className="text-kg-faint hidden text-[9px] sm:block">
-              原生内核
-            </div>
-          </div>
-        </div>
-
-        <ScrollArea
-          type="hover"
-          className="h-14 min-w-0 flex-1"
-          aria-label="资源栏"
-          data-resource-scroll
+      <Sheet open={mobileNavOpen} onOpenChange={setMobileNavOpen}>
+        <SheetContent
+          side="left"
+          className="kittens-game-theme border-kg-line bg-kg-sidebar text-kg-body flex w-[280px] flex-col overflow-hidden"
         >
-          <div className="flex h-[52px] w-max items-stretch gap-1.5 pr-2 sm:gap-2">
-            {resources.map((resource) => (
-              <ResourceChip key={resource.id} resource={resource} />
-            ))}
+          <SheetHeader className="border-kg-line border-b pb-5 text-left">
+            <SheetTitle className="text-kg-strong flex items-center gap-2 font-serif text-lg">
+              <Cat className="text-kg-accent size-5" />
+              猫国建设者
+            </SheetTitle>
+            <SheetDescription className="text-kg-muted text-xs">
+              原生逻辑 · {snapshot.version}
+            </SheetDescription>
+          </SheetHeader>
+          <div className="mt-2 min-h-0 flex-1 px-2">
+            <Navigation activeNav={activeNav} onNavigate={navigate} />
           </div>
-          <ScrollBar orientation="horizontal" className="h-1.5" />
-        </ScrollArea>
+        </SheetContent>
+      </Sheet>
 
-        <div className="border-kg-line hidden min-w-[132px] shrink-0 items-center gap-3 border-l pl-4 md:flex">
-          <div className="min-w-0 flex-1 text-right">
-            <div className="text-kg-muted truncate text-[10px]">
-              {snapshot.calendar.seasonLabel} · 第 {snapshot.calendar.year} 年
-            </div>
-            <div className="text-kg-body mt-0.5 font-mono text-xs tabular-nums">
-              第 {snapshot.calendar.day} 天
-            </div>
-          </div>
-          <CalendarDays className="text-kg-muted size-5" />
-        </div>
-
-        <Button
-          type="button"
-          variant="ghost"
-          size="icon"
-          className="text-kg-muted hover:bg-kg-hover-strong hover:text-kg-accent size-8 shrink-0"
-          onClick={() => setSaveDialogOpen(true)}
-          aria-label="存档管理"
-          aria-keyshortcuts="Control+Shift+S Meta+Shift+S"
-          data-action="open-save-manager"
-        >
-          <FolderOpen className="size-4" />
-        </Button>
-
-        <Button
-          type="button"
-          variant="ghost"
-          size="icon"
-          className="text-kg-muted hover:bg-kg-hover-strong hover:text-kg-accent size-8 shrink-0"
-          onClick={() => runAction("游戏已保存", () => kernel.save())}
-          aria-label="快速保存"
-          aria-keyshortcuts="Control+S Meta+S"
-        >
-          <Save className="size-4" />
-        </Button>
-      </header>
-
-      <div className="grid min-h-0 grid-cols-1 overflow-hidden lg:grid-cols-[168px_minmax(0,1fr)] xl:grid-cols-[176px_minmax(0,1fr)_280px]">
+      <div className="grid h-full min-h-0 grid-cols-1 overflow-hidden lg:grid-cols-[168px_minmax(0,1fr)] xl:grid-cols-[176px_minmax(0,1fr)_280px]">
         <aside className="border-kg-line bg-kg-sidebar hidden min-h-0 border-r p-2.5 lg:flex lg:flex-col">
           <div className="text-kg-faint mb-3 px-2 text-[10px] font-semibold tracking-[0.18em] uppercase">
             发展阶段
